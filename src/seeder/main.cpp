@@ -16,6 +16,7 @@
 #include <tinyformat.h>
 #include <util/defer.h>
 #include <util/strencodings.h>
+#include <util/syserror.h>
 #include <util/system.h>
 
 #include <algorithm>
