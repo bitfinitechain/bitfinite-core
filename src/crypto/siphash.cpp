@@ -1,4 +1,5 @@
 // Copyright (c) 2016-2018 The Bitcoin Core developers
+// Copyright (c) 2025 The Bitcoin developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -52,7 +53,9 @@ CSipHasher &CSipHasher::Write(uint64_t data) noexcept {
     return *this;
 }
 
-CSipHasher &CSipHasher::Write(const uint8_t *data, size_t size) noexcept {
+CSipHasher &CSipHasher::Write(const std::span<const std::byte> sp) noexcept {
+    const std::byte *data = sp.data();
+    size_t size = sp.size();
     uint64_t v0 = v[0], v1 = v[1], v2 = v[2], v3 = v[3];
     uint64_t t = tmp;
     int c = count;

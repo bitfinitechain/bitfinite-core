@@ -851,6 +851,10 @@ void SetupServerArgs() {
                  ArgsManager::ALLOW_ANY, OptionsCategory::DEBUG_TEST);
     gArgs.AddArg("-logips", strprintf("Include IP addresses in debug output (default: %d)", DEFAULT_LOGIPS),
                  ArgsManager::ALLOW_ANY, OptionsCategory::DEBUG_TEST);
+    gArgs.AddArg("-logratelimit",
+                 strprintf("Apply rate limiting to logging to mitigate disk-filling attacks (default: %u)",
+                           BCLog::DEFAULT_LOGRATELIMIT),
+                 ArgsManager::ALLOW_ANY | ArgsManager::DEBUG_ONLY, OptionsCategory::DEBUG_TEST);
     gArgs.AddArg("-logtimestamps",
                  strprintf("Prepend debug output with timestamp (default: %d)", DEFAULT_LOGTIMESTAMPS),
                  ArgsManager::ALLOW_ANY, OptionsCategory::DEBUG_TEST);
@@ -2025,6 +2029,24 @@ bool AppInitMain(Config &config, RPCServer &rpcServer, HTTPRPCRequestProcessor &
         // Prevent overflow and UB: constrain -mempoolexpiry to a sane, positive value within the next ~114 years.
         return InitError("Invalid -mempoolexpiry argument. Please specify a value >0 and <1,000,000.");
     }
+
+    // Install the log rate limiter reset task which runs once per hour
+    if (gArgs.GetBoolArg("-logratelimit", BCLog::DEFAULT_LOGRATELIMIT)) {
+        auto weakLimiter = LogInstance().SetRateLimiting(BCLog::RATELIMIT_MAX_BYTES, BCLog::RATELIMIT_WINDOW);
+        scheduler.scheduleEvery(
+            [weakLimiter]{
+                if (auto limiter = weakLimiter.lock()) {
+                    limiter->Reset(); // clears all stats, re-enabling any log suppressions
+                    return true; // run again
+                } else {
+                    return false; // never run again if weak_ptr expires
+                }
+            },
+            BCLog::RATELIMIT_WINDOW);
+    } else {
+        LogPrintf("Log rate limiting disabled\n");
+    }
+
 
     // Step 5: verify wallet database integrity
     for (const auto &client : node.chain_clients) {

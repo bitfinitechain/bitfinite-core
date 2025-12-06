@@ -6,20 +6,26 @@
 
 #pragma once
 
+#include <crypto/siphash.h>
 #include <fs.h>
 #include <tinyformat.h>
 
 #include <atomic>
+#include <chrono>
 #include <cstdint>
+#include <cstring>
 #include <list>
+#include <memory>
 #include <mutex>
+#include <source_location>
 #include <string>
+#include <string_view>
 #include <utility>
 
-static const bool DEFAULT_LOGTIMEMICROS = false;
-static const bool DEFAULT_LOGIPS = false;
-static const bool DEFAULT_LOGTIMESTAMPS = true;
-static const bool DEFAULT_LOGTHREADNAMES = false;
+inline constexpr bool DEFAULT_LOGTIMEMICROS = false;
+inline constexpr bool DEFAULT_LOGIPS = false;
+inline constexpr bool DEFAULT_LOGTIMESTAMPS = true;
+inline constexpr bool DEFAULT_LOGTHREADNAMES = false;
 
 extern bool fLogIPs;
 extern const char *const DEFAULT_DEBUGLOGFILE;
@@ -30,6 +36,80 @@ struct CLogCategoryActive {
 };
 
 namespace BCLog {
+
+using namespace std::chrono_literals;
+
+inline constexpr bool DEFAULT_LOGRATELIMIT = true;
+inline constexpr uint64_t RATELIMIT_MAX_BYTES = 1024 * 1024; // maximum number of bytes per source location that can be logged within the RATELIMIT_WINDOW
+inline constexpr auto RATELIMIT_WINDOW = 1h; // time window after which log ratelimit stats are reset
+
+//! Fixed window rate limiter for logging.
+class LogRateLimiter {
+public:
+    //! Keeps track of an individual source location and how many available bytes are left for logging from it.
+    struct Stats {
+        //! Remaining bytes
+        uint64_t m_available_bytes = 0;
+        //! Number of bytes that were consumed but didn't fit in the available bytes.
+        uint64_t m_dropped_bytes = 0;
+
+        Stats(uint64_t max_bytes) : m_available_bytes{max_bytes} {}
+        //! Updates internal accounting and returns true if enough available_bytes were remaining
+        bool Consume(uint64_t bytes);
+    };
+
+private:
+    mutable std::mutex m_mutex;
+
+    struct SourceLocationEqual {
+        bool operator()(const std::source_location& lhs, const std::source_location& rhs) const noexcept {
+            return lhs.line() == rhs.line() && 0 == std::strcmp(lhs.file_name(), rhs.file_name());
+        }
+    };
+
+    struct SourceLocationHasher {
+        size_t operator()(const std::source_location& s) const noexcept {
+            // Use CSipHasher(0, 0) as a simple way to get uniform distribution.
+            return static_cast<size_t>(CSipHasher(0, 0)
+                                           .Write(s.line())
+                                           .Write(std::as_bytes(std::span{std::string_view{s.file_name()}}))
+                                           .Finalize());
+        }
+    };
+
+    using SourceLocationsMap = std::unordered_map<std::source_location, Stats, SourceLocationHasher, SourceLocationEqual>;
+    //! Stats for each source location that has attempted to log something.
+    SourceLocationsMap m_source_locations; // GUARDED_BY(m_mutex)
+    //! Whether any log locations are suppressed. Cached view on m_source_locations for performance reasons.
+    std::atomic<bool> m_suppression_active = false;
+
+public:
+    //! Maximum number of bytes logged per location per window.
+    const uint64_t m_max_bytes;
+    //! Interval after which the window is reset.
+    const std::chrono::seconds m_reset_window;
+
+    /**
+     * @param max_bytes         Maximum number of bytes that can be logged for each source location per time window.
+     * @param reset_window      Time window after which the stats are reset to 0 for all source locations.
+     */
+    LogRateLimiter(uint64_t max_bytes, std::chrono::seconds reset_window)
+        : m_max_bytes{max_bytes}, m_reset_window{reset_window} {}
+
+    //! Suppression status of a source log location.
+    enum class Status {
+        UNSUPPRESSED,     // string fits within the limit
+        NEWLY_SUPPRESSED, // suppression has started since this string
+        STILL_SUPPRESSED, // suppression is still ongoing
+    };
+    //! Consumes `source_loc`'s available bytes corresponding to the size of the (formatted)
+    //! `str` and returns its status.
+    [[nodiscard]] Status Consume(const std::source_location& source_loc, const std::string& str); // EXCLUSIVE_LOCKS_REQUIRED(!m_mutex)
+    //! Resets all usage to zero. Called periodically by the scheduler.
+    void Reset(); // EXCLUSIVE_LOCKS_REQUIRED(!m_mutex)
+    //! Returns true if any log locations are currently being suppressed.
+    bool SuppressionsActive() const { return m_suppression_active; }
+};
 
 enum LogFlags : uint32_t {
     NONE = 0,
@@ -73,8 +153,10 @@ enum LogFlags : uint32_t {
 class Logger {
 private:
     FILE *m_fileout = nullptr;
-    std::mutex m_file_mutex;
+    std::mutex m_cs;
     std::list<std::string> m_msgs_before_open;
+
+    std::shared_ptr<LogRateLimiter> m_limiter; // GUARDED_BY(m_cs)
 
     /**
      * m_started_new_line is a state variable that will suppress printing of the
@@ -103,8 +185,10 @@ public:
     ~Logger();
 
     /** Send a string to the log output */
-    void LogPrintStr(std::string &&str);
-    void LogPrintStr(const std::string &str) { LogPrintStr(std::string{str}); }
+    void LogPrintStr(std::string &&str, std::source_location &&sloc, bool should_rate_limit);
+    void LogPrintStr(std::string_view str, std::source_location &&sloc, bool should_rate_limit) {
+        LogPrintStr(std::string{str}, std::move(sloc), should_rate_limit);
+    }
 
     /** Returns whether logs will be written to any output */
     bool Enabled() const { return m_print_to_console || m_print_to_file; }
@@ -124,6 +208,16 @@ public:
 
     /** Default for whether ShrinkDebugFile should be run */
     bool DefaultShrinkDebugFile() const;
+
+    std::weak_ptr<LogRateLimiter> SetRateLimiting(uint64_t max_bytes, std::chrono::seconds reset_window) /* EXCLUSIVE_LOCKS_REQUIRED(!m_cs) */ {
+        std::unique_lock scoped_lock(m_cs);
+        return m_limiter = std::make_shared<LogRateLimiter>(max_bytes, reset_window);
+    }
+
+    void DisableRateLimiting() /* EXCLUSIVE_LOCKS_REQUIRED(!m_cs) */ {
+        std::unique_lock scoped_lock(m_cs);
+        m_limiter.reset();
+    }
 };
 
 /** Belt and suspenders: make sure outgoing log messages don't contain
@@ -156,32 +250,35 @@ std::vector<CLogCategoryActive> ListActiveLogCategories();
 /** Return true if str parses as a log category and set the flag */
 bool GetLogCategory(BCLog::LogFlags &flag, const std::string &str);
 
-// Be conservative when using LogPrintf/error or other things which
-// unconditionally log to debug.log! It should not be the case that an inbound
-// peer can fill up a user's disk with debug.log entries.
+// App-global logging. Uses basic rate limiting to mitigate disk filling attacks.
+// Be conservative when using functions that unconditionally log to debug.log!
+// It should not be the case that an inbound peer can fill up a user's storage
+// with debug.log entries.
 template <typename... Args>
-static inline void LogPrintf(const char *fmt, const Args &... args) {
+static inline void LogPrintfInternal(std::source_location &&sloc, bool should_rate_limit, const char *fmt, const Args &... args) {
     if (LogInstance().Enabled()) {
         std::string log_msg;
         try {
             log_msg = tfm::format(fmt, args...);
-        } catch (tinyformat::format_error &fmterr) {
+        } catch (const tinyformat::format_error &fmterr) {
             /**
              * Original format string will have newline so don't add one here
              */
-            log_msg = "Error \"" + std::string(fmterr.what()) +
-                      "\" while formatting log message: " + fmt;
+            log_msg = "Error \"" + std::string(fmterr.what()) + "\" while formatting log message: " + fmt;
         }
-        LogInstance().LogPrintStr(std::move(log_msg));
+        LogInstance().LogPrintStr(std::move(log_msg), std::move(sloc), should_rate_limit);
     }
 }
 
+#define LogPrintf(fmt, ...)            LogPrintfInternal(std::source_location::current(), true, (fmt) __VA_OPT__(,) __VA_ARGS__)
+#define LogPrintfNoRateLimit(fmt, ...) LogPrintfInternal(std::source_location::current(), false, (fmt) __VA_OPT__(,) __VA_ARGS__)
+
 // Use a macro instead of a function for conditional logging to prevent
 // evaluating arguments when logging for the category is not enabled.
-#define LogPrint(category, ...)                                                \
+#define LogPrint(category, fmt, ...)                                           \
     do {                                                                       \
         if (LogAcceptCategory((category))) {                                   \
-            LogPrintf(__VA_ARGS__);                                            \
+            LogPrintfNoRateLimit((fmt) __VA_OPT__(,) __VA_ARGS__);             \
         }                                                                      \
     } while (0)
 

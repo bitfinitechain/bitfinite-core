@@ -2013,12 +2013,17 @@ static void UpdateTip(const Config &config, CBlockIndex *pindexNew) EXCLUSIVE_LO
         g_best_block_cv.notify_all();
     }
 
-    LogPrintf("%s: new best=%s height=%d version=0x%08x log2_work=%.8g tx=%ld "
-              "date='%s' progress=%f cache=%.1fMiB(%utxo)\n",
-              __func__, pindexNew->GetBlockHash().ToString(), pindexNew->nHeight, pindexNew->nVersion,
-              log(pindexNew->nChainWork.getdouble()) / log(2.0), pindexNew->GetChainTxCount(),
-              FormatISO8601DateTime(pindexNew->GetBlockTime()), GuessVerificationProgress(params.TxData(), pindexNew),
-              pcoinsTip->DynamicMemoryUsage() * (1.0 / (1 << 20)), pcoinsTip->GetCacheSize());
+    // Note that we disable log rate limiting for this message, so this source location always logs during IBD.
+    LogPrintfNoRateLimit("%s: new best=%s height=%d version=0x%08x log2_work=%.8g tx=%u date='%s' progress=%f"
+                         " cache=%.1fMiB(%utxo)\n",
+                         __func__, pindexNew->GetBlockHash().ToString(),
+                         pindexNew->nHeight, pindexNew->nVersion,
+                         log(pindexNew->nChainWork.getdouble()) / log(2.0),
+                         pindexNew->GetChainTxCount(),
+                         FormatISO8601DateTime(pindexNew->GetBlockTime()),
+                         GuessVerificationProgress(params.TxData(), pindexNew),
+                         pcoinsTip->DynamicMemoryUsage() * (1.0 / (1 << 20)),
+                         pcoinsTip->GetCacheSize());
 }
 
 /**
