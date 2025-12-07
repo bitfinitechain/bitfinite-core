@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2016 The Bitcoin Core developers
-// Copyright (c) 2017-2023 The Bitcoin developers
+// Copyright (c) 2017-2025 The Bitcoin developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -177,6 +177,8 @@ void BCLog::Logger::LogPrintStr(std::string &&str)
     if (!m_print_to_console && !m_print_to_file)
         return; // Nothing to do!
 
+    LogEscapeMessageInPlace(str);
+
     if (m_log_threadnames && m_started_new_line) {
         // below does: str = "[" + threadName + "] " + str; (but with less copying)
         std::string tmp;
@@ -302,4 +304,40 @@ bool BCLog::Logger::WillLogCategory(LogFlags category) const {
 
 bool BCLog::Logger::DefaultShrinkDebugFile() const {
     return m_categories != BCLog::NONE;
+}
+
+bool BCLog::LogEscapeMessageInPlace(std::string &str) {
+    // Returns true if the character is "mundane" or acceptable to print to log as-is, false otherwise.
+    auto IsMundaneChar = [](const char ch_in) {
+        const uint8_t ch = static_cast<uint8_t>(ch_in);
+        return ch != 0x7fu && (ch >= 32u || ch_in == '\n'); // Note that we accept UTF-8 control chars >= 0x80, etc
+    };
+    // Returns the input character as a 4-char string of the form: "\xNN" where NN is the hex code for the character.
+    auto EscapeChar = [](const uint8_t ch) { return strprintf("\\x%02x", ch); };
+    // First, loop through all chars and find the first non-acceptable char, if any.
+    const size_t strsz = str.size();
+    size_t i;
+    for (i = 0; i != strsz && IsMundaneChar(str[i]); ++i) { /**/ }
+    // If all chars are acceptable, return early, doing no work, no allocations, etc
+    if (i == strsz) [[likely]] {
+        return false; // indicate str was unmodified
+    }
+    // If we get here, at least one character needs to be replaced
+    std::string tmp;
+    tmp.reserve(strsz + 3u); // reserve space for known string size plus at least 1 replacement char
+    // Copy the chars we accepted already above
+    tmp.append(str.data(), i);
+    // Escape the first known bad char
+    tmp.append(EscapeChar(str[i++]));
+    // ... and process the rest
+    for ( ; i != strsz; ++i) {
+        const char ch = str[i];
+        if (IsMundaneChar(ch)) {
+            tmp.push_back(ch);
+        } else {
+            tmp.append(EscapeChar(ch));
+        }
+    }
+    str = std::move(tmp);
+    return true; // indicate str was modified
 }

@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2016 The Bitcoin Core developers
-// Copyright (c) 2017-2023 The Bitcoin developers
+// Copyright (c) 2017-2025 The Bitcoin developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -125,6 +125,18 @@ public:
     /** Default for whether ShrinkDebugFile should be run */
     bool DefaultShrinkDebugFile() const;
 };
+
+/** Belt and suspenders: make sure outgoing log messages don't contain
+ * potentially suspicious characters, such as terminal control codes.
+ *
+ * This escapes control characters except newline ('\n') in C syntax.
+ * It escapes instead of removes them to still allow for troubleshooting
+ * issues where they accidentally end up in strings.
+ *
+ * This function is used internally but is exposed here for unit tests.
+ * @returns true if `str` was modified, false otherwise.
+ */
+bool LogEscapeMessageInPlace(std::string &str);
 
 } // namespace BCLog
 
