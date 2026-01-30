@@ -1801,6 +1801,16 @@ static void ProcessGetData(const Config &config, CNode *pfrom,
 inline static void SendBlockTransactions(const CBlock &block,
                                          const BlockTransactionsRequest &req,
                                          CNode *pfrom, CConnman *connman) {
+    // BFX SECURITY: Enhanced validation for CVE-2024-35202 protection
+    // Validate request size before processing to prevent assertion failures
+    if (req.indices.empty() || req.indices.size() > block.vtx.size()) {
+        LOCK(cs_main);
+        Misbehaving(pfrom, 100, "invalid-getblocktxn-size");
+        LogPrintf("Peer %d sent us a getblocktxn with invalid size %d (block has %d txns)\n",
+                  pfrom->GetId(), req.indices.size(), block.vtx.size());
+        return;
+    }
+
     BlockTransactions resp(req);
     for (size_t i = 0; i < req.indices.size(); i++) {
         if (req.indices[i] >= block.vtx.size()) {
@@ -1811,6 +1821,17 @@ inline static void SendBlockTransactions(const CBlock &block,
                 pfrom->GetId());
             return;
         }
+        
+        // BFX SECURITY: Validate indices are sorted and unique
+        // This prevents potential DoS via duplicate or unsorted indices
+        if (i > 0 && req.indices[i] <= req.indices[i-1]) {
+            LOCK(cs_main);
+            Misbehaving(pfrom, 100, "unsorted-tx-indices");
+            LogPrintf("Peer %d sent us a getblocktxn with unsorted/duplicate indices\n",
+                      pfrom->GetId());
+            return;
+        }
+        
         resp.txn[i] = block.vtx[req.indices[i]];
     }
     LOCK(cs_main);

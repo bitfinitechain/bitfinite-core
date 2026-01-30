@@ -20,8 +20,8 @@
 #include <unordered_map>
 
 CBlockHeaderAndShortTxIDs::CBlockHeaderAndShortTxIDs(const CBlock &block)
-    : nonce(GetRand(std::numeric_limits<uint64_t>::max())),
-      shorttxids(block.vtx.size() - 1), prefilledtxn(1), header(block) {
+    : nonce(GetRand(std::numeric_limits<uint64_t>::max())), shorttxids(block.vtx.size() - 1), prefilledtxn(1),
+      header(block) {
     FillShortTxIDSelector();
     // TODO: Use our mempool prior to block acceptance to predictively fill more
     // than just the coinbase.
@@ -44,16 +44,13 @@ void CBlockHeaderAndShortTxIDs::FillShortTxIDSelector() {
 }
 
 uint64_t CBlockHeaderAndShortTxIDs::GetShortID(const TxHash &txhash) const {
-    static_assert(SHORTTXIDS_LENGTH == 6,
-                  "shorttxids calculation assumes 6-byte shorttxids");
+    static_assert(SHORTTXIDS_LENGTH == 6, "shorttxids calculation assumes 6-byte shorttxids");
     return SipHashUint256(shorttxidk0, shorttxidk1, txhash) & 0xffffffffffffL;
 }
 
-ReadStatus PartiallyDownloadedBlock::InitData(
-    const CBlockHeaderAndShortTxIDs &cmpctblock,
-    const std::vector<std::pair<TxHash, CTransactionRef>> &extra_txns) {
-    if (cmpctblock.header.IsNull() ||
-        (cmpctblock.shorttxids.empty() && cmpctblock.prefilledtxn.empty())) {
+ReadStatus PartiallyDownloadedBlock::InitData(const CBlockHeaderAndShortTxIDs &cmpctblock,
+                                              const std::vector<std::pair<TxHash, CTransactionRef>> &extra_txns) {
+    if (cmpctblock.header.IsNull() || (cmpctblock.shorttxids.empty() && cmpctblock.prefilledtxn.empty())) {
         return READ_STATUS_INVALID;
     }
     if (cmpctblock.shorttxids.size() + cmpctblock.prefilledtxn.size() >
@@ -95,8 +92,7 @@ ReadStatus PartiallyDownloadedBlock::InitData(
     // (or don't). Because well-formed cmpctblock messages will have a
     // (relatively) uniform distribution of short IDs, any highly-uneven
     // distribution of elements can be safely treated as a READ_STATUS_FAILED.
-    std::unordered_map<uint64_t, uint32_t> shorttxids(
-        cmpctblock.shorttxids.size());
+    std::unordered_map<uint64_t, uint32_t> shorttxids(cmpctblock.shorttxids.size());
     uint32_t index_offset = 0;
     for (size_t i = 0; i < cmpctblock.shorttxids.size(); i++) {
         while (txns_available[i + index_offset]) {
@@ -115,8 +111,7 @@ ReadStatus PartiallyDownloadedBlock::InitData(
         // S * (1 - cdf(binomial(n=S,p=1/S), N)). If we assume blocks of up to
         // 16000, allowing 12 elements per bucket should only fail once per ~1
         // million block transfers (per peer and connection).
-        if (shorttxids.bucket_size(
-                shorttxids.bucket(cmpctblock.shorttxids[i])) > 12) {
+        if (shorttxids.bucket_size(shorttxids.bucket(cmpctblock.shorttxids[i])) > 12) {
             return READ_STATUS_FAILED;
         }
     }
@@ -134,8 +129,7 @@ ReadStatus PartiallyDownloadedBlock::InitData(
         LOCK(pool->cs);
         for (auto &entry : pool->GetIndex()) {
             uint64_t shortid = cmpctblock.GetShortID(entry.GetTx().GetHash());
-            std::unordered_map<uint64_t, uint32_t>::iterator idit =
-                shorttxids.find(shortid);
+            std::unordered_map<uint64_t, uint32_t>::iterator idit = shorttxids.find(shortid);
             if (idit != shorttxids.end()) {
                 if (!have_txn[idit->second]) {
                     txns_available[idit->second] = entry.GetSharedTx();
@@ -163,8 +157,7 @@ ReadStatus PartiallyDownloadedBlock::InitData(
 
     for (auto &extra_txn : extra_txns) {
         uint64_t shortid = cmpctblock.GetShortID(extra_txn.first);
-        std::unordered_map<uint64_t, uint32_t>::iterator idit =
-            shorttxids.find(shortid);
+        std::unordered_map<uint64_t, uint32_t>::iterator idit = shorttxids.find(shortid);
         if (idit != shorttxids.end()) {
             if (!have_txn[idit->second]) {
                 txns_available[idit->second] = extra_txn.second;
@@ -179,8 +172,7 @@ ReadStatus PartiallyDownloadedBlock::InitData(
                 // duplication between extra_txns and mempool to trigger this
                 // case, so we compare hashes first.
                 if (txns_available[idit->second] &&
-                    txns_available[idit->second]->GetHash() !=
-                        extra_txn.second->GetHash()) {
+                    txns_available[idit->second]->GetHash() != extra_txn.second->GetHash()) {
                     txns_available[idit->second].reset();
                     mempool_count--;
                     extra_count--;
@@ -199,8 +191,7 @@ ReadStatus PartiallyDownloadedBlock::InitData(
     LogPrint(BCLog::CMPCTBLOCK,
              "Initialized PartiallyDownloadedBlock for block %s using a "
              "cmpctblock of size %lu\n",
-             cmpctblock.header.GetHash().ToString(),
-             GetSerializeSize(cmpctblock, PROTOCOL_VERSION));
+             cmpctblock.header.GetHash().ToString(), GetSerializeSize(cmpctblock, PROTOCOL_VERSION));
 
     return READ_STATUS_OK;
 }
@@ -211,9 +202,14 @@ bool PartiallyDownloadedBlock::IsTxAvailable(size_t index) const {
     return txns_available[index] != nullptr;
 }
 
-ReadStatus PartiallyDownloadedBlock::FillBlock(
-    CBlock &block, const std::vector<CTransactionRef> &vtx_missing) {
+ReadStatus PartiallyDownloadedBlock::FillBlock(CBlock &block, const std::vector<CTransactionRef> &vtx_missing) {
     assert(!header.IsNull());
+
+    // BFX SECURITY: Additional safety check to prevent processing empty blocks
+    if (txns_available.empty()) {
+        return READ_STATUS_INVALID;
+    }
+
     uint256 hash = header.GetHash();
     block = header;
     block.vtx.resize(txns_available.size());
@@ -223,6 +219,10 @@ ReadStatus PartiallyDownloadedBlock::FillBlock(
         auto &txn_available = txns_available[i];
         if (!txn_available) {
             if (vtx_missing.size() <= tx_missing_offset) {
+                return READ_STATUS_INVALID;
+            }
+            // BFX SECURITY: Validate transaction is not null before assignment
+            if (vtx_missing[tx_missing_offset]->IsNull()) {
                 return READ_STATUS_INVALID;
             }
             block.vtx[i] = vtx_missing[tx_missing_offset++];
@@ -240,8 +240,7 @@ ReadStatus PartiallyDownloadedBlock::FillBlock(
     }
 
     CValidationState state;
-    if (!CheckBlock(block, state, config->GetChainParams().GetConsensus(),
-                    BlockValidationOptions(*config))) {
+    if (!CheckBlock(block, state, config->GetChainParams().GetConsensus(), BlockValidationOptions(*config))) {
         // TODO: We really want to just check merkle tree manually here, but
         // that is expensive, and CheckBlock caches a block's "checked-status"
         // (in the CBlock?). CBlock should be able to check its own merkle root
@@ -257,12 +256,10 @@ ReadStatus PartiallyDownloadedBlock::FillBlock(
              "Successfully reconstructed block %s with %lu txn prefilled, %lu "
              "txn from mempool (incl at least %lu from extra pool) and %lu txn "
              "requested\n",
-             hash.ToString(), prefilled_count, mempool_count, extra_count,
-             vtx_missing.size());
+             hash.ToString(), prefilled_count, mempool_count, extra_count, vtx_missing.size());
     if (vtx_missing.size() < 5) {
         for (const auto &tx : vtx_missing) {
-            LogPrint(BCLog::CMPCTBLOCK,
-                     "Reconstructed block %s required tx %s\n", hash.ToString(),
+            LogPrint(BCLog::CMPCTBLOCK, "Reconstructed block %s required tx %s\n", hash.ToString(),
                      tx->GetId().ToString());
         }
     }
