@@ -8,12 +8,27 @@
 #if defined(HAVE_CONFIG_H)
 #include <config/bitcoin-config.h>
 #endif // HAVE_CONFIG_H
-#include <config/version.h>
+// #include <config/version.h>
+
+// --- BITFINITE FIX START ---
+#undef CLIENT_VERSION_MAJOR
+#undef CLIENT_VERSION_MINOR
+#undef CLIENT_VERSION_REVISION
+#undef CLIENT_VERSION_BUILD
+
+// CHANGE THESE TO YOUR PREFERRED VERSION (e.g., 1.0.0)
+#define CLIENT_VERSION_MAJOR 2
+#define CLIENT_VERSION_MINOR 0
+#define CLIENT_VERSION_REVISION 0
+#define CLIENT_VERSION_BUILD 1
+#define CLIENT_VERSION_IS_RELEASE 0
+#define COPYRIGHT_YEAR 2025
+#define COPYRIGHT_HOLDERS_FINAL "The Bitcoin and BitFinite developers"
+// --- BITFINITE FIX END ---
 
 // Check that required client information is defined
-#if !defined(CLIENT_VERSION_MAJOR) || !defined(CLIENT_VERSION_MINOR) ||        \
-    !defined(CLIENT_VERSION_REVISION) || !defined(COPYRIGHT_YEAR) ||           \
-    !defined(CLIENT_VERSION_IS_RELEASE)
+#if !defined(CLIENT_VERSION_MAJOR) || !defined(CLIENT_VERSION_MINOR) || !defined(CLIENT_VERSION_REVISION) ||           \
+    !defined(COPYRIGHT_YEAR) || !defined(CLIENT_VERSION_IS_RELEASE)
 #error Client version information missing: version is not defined by bitcoin-config.h nor defined any other way
 #endif
 
@@ -26,8 +41,7 @@
 #define DO_STRINGIZE(X) #X
 
 //! Copyright string used in Windows .rc files
-#define COPYRIGHT_STR                                                          \
-    "2009-" STRINGIZE(COPYRIGHT_YEAR) " " COPYRIGHT_HOLDERS_FINAL
+#define COPYRIGHT_STR "2009-" STRINGIZE(COPYRIGHT_YEAR) " " COPYRIGHT_HOLDERS_FINAL
 
 /**
  * bitcoind-res.rc includes this file, but it cannot cope with real c++ code.
@@ -40,9 +54,8 @@
 #include <string>
 #include <vector>
 
-static constexpr int CLIENT_VERSION = 1000000 * CLIENT_VERSION_MAJOR +
-                                      10000 * CLIENT_VERSION_MINOR +
-                                      100 * CLIENT_VERSION_REVISION;
+static constexpr int CLIENT_VERSION =
+    1000000 * CLIENT_VERSION_MAJOR + 10000 * CLIENT_VERSION_MINOR + 100 * CLIENT_VERSION_REVISION;
 
 static constexpr int CLIENT_VERSION_ABLA_BLOCKINDEX_DATA = 26010100;
 
@@ -50,7 +63,6 @@ extern const std::string CLIENT_NAME;
 extern const std::string CLIENT_BUILD;
 
 std::string FormatFullVersion();
-std::string FormatSubVersion(const std::string &name, int nClientVersion,
-                             const std::vector<std::string> &comments);
+std::string FormatSubVersion(const std::string &name, int nClientVersion, const std::vector<std::string> &comments);
 
 #endif // WINDRES_PREPROC
