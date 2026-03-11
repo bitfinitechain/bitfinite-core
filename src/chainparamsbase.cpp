@@ -43,16 +43,18 @@ const CBaseChainParams &BaseParams() {
 }
 
 /**
- * Port numbers for incoming Tor connections (8334, 18334, 28334, 38334, 18445) have been chosen arbitrarily to keep
- * ranges of used ports tight.
+ * Port numbers for incoming Tor connections (19770, 29770, etc) have been chosen 
+ * to keep ranges of used ports tight and distinct from Bitcoin/BCH.
  */
 std::unique_ptr<CBaseChainParams> CreateBaseChainParams(const std::string &chain) {
     if (chain == CBaseChainParams::MAIN) {
-        return std::make_unique<CBaseChainParams>("", 8332, 8334);
+        // BFX Mainnet: RPC 19769, Onion 19770
+        return std::make_unique<CBaseChainParams>("", 19769, 19770);
     }
 
     if (chain == CBaseChainParams::TESTNET) {
-        return std::make_unique<CBaseChainParams>("testnet3", 18332, 18334);
+        // BFX Testnet: RPC 29769, Onion 29770
+        return std::make_unique<CBaseChainParams>("testnet3", 29769, 29770);
     }
 
     if (chain == CBaseChainParams::TESTNET4) {
@@ -68,7 +70,8 @@ std::unique_ptr<CBaseChainParams> CreateBaseChainParams(const std::string &chain
     }
 
     if (chain == CBaseChainParams::REGTEST) {
-        return std::make_unique<CBaseChainParams>("regtest", 18443, 18445);
+        // BFX Regtest: RPC 29775, Onion 29776
+        return std::make_unique<CBaseChainParams>("regtest", 29775, 29776);
     }
 
     throw std::runtime_error(

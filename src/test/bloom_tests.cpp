@@ -12,7 +12,7 @@
 #include <merkleblock.h>
 #include <primitives/block.h>
 #include <random.h>
-#include <serialize.h>
+#include "serialize.h"
 #include <streams.h>
 #include <uint256.h>
 #include <util/strencodings.h>

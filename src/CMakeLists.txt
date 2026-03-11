@@ -28,7 +28,7 @@ option(ENABLE_QRCODE "Enable QR code display" ON)
 option(ENABLE_UPNP "Enable UPnP support" ON)
 option(ENABLE_WERROR "Promote some compiler warnings to errors" OFF)
 option(START_WITH_UPNP "Make UPnP the default to map ports" OFF)
-option(ENABLE_CLANG_TIDY "Enable clang-tidy checks for Bitcoin Cash Node" OFF)
+option(ENABLE_CLANG_TIDY "Enable clang-tidy checks for BitFinite Node" OFF)
 option(ENABLE_PROFILING "Select the profiling tool to use" OFF)
 option(USE_JEMALLOC_EXPERIMENTAL "Use jemalloc as an allocation library (experimental)" OFF)
 
@@ -360,7 +360,7 @@ add_custom_command(
     ${CMAKE_COMMAND} -E remove "${BUILD_HEADER_TMP}"
 )
 
-# Because the Bitcoin Cash Node source code is disorganised, we
+# Because the BitFinite Node source code is disorganised, we
 # end up with a bunch of libraries without any apparent
 # cohesive structure. This is inherited from Bitcoin Core
 # and reflecting this.
@@ -648,17 +648,17 @@ if(BUILD_BITCOIN_WALLET)
   target_link_libraries(wallet server)
 
   # bitcoin-wallet
-  add_executable(bitcoin-wallet bitcoin-wallet.cpp)
+  add_executable(bitfinite-wallet bitcoin-wallet.cpp)
   if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     target_sources(bitcoin-wallet PRIVATE bitcoin-wallet-res.rc)
   endif()
 
-  target_link_libraries(bitcoin-wallet wallet-tool server common bitcoinconsensus util)
+  target_link_libraries(bitfinite-wallet wallet-tool server common bitcoinconsensus util)
 
-  add_to_symbols_check(bitcoin-wallet)
-  add_to_security_check(bitcoin-wallet)
+  add_to_symbols_check(bitfinite-wallet)
+  add_to_security_check(bitfinite-wallet)
 
-  install_target(bitcoin-wallet)
+  install_target(bitfinite-wallet)
 else()
   target_sources(server PRIVATE dummywallet.cpp)
 endif()
@@ -680,46 +680,46 @@ endif()
 
 # bitcoin-cli
 if(BUILD_BITCOIN_CLI)
-  add_executable(bitcoin-cli bitcoin-cli.cpp)
+  add_executable(bitfinite-cli bitcoin-cli.cpp)
   if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     target_sources(bitcoin-cli PRIVATE bitcoin-cli-res.rc)
   endif()
 
-  target_link_libraries(bitcoin-cli common rpcclient Event::event)
+  target_link_libraries(bitfinite-cli common rpcclient Event::event)
 
-  add_to_symbols_check(bitcoin-cli)
-  add_to_security_check(bitcoin-cli)
+  add_to_symbols_check(bitfinite-cli)
+  add_to_security_check(bitfinite-cli)
 
-  install_target(bitcoin-cli)
+  install_target(bitfinite-cli)
 endif()
 
 # bitcoin-tx
 if(BUILD_BITCOIN_TX)
-  add_executable(bitcoin-tx bitcoin-tx.cpp)
+  add_executable(bitfinite-tx bitcoin-tx.cpp)
   if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     target_sources(bitcoin-tx PRIVATE bitcoin-tx-res.rc)
   endif()
 
-  target_link_libraries(bitcoin-tx bitcoinconsensus)
+  target_link_libraries(bitfinite-tx bitcoinconsensus)
 
-  add_to_symbols_check(bitcoin-tx)
-  add_to_security_check(bitcoin-tx)
+  add_to_symbols_check(bitfinite-tx)
+  add_to_security_check(bitfinite-tx)
 
-  install_target(bitcoin-tx)
+  install_target(bitfinite-tx)
 endif()
 
 # bitcoind
 if(BUILD_BITCOIN_DAEMON)
-  add_executable(bitcoind bitcoind.cpp)
-  target_link_libraries(bitcoind server)
+  add_executable(bitfinited bitcoind.cpp)
+  target_link_libraries(bitfinited server)
   if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-    target_sources(bitcoind PRIVATE bitcoind-res.rc)
+    target_sources(bitfinited PRIVATE bitcoind-res.rc)
   endif()
 
-  add_to_symbols_check(bitcoind)
-  add_to_security_check(bitcoind)
+  add_to_symbols_check(bitfinited)
+  add_to_security_check(bitfinited)
 
-  install_target(bitcoind)
+  install_target(bitfinited)
 endif()
 
 # Bitcoin-qt

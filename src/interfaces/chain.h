@@ -5,7 +5,9 @@
 
 #pragma once
 
+#include "compat/optional.h"
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <string>
@@ -117,8 +119,7 @@ public:
     //! If a block pointer is provided to retrieve the block contents, and the
     //! block exists but doesn't have data (for example due to pruning), the
     //! block will be empty and all fields set to null.
-    virtual bool findBlock(const BlockHash &hash, CBlock *block = nullptr,
-                           int64_t *time = nullptr,
+    virtual bool findBlock(const BlockHash &hash, CBlock *block = nullptr, int64_t *time = nullptr,
                            int64_t *max_time = nullptr) = 0;
 
     //! Estimate fraction of total transactions verified if blocks up to
@@ -162,7 +163,6 @@ std::unique_ptr<Chain> MakeChain();
 //! analysis, or fee estimation. These clients need to expose their own
 //! MakeXXXClient functions returning their implementations of the ChainClient
 //! interface.
-std::unique_ptr<ChainClient>
-MakeWalletClient(Chain &chain, std::vector<std::string> wallet_filenames);
+std::unique_ptr<ChainClient> MakeWalletClient(Chain &chain, std::vector<std::string> wallet_filenames);
 
 } // namespace interfaces

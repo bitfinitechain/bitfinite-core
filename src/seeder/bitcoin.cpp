@@ -11,7 +11,7 @@
 #include <netbase.h>
 #include <primitives/blockhash.h>
 #include <seeder/db.h>
-#include <serialize.h>
+#include "serialize.h"
 #include <span.h>
 #include <uint256.h>
 #include <validation.h>

@@ -8,11 +8,12 @@
 
 #include <primitives/transaction.h>
 #include <script/script_error.h>
-#include <script/script_flags.h>
 #include <script/script_execution_context.h>
+#include <script/script_flags.h>
 #include <script/script_metrics.h>
 #include <script/sighashtype.h>
 
+#include "compat/optional.h"
 #include <cstdint>
 #include <optional>
 #include <stdexcept>
@@ -63,13 +64,9 @@ public:
         return false;
     }
 
-    virtual bool CheckLockTime(const CScriptNum &nLockTime) const {
-        return false;
-    }
+    virtual bool CheckLockTime(const CScriptNum &nLockTime) const { return false; }
 
-    virtual bool CheckSequence(const CScriptNum &nSequence) const {
-        return false;
-    }
+    virtual bool CheckSequence(const CScriptNum &nSequence) const { return false; }
 
     virtual const ScriptExecutionContext *GetContext() const { return nullptr; }
 
@@ -84,8 +81,6 @@ struct ContextOptSignatureChecker : BaseSignatureChecker {
 
     const ScriptExecutionContext *GetContext() const override { return contextOpt ? &*contextOpt : nullptr; }
 };
-
-
 
 class TransactionSignatureChecker : public BaseSignatureChecker {
     const ScriptExecutionContext &context;
@@ -106,13 +101,11 @@ public:
     const ScriptExecutionContext *GetContext() const final override { return &context; }
 };
 
-bool EvalScript(StackT& stack, const CScript &script,
-                uint32_t flags, const BaseSignatureChecker &checker,
+bool EvalScript(StackT &stack, const CScript &script, uint32_t flags, const BaseSignatureChecker &checker,
                 ScriptExecutionMetrics &metrics, ScriptError *error = nullptr);
 
-inline
-bool EvalScript(StackT& stack, const CScript &script, uint32_t flags,
-                const BaseSignatureChecker &checker, ScriptError *error = nullptr) {
+inline bool EvalScript(StackT &stack, const CScript &script, uint32_t flags, const BaseSignatureChecker &checker,
+                       ScriptError *error = nullptr) {
     ScriptExecutionMetrics dummymetrics;
     return EvalScript(stack, script, flags, checker, dummymetrics, error);
 }
@@ -123,12 +116,12 @@ bool EvalScript(StackT& stack, const CScript &script, uint32_t flags,
  * Upon success, metrics will hold the accumulated script metrics.
  * (upon failure, the results should not be relied on)
  */
-bool VerifyScript(const CScript &scriptSig, const CScript &scriptPubKey, uint32_t flags, const BaseSignatureChecker &checker,
-                  ScriptExecutionMetrics &metricsOut, ScriptError *serror = nullptr);
+bool VerifyScript(const CScript &scriptSig, const CScript &scriptPubKey, uint32_t flags,
+                  const BaseSignatureChecker &checker, ScriptExecutionMetrics &metricsOut,
+                  ScriptError *serror = nullptr);
 
-inline
-bool VerifyScript(const CScript &scriptSig, const CScript &scriptPubKey, uint32_t flags, const BaseSignatureChecker &checker,
-                  ScriptError *serror = nullptr) {
+inline bool VerifyScript(const CScript &scriptSig, const CScript &scriptPubKey, uint32_t flags,
+                         const BaseSignatureChecker &checker, ScriptError *serror = nullptr) {
     ScriptExecutionMetrics dummymetrics;
     return VerifyScript(scriptSig, scriptPubKey, flags, checker, dummymetrics, serror);
 }

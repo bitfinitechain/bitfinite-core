@@ -484,7 +484,7 @@
         <translation>Opsiynau:</translation>
     </message>
     <message>
-        <source>Bitcoin Cash Node</source>
+        <source>BitFinite Node</source>
         <translation>Cash Node Bitcoin</translation>
     </message>
     <message>

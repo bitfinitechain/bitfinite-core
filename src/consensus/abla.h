@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include <consensus/consensus.h>
-#include <serialize.h>
+#include "../serialize.h"
+#include "consensus.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -14,10 +14,10 @@
 
 /// ABLA, the Adaptive Blocksize-Limit Algorithm
 ///
-/// Algorithm and data types for dynamically adjusting the block size limit permitted on the Bitcoin Cash
+/// Algorithm and data types for dynamically adjusting the block size limit permitted on the BitFinite
 /// network.
 ///
-/// Originally written by bitcoincashautist but adapted to C++ and to fit into the BCHN sources by Calin Culianu.
+/// Originally written by bitfiniteautist but adapted to C++ and to fit into the BFXN sources by Calin Culianu.
 namespace abla {
 
 /// Algorithm configuration -- this should be a part of a chain's consensus params.
@@ -57,8 +57,7 @@ struct Config {
     /// @param fixedSize - if `true`, set `epsilonMax = epsilon0`, `betaMax = beta0`, thus making the ABLA algorithm
     ///        a no-op that always returns `defaultBlockSize` as the static max block size. This is normally set to
     ///        `true` for testnet3 and testnet4 (where we do not want the max block size to grow over time).
-    static Config MakeDefault(uint64_t defaultBlockSize = DEFAULT_CONSENSUS_BLOCK_SIZE,
-                              bool fixedSize = false);
+    static Config MakeDefault(uint64_t defaultBlockSize = DEFAULT_CONSENSUS_BLOCK_SIZE, bool fixedSize = false);
 };
 
 /// Algorithm's internal state
@@ -127,7 +126,7 @@ public:
 
     // -- To/From a tuple (mainly used by tests) --
 
-    auto ToTuple() const { return std::tuple(blockSize, controlBlockSize, elasticBufferSize); }
+    auto ToTuple() const { return std::make_tuple(blockSize, controlBlockSize, elasticBufferSize); }
     static State FromTuple(const std::tuple<uint64_t, uint64_t, uint64_t> &tup) {
         State ret;
         std::tie(ret.blockSize, ret.controlBlockSize, ret.elasticBufferSize) = tup;
@@ -149,16 +148,16 @@ public:
  * store the real number 1.5 as integer 192 so when we want to multiply or divide an integer with value of 1.5,
  * we will do muldiv(value, 192, B7) or muldiv(value, B7, 192).
  */
-inline constexpr uint64_t B7 = 1u << 7u;
+constexpr uint64_t B7 = 1u << 7u;
 
 // Sanity ranges for configuration values
-inline constexpr uint64_t MIN_ZETA_XB7 = 129u; ///< zeta real value of 1.0078125
-inline constexpr uint64_t MAX_ZETA_XB7 = 256u; ///< zeta real value of 2.0000000
-inline constexpr uint64_t MIN_GAMMA_RECIPROCAL = 9484u;
-inline constexpr uint64_t MAX_GAMMA_RECIPROCAL = 151744u;
-inline constexpr uint64_t MIN_DELTA = 0u;
-inline constexpr uint64_t MAX_DELTA = 32u;
-inline constexpr uint64_t MIN_THETA_RECIPROCAL = 9484u;
-inline constexpr uint64_t MAX_THETA_RECIPROCAL = 151744u;
+constexpr uint64_t MIN_ZETA_XB7 = 129u; ///< zeta real value of 1.0078125
+constexpr uint64_t MAX_ZETA_XB7 = 256u; ///< zeta real value of 2.0000000
+constexpr uint64_t MIN_GAMMA_RECIPROCAL = 9484u;
+constexpr uint64_t MAX_GAMMA_RECIPROCAL = 151744u;
+constexpr uint64_t MIN_DELTA = 0u;
+constexpr uint64_t MAX_DELTA = 32u;
+constexpr uint64_t MIN_THETA_RECIPROCAL = 9484u;
+constexpr uint64_t MAX_THETA_RECIPROCAL = 151744u;
 
 } // namespace abla

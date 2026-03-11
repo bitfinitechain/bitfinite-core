@@ -32,13 +32,13 @@ class Node;
 } // namespace interfaces
 
 /**
- * Class encapsulating Bitcoin Cash Node startup and shutdown.
+ * Class encapsulating BitFinite Node startup and shutdown.
  * Allows running startup and shutdown in a different thread from the UI thread.
  */
-class BitcoinCashNode : public QObject {
+class BitFiniteNode : public QObject {
     Q_OBJECT
 public:
-    explicit BitcoinCashNode(interfaces::Node &node);
+    explicit BitFiniteNode(interfaces::Node &node);
 
 public Q_SLOTS:
     void initialize(Config *config, RPCServer *rpcServer,

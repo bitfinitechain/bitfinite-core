@@ -7,7 +7,7 @@
 #pragma once
 
 #include <amount.h>
-#include <serialize.h>
+#include "serialize.h"
 
 #include <cstdlib>
 #include <ostream>

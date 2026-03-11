@@ -1,7 +1,7 @@
 Bitcoin ABC 0.14.1
 ------------------
 
-No release notes exist for this initial release of Bitcoin ABC. Below are the release notes for Bitcoin Core version 0.14.1, upon which Bitcoin ABC version 0.14.1 is based. For the main changes for the Bitcoin Cash network, see [Bitcoin Cash upgrades](../bch-upgrades.md) and [BIPS](../bips.md).
+No release notes exist for this initial release of Bitcoin ABC. Below are the release notes for Bitcoin Core version 0.14.1, upon which Bitcoin ABC version 0.14.1 is based. For the main changes for the BitFinite network, see [BitFinite upgrades](../bch-upgrades.md) and [BIPS](../bips.md).
 
 ----------------------------------------
 

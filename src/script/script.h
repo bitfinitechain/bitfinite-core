@@ -6,11 +6,12 @@
 
 #pragma once
 
+#include "serialize.h"
 #include <crypto/common.h>
 #include <prevector.h>
 #include <script/script_error.h>
-#include <serialize.h>
 
+#include "compat/optional.h"
 #include <cassert>
 #include <climits>
 #include <cstdint>
@@ -40,7 +41,8 @@ static const int MAX_STACK_SIZE = 1000;
 // otherwise as UNIX timestamp. Thresold is Tue Nov 5 00:53:20 1985 UTC
 static const uint32_t LOCKTIME_THRESHOLD = 500'000'000u;
 
-template <typename T> std::vector<uint8_t> ToByteVector(const T &in) {
+template <typename T>
+std::vector<uint8_t> ToByteVector(const T &in) {
     return std::vector<uint8_t>(in.begin(), in.end());
 }
 
@@ -226,7 +228,7 @@ enum opcodetype {
     // position 0 in scriptPubKey. See: primitives/token.h
     SPECIAL_TOKEN_PREFIX = 0xef,
 
-    INVALIDOPCODE = 0xff,   ///< Not a real OPCODE!
+    INVALIDOPCODE = 0xff, ///< Not a real OPCODE!
 };
 
 // Maximum value that an opcode can be
@@ -242,10 +244,8 @@ bool CheckMinimalPush(const std::vector<uint8_t> &data, opcodetype opcode);
 
 struct scriptnum_error : std::runtime_error {
     ScriptError scriptError;
-    explicit
-    scriptnum_error(const std::string &str, ScriptError err = ScriptError::UNKNOWN)
-        : std::runtime_error(str), scriptError(err)
-    {}
+    explicit scriptnum_error(const std::string &str, ScriptError err = ScriptError::UNKNOWN)
+        : std::runtime_error(str), scriptError(err) {}
 };
 
 /**
@@ -266,9 +266,8 @@ public:
      * Note the unusual enforcement of the rules regarding valid 64-bit
      * ranges. We enforce a strict range of [INT64_MIN+1, INT64_MAX].
      */
-    static constexpr
-    std::optional<Derived> fromInt(int64_t x) noexcept {
-        if ( ! valid64BitRange(x)) {
+    static constexpr std::optional<Derived> fromInt(int64_t x) noexcept {
+        if (!valid64BitRange(x)) {
             return std::nullopt;
         }
         return Derived(x);
@@ -276,58 +275,31 @@ public:
 
     /// Performance/convenience optimization: Construct an instance from a raw
     /// int64_t where the caller already knows that the supplied value is in range.
-    static constexpr
-    Derived fromIntUnchecked(int64_t x) noexcept {
-        return Derived(x);
-    }
+    static constexpr Derived fromIntUnchecked(int64_t x) noexcept { return Derived(x); }
 
-    constexpr
-    bool operator==(int64_t x) const noexcept { return value_ == x; }
+    constexpr bool operator==(int64_t x) const noexcept { return value_ == x; }
 
-    constexpr
-    bool operator!=(int64_t x) const noexcept { return value_ != x; }
+    constexpr bool operator!=(int64_t x) const noexcept { return value_ != x; }
 
-    constexpr
-    bool operator<=(int64_t x) const noexcept { return value_ <= x; }
+    constexpr bool operator<=(int64_t x) const noexcept { return value_ <= x; }
 
-    constexpr
-    bool operator<(int64_t x) const noexcept { return value_ < x; }
+    constexpr bool operator<(int64_t x) const noexcept { return value_ < x; }
 
-    constexpr
-    bool operator>=(int64_t x) const noexcept { return value_ >= x; }
+    constexpr bool operator>=(int64_t x) const noexcept { return value_ >= x; }
 
-    constexpr
-    bool operator>(int64_t x) const noexcept { return value_ > x; }
+    constexpr bool operator>(int64_t x) const noexcept { return value_ > x; }
 
-    constexpr
-    bool operator==(Derived const& x) const noexcept {
-        return operator==(x.value_);
-    }
+    constexpr bool operator==(Derived const &x) const noexcept { return operator==(x.value_); }
 
-    constexpr
-    bool operator!=(Derived const& x) const noexcept {
-        return operator!=(x.value_);
-    }
+    constexpr bool operator!=(Derived const &x) const noexcept { return operator!=(x.value_); }
 
-    constexpr
-    bool operator<=(Derived const& x) const noexcept {
-        return operator<=(x.value_);
-    }
+    constexpr bool operator<=(Derived const &x) const noexcept { return operator<=(x.value_); }
 
-    constexpr
-    bool operator<(Derived const& x) const noexcept {
-        return operator<(x.value_);
-    }
+    constexpr bool operator<(Derived const &x) const noexcept { return operator<(x.value_); }
 
-    constexpr
-    bool operator>=(Derived const& x) const noexcept {
-        return operator>=(x.value_);
-    }
+    constexpr bool operator>=(Derived const &x) const noexcept { return operator>=(x.value_); }
 
-    constexpr
-    bool operator>(Derived const& x) const noexcept {
-        return operator>(x.value_);
-    }
+    constexpr bool operator>(Derived const &x) const noexcept { return operator>(x.value_); }
 
     // Arithmetic operations
     std::optional<Derived> safeAdd(int64_t x) const noexcept {
@@ -335,49 +307,42 @@ public:
         if (res) {
             return std::nullopt;
         }
-        if ( ! valid64BitRange(x)) {
+        if (!valid64BitRange(x)) {
             return std::nullopt;
         }
         return Derived(x);
     }
 
-    std::optional<Derived> safeAdd(Derived const& x) const noexcept {
-        return safeAdd(x.value_);
-    }
+    std::optional<Derived> safeAdd(Derived const &x) const noexcept { return safeAdd(x.value_); }
 
     std::optional<Derived> safeSub(int64_t x) const noexcept {
         bool const res = __builtin_sub_overflow(value_, x, &x);
         if (res) {
             return std::nullopt;
         }
-        if ( ! valid64BitRange(x)) {
+        if (!valid64BitRange(x)) {
             return std::nullopt;
         }
         return Derived(x);
     }
 
-    std::optional<Derived> safeSub(Derived const& x) const noexcept {
-        return safeSub(x.value_);
-    }
+    std::optional<Derived> safeSub(Derived const &x) const noexcept { return safeSub(x.value_); }
 
     std::optional<Derived> safeMul(int64_t x) const noexcept {
         bool const res = __builtin_mul_overflow(value_, x, &x);
         if (res) {
             return std::nullopt;
         }
-        if ( ! valid64BitRange(x)) {
+        if (!valid64BitRange(x)) {
             return std::nullopt;
         }
         return Derived(x);
     }
 
-    std::optional<Derived> safeMul(Derived const& x) const noexcept {
-        return safeMul(x.value_);
-    }
+    std::optional<Derived> safeMul(Derived const &x) const noexcept { return safeMul(x.value_); }
 
-    constexpr
-    Derived operator/(int64_t x) const noexcept {
-        if (x == -1 && ! valid64BitRange(value_)) {
+    constexpr Derived operator/(int64_t x) const noexcept {
+        if (x == -1 && !valid64BitRange(value_)) {
             // Guard against overflow, which can't normally happen unless class is misused
             // by the fromIntUnchecked() factory method (may happen in tests).
             // This will return INT64_MIN which is what ARM & x86 does anyway for INT64_MIN / -1.
@@ -386,59 +351,40 @@ public:
         return Derived(value_ / x);
     }
 
-    constexpr
-    Derived operator/(Derived const& x) const noexcept {
-        return operator/(x.value_);
-    }
+    constexpr Derived operator/(Derived const &x) const noexcept { return operator/(x.value_); }
 
-    constexpr
-    Derived operator%(int64_t x) const noexcept {
-        if (x == -1 && ! valid64BitRange(value_)) {
+    constexpr Derived operator%(int64_t x) const noexcept {
+        if (x == -1 && !valid64BitRange(value_)) {
             // INT64_MIN % -1 is UB in C++, but mathematically it would yield 0
             return Derived(0);
         }
         return Derived(value_ % x);
     }
 
-    constexpr
-    Derived operator%(Derived const& x) const noexcept {
-        return operator%(x.value_);
-    }
+    constexpr Derived operator%(Derived const &x) const noexcept { return operator%(x.value_); }
 
     // Bitwise operations
     std::optional<Derived> safeBitwiseAnd(int64_t x) const noexcept {
         x = value_ & x;
-        if ( ! valid64BitRange(x)) {
+        if (!valid64BitRange(x)) {
             return std::nullopt;
         }
         return Derived(x);
     }
 
-    std::optional<Derived> safeBitwiseAnd(Derived const& x) const noexcept {
-        return safeBitwiseAnd(x.value_);
-    }
+    std::optional<Derived> safeBitwiseAnd(Derived const &x) const noexcept { return safeBitwiseAnd(x.value_); }
 
-    constexpr
-    Derived operator-() const noexcept {
+    constexpr Derived operator-() const noexcept {
         // Defensive programming: -INT64_MIN is UB
         return Derived(valid64BitRange(value_) ? -value_ : value_);
     }
 
-    constexpr
-    int64_t getint64() const noexcept {
-        return value_;
-    }
+    constexpr int64_t getint64() const noexcept { return value_; }
 
 protected:
-    static constexpr
-    bool valid64BitRange(int64_t x) {
-        return x != std::numeric_limits<int64_t>::min();
-    }
+    static constexpr bool valid64BitRange(int64_t x) { return x != std::numeric_limits<int64_t>::min(); }
 
-    explicit constexpr
-    ScriptIntBase(int64_t x)
-        : value_(x)
-    {}
+    explicit constexpr ScriptIntBase(int64_t x) : value_(x) {}
 
     int64_t value_;
 };
@@ -489,10 +435,7 @@ struct ScriptInt : ScriptIntBase<ScriptInt> {
     friend ScriptIntBase;
 
 private:
-    explicit constexpr
-    ScriptInt(int64_t x) noexcept
-        : ScriptIntBase(x)
-    {}
+    explicit constexpr ScriptInt(int64_t x) noexcept : ScriptIntBase(x) {}
 };
 
 /**
@@ -540,25 +483,17 @@ struct CScriptNum : ScriptIntBase<CScriptNum> {
     static constexpr size_t MAXIMUM_ELEMENT_SIZE_64_BIT = 8;
 
 private:
-    explicit constexpr
-    CScriptNum(int64_t x) noexcept
-        : ScriptIntBase(x)
-    {}
+    explicit constexpr CScriptNum(int64_t x) noexcept : ScriptIntBase(x) {}
 
 public:
-    explicit
-    CScriptNum(const std::vector<uint8_t> &vch, bool fRequireMinimal, size_t maxIntegerSize)
-        : ScriptIntBase(fromBytes(vch, fRequireMinimal, maxIntegerSize))
-    {}
+    explicit CScriptNum(const std::vector<uint8_t> &vch, bool fRequireMinimal, size_t maxIntegerSize)
+        : ScriptIntBase(fromBytes(vch, fRequireMinimal, maxIntegerSize)) {}
 
-    static
-    bool IsMinimallyEncoded(const std::vector<uint8_t> &vch, size_t maxIntegerSize);
+    static bool IsMinimallyEncoded(const std::vector<uint8_t> &vch, size_t maxIntegerSize);
 
-    static
-    bool MinimallyEncode(std::vector<uint8_t> &data);
+    static bool MinimallyEncode(std::vector<uint8_t> &data);
 
-    constexpr
-    int32_t getint32() const noexcept {
+    constexpr int32_t getint32() const noexcept {
         if (value_ > std::numeric_limits<int32_t>::max()) {
             return std::numeric_limits<int32_t>::max();
         } else if (value_ < std::numeric_limits<int32_t>::min()) {
@@ -569,8 +504,7 @@ public:
 
     std::vector<uint8_t> getvch() const { return serialize(value_); }
 
-    static
-    std::vector<uint8_t> serialize(int64_t value) {
+    static std::vector<uint8_t> serialize(int64_t value) {
         if (value == 0) {
             return {};
         }
@@ -603,25 +537,23 @@ public:
     }
 
 private:
-    static
-    int64_t fromBytes(std::vector<uint8_t> const& vch, bool fRequireMinimal, size_t maxIntegerSize) {
+    static int64_t fromBytes(std::vector<uint8_t> const &vch, bool fRequireMinimal, size_t maxIntegerSize) {
         if (maxIntegerSize > MAXIMUM_ELEMENT_SIZE_64_BIT) {
             throw scriptnum_error("maxIntegerSize cannot be greater than 8");
         }
         if (vch.size() > maxIntegerSize) {
-            throw scriptnum_error("script number overflow",
-                                  maxIntegerSize == 8 ? ScriptError::INVALID_NUMBER_RANGE_64_BIT
-                                                      : ScriptError::INVALID_NUMBER_RANGE);
+            throw scriptnum_error("script number overflow", maxIntegerSize == 8
+                                                                ? ScriptError::INVALID_NUMBER_RANGE_64_BIT
+                                                                : ScriptError::INVALID_NUMBER_RANGE);
         }
-        if (fRequireMinimal && ! IsMinimallyEncoded(vch, maxIntegerSize)) {
+        if (fRequireMinimal && !IsMinimallyEncoded(vch, maxIntegerSize)) {
             throw scriptnum_error("non-minimally encoded script number", ScriptError::MINIMALNUM);
         }
         return set_vch(vch);
     }
 
     ///! Precondition: vch.size() must be <= 8.
-    static
-    int64_t set_vch(const std::vector<uint8_t> &vch) {
+    static int64_t set_vch(const std::vector<uint8_t> &vch) {
         if (vch.empty()) {
             return 0;
         }
@@ -649,8 +581,7 @@ private:
  */
 typedef prevector<28, uint8_t> CScriptBase;
 
-bool GetScriptOp(CScriptBase::const_iterator &pc,
-                 CScriptBase::const_iterator end, opcodetype &opcodeRet,
+bool GetScriptOp(CScriptBase::const_iterator &pc, CScriptBase::const_iterator end, opcodetype &opcodeRet,
                  std::vector<uint8_t> *pvchRet);
 
 /** Serialized script, used inside transaction inputs and outputs */
@@ -669,13 +600,10 @@ protected:
 
 public:
     CScript() {}
-    CScript(const_iterator pbegin, const_iterator pend)
+    CScript(const_iterator pbegin, const_iterator pend) : CScriptBase(pbegin, pend) {}
+    CScript(std::vector<uint8_t>::const_iterator pbegin, std::vector<uint8_t>::const_iterator pend)
         : CScriptBase(pbegin, pend) {}
-    CScript(std::vector<uint8_t>::const_iterator pbegin,
-            std::vector<uint8_t>::const_iterator pend)
-        : CScriptBase(pbegin, pend) {}
-    CScript(const uint8_t *pbegin, const uint8_t *pend)
-        : CScriptBase(pbegin, pend) {}
+    CScript(const uint8_t *pbegin, const uint8_t *pend) : CScriptBase(pbegin, pend) {}
 
     SERIALIZE_METHODS(CScript, obj) { READWRITEAS(CScriptBase, obj); }
 
@@ -691,12 +619,8 @@ public:
         return ret;
     }
 
-    explicit CScript(opcodetype b) {
-        operator<<(b);
-    }
-    explicit CScript(const CScriptNum &b) {
-        operator<<(b);
-    }
+    explicit CScript(opcodetype b) { operator<<(b); }
+    explicit CScript(const CScriptNum &b) { operator<<(b); }
     explicit CScript(const std::vector<uint8_t> &b) { operator<<(b); }
 
     CScript &operator<<(opcodetype opcode) {
@@ -712,9 +636,7 @@ public:
         return *this;
     }
 
-    CScript& operator<<(ScriptInt const& x) {
-        return push_int64(x.getint64());
-    }
+    CScript &operator<<(ScriptInt const &x) { return push_int64(x.getint64()); }
 
     CScript &operator<<(const std::vector<uint8_t> &b) {
         if (b.size() < OP_PUSHDATA1) {
@@ -746,14 +668,11 @@ public:
         return *this;
     }
 
-    bool GetOp(const_iterator &pc, opcodetype &opcodeRet,
-               std::vector<uint8_t> &vchRet) const {
+    bool GetOp(const_iterator &pc, opcodetype &opcodeRet, std::vector<uint8_t> &vchRet) const {
         return GetScriptOp(pc, end(), opcodeRet, &vchRet);
     }
 
-    bool GetOp(const_iterator &pc, opcodetype &opcodeRet) const {
-        return GetScriptOp(pc, end(), opcodeRet, nullptr);
-    }
+    bool GetOp(const_iterator &pc, opcodetype &opcodeRet) const { return GetScriptOp(pc, end(), opcodeRet, nullptr); }
 
     /** Encode/decode small integers: */
     static int DecodeOP_N(opcodetype opcode) {

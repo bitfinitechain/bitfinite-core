@@ -325,7 +325,7 @@ static UniValue stop(const Config &config, const JSONRPCRequest &jsonRequest) {
     if (jsonRequest.fHelp || jsonRequest.params.size() > 1) {
         throw std::runtime_error(RPCHelpMan{
             "stop",
-            "\nStop Bitcoin server.",
+            "\nStop BitFinite server.",
             {},
             RPCResults{},
             RPCExamples{""},
@@ -338,7 +338,7 @@ static UniValue stop(const Config &config, const JSONRPCRequest &jsonRequest) {
     if (jsonRequest.params[0].isNum()) {
         MilliSleep(jsonRequest.params[0].get_int());
     }
-    return "Bitcoin server stopping";
+    return "BitFinite server stopping";
 }
 
 static UniValue uptime(const Config &config,

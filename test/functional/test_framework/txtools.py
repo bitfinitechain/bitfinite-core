@@ -104,7 +104,7 @@ def calc_dust_limit(*, typ: Optional[str] = None, txout: Optional[CTxOut] = None
         return calc_dust_limit(txout=CTxOut(0, script, tokenData=token_data), sats_per_kb=sats_per_kb)
     elif txout is not None and typ is None:
         assert token_data is None, "Param `token_data` may only be used with param `typ`"
-        # Dust limit formula is taken from BCHN sources: src/policy/policy.cpp
+        # Dust limit formula is taken from BFXN sources: src/policy/policy.cpp
         return ((148 + len(txout.serialize())) * 3000) // sats_per_kb
     else:
         assert False, 'Must specify extactly one of one param typ= or param txout='

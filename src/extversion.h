@@ -6,14 +6,14 @@
 
 #pragma once
 
-#include <serialize.h>
+#include "serialize.h"
 #include <streams.h>
 #include <tinyformat.h>
 #include <version.h>
 
 #include <cstdint>
 #include <limits>
-#include <optional>
+#include "compat/optional.h"
 #include <string>
 #include <tuple>
 #include <vector>
@@ -80,10 +80,10 @@ static_assert (version.Revision() < version.MinorRevisionRange(), "Static versio
 
 
 /*!
-  Bitcoin Cash extended version message implementation.
+  BitFinite extended version message implementation.
 
   This version message de-/serializes the same fields as the version
-  message format as in the BU BCH implementation as of July 2018.
+  message format as in the BU BFX implementation as of July 2018.
 
   For now we only support Key::Version as the only key we understand
   and serialize/deserialize.  All other unknown keys are silently

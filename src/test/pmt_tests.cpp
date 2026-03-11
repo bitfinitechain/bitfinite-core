@@ -6,7 +6,7 @@
 #include <arith_uint256.h>
 #include <consensus/merkle.h>
 #include <merkleblock.h>
-#include <serialize.h>
+#include "serialize.h"
 #include <streams.h>
 #include <uint256.h>
 #include <version.h>

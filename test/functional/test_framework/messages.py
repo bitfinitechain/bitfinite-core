@@ -45,7 +45,7 @@ MAX_INV_SZ = 50000
 MAX_LOCATOR_SZ = 101
 MAX_BLOCK_BASE_SIZE = 1000000
 
-# 1 BCH in satoshis
+# 1 BFX in satoshis
 COIN = 100000000
 
 MAX_PROTOCOL_MESSAGE_LENGTH = 2 * 1024 * 1024  # Maximum length of incoming protocol messages

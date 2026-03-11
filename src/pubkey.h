@@ -8,7 +8,7 @@
 #pragma once
 
 #include <hash.h>
-#include <serialize.h>
+#include "serialize.h"
 #include <uint256.h>
 
 #include <boost/range/adaptor/sliced.hpp>

@@ -167,7 +167,7 @@ WalletModel::prepareTransaction(WalletModelTransaction &transaction,
             total += subtotal;
         }
 
-        // User-entered Bitcoin Cash address / amount:
+        // User-entered BitFinite address / amount:
         else
 #endif
         {
@@ -253,8 +253,8 @@ WalletModel::sendCoins(WalletModelTransaction &transaction) {
 #endif
         {
             if (!rcp.message.isEmpty()) {
-                // Message from normal bitcoincash:URI
-                // (bitcoincash:123...?message=example)
+                // Message from normal bitfinite:URI
+                // (bitfinite:123...?message=example)
                 vOrderForm.emplace_back("Message", rcp.message.toStdString());
             }
         }

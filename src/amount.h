@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <serialize.h>
+#include "serialize.h"
 
 #include <cstdlib>
 #include <ostream>
@@ -49,28 +49,16 @@ public:
     /**
      * Equality
      */
-    friend constexpr bool operator==(const Amount a, const Amount b) {
-        return a.amount == b.amount;
-    }
-    friend constexpr bool operator!=(const Amount a, const Amount b) {
-        return !(a == b);
-    }
+    friend constexpr bool operator==(const Amount a, const Amount b) { return a.amount == b.amount; }
+    friend constexpr bool operator!=(const Amount a, const Amount b) { return !(a == b); }
 
     /**
      * Comparison
      */
-    friend constexpr bool operator<(const Amount a, const Amount b) {
-        return a.amount < b.amount;
-    }
-    friend constexpr bool operator>(const Amount a, const Amount b) {
-        return b < a;
-    }
-    friend constexpr bool operator<=(const Amount a, const Amount b) {
-        return !(a > b);
-    }
-    friend constexpr bool operator>=(const Amount a, const Amount b) {
-        return !(a < b);
-    }
+    friend constexpr bool operator<(const Amount a, const Amount b) { return a.amount < b.amount; }
+    friend constexpr bool operator>(const Amount a, const Amount b) { return b < a; }
+    friend constexpr bool operator<=(const Amount a, const Amount b) { return !(a > b); }
+    friend constexpr bool operator>=(const Amount a, const Amount b) { return !(a < b); }
 
     /**
      * Unary minus
@@ -80,32 +68,20 @@ public:
     /**
      * Addition and subtraction.
      */
-    friend constexpr Amount operator+(const Amount a, const Amount b) {
-        return Amount(a.amount + b.amount);
-    }
-    friend constexpr Amount operator-(const Amount a, const Amount b) {
-        return a + -b;
-    }
+    friend constexpr Amount operator+(const Amount a, const Amount b) { return Amount(a.amount + b.amount); }
+    friend constexpr Amount operator-(const Amount a, const Amount b) { return a + -b; }
 
     /**
      * Multiplication
      */
-    friend constexpr Amount operator*(const int64_t a, const Amount b) {
-        return Amount(a * b.amount);
-    }
-    friend constexpr Amount operator*(const int a, const Amount b) {
-        return Amount(a * b.amount);
-    }
+    friend constexpr Amount operator*(const int64_t a, const Amount b) { return Amount(a * b.amount); }
+    friend constexpr Amount operator*(const int a, const Amount b) { return Amount(a * b.amount); }
 
     /**
      * Division
      */
-    constexpr int64_t operator/(const Amount b) const {
-        return amount / b.amount;
-    }
-    constexpr Amount operator/(const int64_t b) const {
-        return Amount(amount / b);
-    }
+    constexpr int64_t operator/(const Amount b) const { return amount / b.amount; }
+    constexpr Amount operator/(const int64_t b) const { return Amount(amount / b); }
     constexpr Amount operator/(const int b) const { return Amount(amount / b); }
     Amount &operator/=(const int64_t n) {
         amount /= n;
@@ -115,12 +91,8 @@ public:
     /**
      * Modulus
      */
-    constexpr Amount operator%(const Amount b) const {
-        return Amount(amount % b.amount);
-    }
-    constexpr Amount operator%(const int64_t b) const {
-        return Amount(amount % b);
-    }
+    constexpr Amount operator%(const Amount b) const { return Amount(amount % b.amount); }
+    constexpr Amount operator%(const int64_t b) const { return Amount(amount % b); }
     constexpr Amount operator%(const int b) const { return Amount(amount % b); }
 
     /**
@@ -132,9 +104,7 @@ public:
     constexpr Amount operator%(const double b) const = delete;
 
     // ostream support
-    friend std::ostream &operator<<(std::ostream &stream, const Amount &ca) {
-        return stream << ca.amount;
-    }
+    friend std::ostream &operator<<(std::ostream &stream, const Amount &ca) { return stream << ca.amount; }
 
     std::string ToString(bool trimTrailingZeros = true, bool trimTrailingDecimalPoint = false) const;
 
@@ -152,13 +122,13 @@ extern const std::string CURRENCY_UNIT;
  * No amount larger than this (in satoshi) is valid.
  *
  * Note that this constant is *not* the total money supply, which in Bitcoin
- * currently happens to be less than 21,000,000 BCH for various reasons, but
+ * currently happens to be less than 21,000,000 BFX for various reasons, but
  * rather a sanity check. As this sanity check is used by consensus-critical
  * validation code, the exact value of the MAX_MONEY constant is consensus
  * critical; in unusual circumstances like a(nother) overflow bug that allowed
  * for the creation of coins out of thin air modification could lead to a fork.
  */
-inline constexpr Amount MAX_MONEY = 21'000'000 * COIN;
+inline constexpr Amount MAX_MONEY = 100'000 * COIN;
 inline bool MoneyRange(const Amount nValue) {
     return nValue >= Amount::zero() && nValue <= MAX_MONEY;
 }

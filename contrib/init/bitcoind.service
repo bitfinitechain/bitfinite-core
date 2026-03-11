@@ -1,5 +1,5 @@
 [Unit]
-Description=Bitcoin Cash Node Daemon
+Description=BitFinite Node Daemon
 After=network.target
 
 [Service]

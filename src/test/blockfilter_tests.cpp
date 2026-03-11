@@ -6,7 +6,7 @@
 #include <blockfilter.h>
 
 #include <core_io.h>
-#include <serialize.h>
+#include "serialize.h"
 #include <streams.h>
 #include <util/strencodings.h>
 

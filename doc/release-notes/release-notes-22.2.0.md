@@ -1,12 +1,12 @@
-# Release Notes for Bitcoin Cash Node version 22.2.0
+# Release Notes for BitFinite Node version 22.2.0
 
-Bitcoin Cash Node version 22.2.0 is now available from:
+BitFinite Node version 22.2.0 is now available from:
 
-  <https://bitcoincashnode.org>
+  <https://bitfinitenode.org>
 
 ## Overview
 
-This is a minor release of Bitcoin Cash Node that implements some
+This is a minor release of BitFinite Node that implements some
 interface enhancements and includes a number of other corrections and
 improvements.
 
@@ -118,7 +118,7 @@ returned result. A two-step procedure will be followed to correct this.
 
 ## Regressions
 
-Bitcoin Cash Node 22.2.0 does not introduce any known regressions compared
+BitFinite Node 22.2.0 does not introduce any known regressions compared
 to 22.1.0.
 
 
@@ -128,7 +128,7 @@ Some issues could not be closed in time for release, but we are tracking
 all of them on our GitLab repository.
 
 - MacOS versions earlier than 10.12 are no longer supported. Additionally,
-  Bitcoin Cash Node does not yet change appearance when macOS "dark mode"
+  BitFinite Node does not yet change appearance when macOS "dark mode"
   is activated.
 
 - Windows users are recommended not to run multiple instances of bitcoin-qt
@@ -158,11 +158,11 @@ all of them on our GitLab repository.
   avoids wallet database incompatibility issues with the official release.
 
 - There is a documentation build bug that causes some ordered lists on
-  docs.bitcoincashnode.org to be rendered incorrectly (Issue #141).
+  docs.bitfinitenode.org to be rendered incorrectly (Issue #141).
 
 - The `test_bitcoin-qt` test executable fails on Linux Mint 20
   (see Issue #144). This does not otherwise appear to impact the functioning
-  of the BCHN software on that platform.
+  of the BFXN software on that platform.
 
 - An 'autotools' build (the old build method) fails on OSX when using Clang.
   (Issue #129)
@@ -206,7 +206,7 @@ all of them on our GitLab repository.
 
 ---
 
-## Changes since Bitcoin Cash Node 22.1.0
+## Changes since BitFinite Node 22.1.0
 
 ### New documents
 
@@ -220,7 +220,7 @@ None.
 
 #### Security or consensus relevant fixes
 
-- ab6226ad59262fce47bfb55d9689419bb80181cf Add checkpoints for Axion activation on Bitcoin Cash
+- ab6226ad59262fce47bfb55d9689419bb80181cf Add checkpoints for Axion activation on BitFinite
 - 4ee1083307d2aaac92dd7c409cc9d6f2eb52be78 Activate Nov. 15 HF (axion) based on height on 3 of the 4 chains
 
 #### Interfaces / RPC

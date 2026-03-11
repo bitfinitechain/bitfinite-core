@@ -6,15 +6,14 @@
 
 #include <iterator>
 
-#include <algorithm/type_attributes.h>
+#include "type_attributes.h"
 
 namespace algo {
 
 template <typename C, typename P>
 // requires AssociativeContainer<C> && UnaryPredicate<P>
-inline
-attr::SizeType<C> erase_if(C& c, P pred) {
-    auto const old_size = std::size(c);
+inline attr::SizeType<C> erase_if(C &c, P pred) {
+    auto const old_size = c.size();
     auto f = std::begin(c);
     auto const l = std::end(c);
     while (f != l) {
@@ -24,7 +23,7 @@ attr::SizeType<C> erase_if(C& c, P pred) {
             ++f;
         }
     }
-    return old_size - std::size(c);
+    return old_size - c.size();
 }
 
 } // namespace algo

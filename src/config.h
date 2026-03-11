@@ -13,7 +13,7 @@
 #include <atomic>
 #include <cstdint>
 #include <memory>
-#include <optional>
+#include "compat/optional.h"
 #include <set>
 #include <string>
 #include <variant>

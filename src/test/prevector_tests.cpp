@@ -6,7 +6,7 @@
 #include <prevector.h>
 
 #include <reverse_iterator.h>
-#include <serialize.h>
+#include "serialize.h"
 #include <streams.h>
 
 #include <test/setup_common.h>

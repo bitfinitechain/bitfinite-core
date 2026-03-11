@@ -79,7 +79,7 @@ set(CMAKE_AUTOMOC ON)
 # Handle qrc resources
 qt5_add_resources(QRC_BITCOIN_CPP bitcoin.qrc)
 
-add_library(bitcoin-qt-base
+add_library(bitfinite-qt-base
 	bantablemodel.cpp
 	bitcoin.cpp
 	bitcoinaddressvalidator.cpp
@@ -131,7 +131,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	list(APPEND QT_PLUGIN_COMPONENTS QWindowsIntegrationPlugin)
 	list(APPEND QT_PLUGIN_PLATFORM_DEFINITIONS -DQT_QPA_PLATFORM_WINDOWS=1)
 
-	target_sources(bitcoin-qt-base PRIVATE winshutdownmonitor.cpp)
+	target_sources(bitfinite-qt-base PRIVATE winshutdownmonitor.cpp)
 endif()
 
 # OSX support
@@ -139,14 +139,14 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	list(APPEND QT_PLUGIN_COMPONENTS QCocoaIntegrationPlugin)
 	list(APPEND QT_PLUGIN_PLATFORM_DEFINITIONS -DQT_QPA_PLATFORM_COCOA=1)
 
-	target_sources(bitcoin-qt-base PRIVATE
+	target_sources(bitfinite-qt-base PRIVATE
 		macdockiconhandler.mm
 		macnotificationhandler.mm
 	)
 
-	set_property(TARGET bitcoin-qt-base PROPERTY AUTOMOC_MOC_OPTIONS "-DQ_OS_MAC")
+	set_property(TARGET bitfinite-qt-base PROPERTY AUTOMOC_MOC_OPTIONS "-DQ_OS_MAC")
 
-	target_link_libraries(bitcoin-qt-base
+	target_link_libraries(bitfinite-qt-base
 		"-framework Foundation"
 		"-framework ApplicationServices"
 		"-framework AppKit"
@@ -208,28 +208,28 @@ if(QT_STATIC_BUILD)
 	# including Qt's predefined plugins."
 	# So if the Qt build is static, the plugins should also be static and we
 	# need to define QT_STATICPLUGIN to tell the code to import <QTPlugin>.
-	target_compile_definitions(bitcoin-qt-base PUBLIC -DQT_STATICPLUGIN=1)
+	target_compile_definitions(bitfinite-qt-base PUBLIC -DQT_STATICPLUGIN=1)
 
 	# Add the platform plugin definition if required
 	# Setting this definition tells the code what is the target for Q_IMPORT_PLUGIN().
 	foreach(qt_platform_definition ${QT_PLUGIN_PLATFORM_DEFINITIONS})
-		target_compile_definitions(bitcoin-qt-base PUBLIC "${qt_platform_definition}")
+		target_compile_definitions(bitfinite-qt-base PUBLIC "${qt_platform_definition}")
 	endforeach()
 
 	# Link the required plugins
 	foreach(qt_plugin ${QT_PLUGIN_COMPONENTS})
-		target_link_libraries(bitcoin-qt-base Qt5::${qt_plugin})
+		target_link_libraries(bitfinite-qt-base Qt5::${qt_plugin})
 	endforeach()
 endif()
 
-target_link_libraries(bitcoin-qt-base
+target_link_libraries(bitfinite-qt-base
 	server
 	rpcclient
 	Qt5::Widgets
 	Qt5::Network
 )
 if(ENABLE_DBUS_NOTIFICATIONS)
-	target_link_libraries(bitcoin-qt-base Qt5::DBus)
+	target_link_libraries(bitfinite-qt-base Qt5::DBus)
 endif()
 
 if(ENABLE_BIP70)
@@ -248,10 +248,10 @@ if(ENABLE_BIP70)
 	endif()
 
 	add_library(
-		bitcoin-qt-protobuf OBJECT
+		bitfinite-qt-protobuf OBJECT
 		paymentrequest.proto
 	)
-	target_link_libraries(bitcoin-qt-protobuf PUBLIC protobuf::libprotobuf)
+	target_link_libraries(bitfinite-qt-protobuf PUBLIC protobuf::libprotobuf)
 
 	# Where protoc will put the generated files
 	set(PROTOC_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
@@ -260,13 +260,13 @@ if(ENABLE_BIP70)
 
 	# Include the generated headers path
 	target_include_directories(
-		bitcoin-qt-protobuf
+		bitfinite-qt-protobuf
 		PUBLIC "$<BUILD_INTERFACE:${PROTOC_OUTPUT_DIRECTORY}>"
 	)
 
 	protobuf_generate(
 		LANGUAGE cpp
-		TARGET bitcoin-qt-protobuf
+		TARGET bitfinite-qt-protobuf
 		IMPORT_DIRS "${PROTO_IMPORT_DIRECTORY}"
 		PROTOC_OUT_DIR "${PROTOC_OUTPUT_DIRECTORY}"
 	)
@@ -274,7 +274,7 @@ if(ENABLE_BIP70)
 	# Don't run clang-tidy on generated files
 	if(ENABLE_CLANG_TIDY)
 		include(ClangTidy)
-		target_disable_clang_tidy(bitcoin-qt-protobuf)
+		target_disable_clang_tidy(bitfinite-qt-protobuf)
 	endif()
 
 	# OpenSSL functionality
@@ -287,12 +287,12 @@ if(ENABLE_BIP70)
 	set(CMAKE_REQUIRED_LIBRARIES ${OPENSSL_CRYPTO_LIBRARY})
 	check_symbol_exists(EVP_MD_CTX_new "openssl/evp.h" HAVE_DECL_EVP_MD_CTX_NEW)
 	if(HAVE_DECL_EVP_MD_CTX_NEW)
-		target_compile_definitions(bitcoin-qt-base PRIVATE HAVE_DECL_EVP_MD_CTX_NEW=1)
+		target_compile_definitions(bitfinite-qt-base PRIVATE HAVE_DECL_EVP_MD_CTX_NEW=1)
 	endif()
 
-	target_link_libraries(bitcoin-qt-base
+	target_link_libraries(bitfinite-qt-base
 		OpenSSL::SSL
-		bitcoin-qt-protobuf
+		bitfinite-qt-protobuf
 	)
 endif()
 
@@ -302,7 +302,7 @@ if(BUILD_BITCOIN_WALLET)
 	set(AUTOMOC_MOC_OPTIONS -DENABLE_WALLET=1)
 
 	# Add wallet functionality to bitcoin-qt
-	target_sources(bitcoin-qt-base
+	target_sources(bitfinite-qt-base
 		PRIVATE
 			addressbookpage.cpp
 			addresstablemodel.cpp
@@ -336,33 +336,33 @@ if(BUILD_BITCOIN_WALLET)
 
 	# Add BIP70 functionality to bitcoin-qt
 	if(ENABLE_BIP70)
-		target_sources(bitcoin-qt-base
+		target_sources(bitfinite-qt-base
 			PRIVATE
 				paymentrequestplus.cpp
 		)
 	endif()
 
-	target_link_libraries(bitcoin-qt-base wallet)
+	target_link_libraries(bitfinite-qt-base wallet)
 
 	if(ENABLE_QRCODE)
 		find_package(QREncode REQUIRED)
-		target_link_libraries(bitcoin-qt-base QREncode::qrencode)
+		target_link_libraries(bitfinite-qt-base QREncode::qrencode)
 	endif()
 endif()
 
 # The executable
-add_executable(bitcoin-qt WIN32 main.cpp)
+add_executable(bitfinite-qt WIN32 main.cpp)
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	target_sources(bitcoin-qt PRIVATE res/bitcoin-qt-res.rc)
 endif()
-target_link_libraries(bitcoin-qt bitcoin-qt-base)
+target_link_libraries(bitfinite-qt bitfinite-qt-base)
 
 include(BinaryTest)
-add_to_symbols_check(bitcoin-qt)
-add_to_security_check(bitcoin-qt)
+add_to_symbols_check(bitfinite-qt)
+add_to_security_check(bitfinite-qt)
 
 include(InstallationHelper)
-install_target(bitcoin-qt)
+install_target(bitfinite-qt)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	set(BITCOINQT_BUNDLE_ICON "res/icons/bitcoin.icns")
@@ -398,7 +398,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 		MACOSX_BUNDLE_INFO_PLIST "${CMAKE_SOURCE_DIR}/share/qt/Info.plist.cmake.in"
 		MACOSX_BUNDLE_BUNDLE_NAME "${BITCOIN_QT_OSX_BUNDLE_NAME}"
 		MACOSX_BUNDLE_BUNDLE_VERSION "${bitcoin-cash-node_VERSION}"
-		MACOSX_BUNDLE_GUI_IDENTIFIER "org.bitcoincashnode.${BITCOIN_QT_OSX_BUNDLE_NAME}"
+		MACOSX_BUNDLE_GUI_IDENTIFIER "org.bitfinitenode.${BITCOIN_QT_OSX_BUNDLE_NAME}"
 		MACOSX_BUNDLE_ICON_FILE "${BITCOINQT_BUNDLE_ICON_NAME}"
 		MACOSX_BUNDLE_INFO_STRING "${bitcoin-cash-node_VERSION}, Copyright © 2009-${COPYRIGHT_YEAR} ${COPYRIGHT_HOLDERS_FINAL}"
 		MACOSX_BUNDLE_LONG_VERSION_STRING "${bitcoin-cash-node_VERSION}"

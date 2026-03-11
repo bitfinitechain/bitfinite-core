@@ -71,7 +71,7 @@ pkg install help2man
 If not installed, manpage generation should be disabled by passing `-DENABLE_MAN=OFF`
 to `cmake`.
 
-## Building Bitcoin Cash Node
+## Building BitFinite Node
 
 Download the source code:
 

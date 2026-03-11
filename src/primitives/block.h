@@ -6,10 +6,10 @@
 
 #pragma once
 
-#include <primitives/blockhash.h>
-#include <primitives/transaction.h>
-#include <serialize.h>
-#include <uint256.h>
+#include "../serialize.h"
+#include "../uint256.h"
+#include "blockhash.h"
+#include "transaction.h"
 
 #include <utility>
 

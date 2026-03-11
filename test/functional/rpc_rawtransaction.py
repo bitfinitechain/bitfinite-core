@@ -168,7 +168,7 @@ class RawTransactionsTest(BitcoinTestFramework):
                                 self.nodes[0].createrawtransaction, [], {'data': ['9']})
         assert_raises_rpc_error(-8, "data array must contain at least one element",
                                 self.nodes[0].createrawtransaction, [], {'data': []})
-        assert_raises_rpc_error(-5, "Invalid Bitcoin Cash address",
+        assert_raises_rpc_error(-5, "Invalid BitFinite address",
                                 self.nodes[0].createrawtransaction, [], {'foo': 0})
         assert_raises_rpc_error(-3, "Invalid amount",
                                 self.nodes[0].createrawtransaction, [], {address: 'foo'})
@@ -328,7 +328,7 @@ class RawTransactionsTest(BitcoinTestFramework):
         # use balance deltas instead of absolute values
         bal = self.nodes[2].getbalance()
 
-        # send 1.2 BCH to msig adr
+        # send 1.2 BFX to msig adr
         txId = self.nodes[0].sendtoaddress(mSigObj, 1.2)
         self.sync_all(synced_nodes)
         self.generate(self.nodes[0], 1)

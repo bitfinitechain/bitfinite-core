@@ -1,7 +1,7 @@
 # Translation Strings Policy
 
 This document provides guidelines for internationalization of the
-Bitcoin Cash Node software.
+BitFinite Node software.
 
 ## How to translate
 

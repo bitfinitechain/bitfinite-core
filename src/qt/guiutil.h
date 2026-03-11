@@ -66,7 +66,7 @@ QString convertToCashAddr(const CChainParams &params, const QString &addr);
 // Set up widget for address
 void setupAddressWidget(QValidatedLineEdit *widget, QWidget *parent);
 
-// Parse "bitcoincash:" URI into recipient object, return true on successful
+// Parse "bitfinite:" URI into recipient object, return true on successful
 // parsing
 bool parseBitcoinURI(const QString &scheme, const QUrl &uri,
                      SendCoinsRecipient *out);

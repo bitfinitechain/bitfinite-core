@@ -69,7 +69,7 @@ BOOST_AUTO_TEST_CASE(random_tests) {
         for (auto &in : tx.vin) {
             in.prevout = COutPoint(TxId{InsecureRand256()}, GetRand(100));
         }
-        // Completely random output value in range [0, 100] BCH, random scriptPubKey data of random length [0, 32]
+        // Completely random output value in range [0, 100] BFX, random scriptPubKey data of random length [0, 32]
         // and a random token.
         for (auto &out : tx.vout) {
             out.nValue = int64_t(GetRand(100)) * COIN;
@@ -101,7 +101,7 @@ BOOST_AUTO_TEST_CASE(random_tests) {
         for (auto &in : tx.vin) {
             in.prevout = COutPoint(TxId{InsecureRand256()}, 0);
         }
-        // Completely random output value in range [0, 100] BCH, static trivial spk
+        // Completely random output value in range [0, 100] BFX, static trivial spk
         for (auto &out : tx.vout) {
             out.nValue = int64_t(GetRand(100)) * COIN;
             out.scriptPubKey = CScript() << OP_1 << OP_2 << OP_3 << OP_4 << OP_DROP << OP_DROP << OP_DROP;

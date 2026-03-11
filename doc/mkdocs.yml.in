@@ -6,8 +6,8 @@
 #
 #     ninja doc/html
 
-site_name: Bitcoin Cash Node documentation
-site_description: Documentation for the Bitcoin Cash Node project
+site_name: BitFinite Node documentation
+site_description: Documentation for the BitFinite Node project
 site_author: The Bitcoin developers
 site_dir: html
 
@@ -32,19 +32,19 @@ nav:
   - Setup instructions: doc/README.md
   - Release notes:
       - Current release notes: doc/release-notes.md
-      - Bitcoin Cash Node v26.1.0: doc/release-notes/release-notes-26.1.0.md
-      - Bitcoin Cash Node v26.0.0: doc/release-notes/release-notes-26.0.0.md
-      - Bitcoin Cash Node v25.0.0: doc/release-notes/release-notes-25.0.0.md
-      - Bitcoin Cash Node v24.1.0: doc/release-notes/release-notes-24.1.0.md
-      - Bitcoin Cash Node v24.0.0: doc/release-notes/release-notes-24.0.0.md
-      - Bitcoin Cash Node v23.1.0: doc/release-notes/release-notes-23.1.0.md
-      - Bitcoin Cash Node v23.0.0: doc/release-notes/release-notes-23.0.0.md
-      - Bitcoin Cash Node v22.2.0: doc/release-notes/release-notes-22.2.0.md
-      - Bitcoin Cash Node v22.1.0: doc/release-notes/release-notes-22.1.0.md
-      - Bitcoin Cash Node v22.0.0: doc/release-notes/release-notes-22.0.0.md
-      - Bitcoin Cash Node v0.21.2: doc/release-notes/release-notes-0.21.2.md
-      - Bitcoin Cash Node v0.21.1: doc/release-notes/release-notes-0.21.1.md
-      - Bitcoin Cash Node v0.21.0: doc/release-notes/release-notes-0.21.0.md
+      - BitFinite Node v26.1.0: doc/release-notes/release-notes-26.1.0.md
+      - BitFinite Node v26.0.0: doc/release-notes/release-notes-26.0.0.md
+      - BitFinite Node v25.0.0: doc/release-notes/release-notes-25.0.0.md
+      - BitFinite Node v24.1.0: doc/release-notes/release-notes-24.1.0.md
+      - BitFinite Node v24.0.0: doc/release-notes/release-notes-24.0.0.md
+      - BitFinite Node v23.1.0: doc/release-notes/release-notes-23.1.0.md
+      - BitFinite Node v23.0.0: doc/release-notes/release-notes-23.0.0.md
+      - BitFinite Node v22.2.0: doc/release-notes/release-notes-22.2.0.md
+      - BitFinite Node v22.1.0: doc/release-notes/release-notes-22.1.0.md
+      - BitFinite Node v22.0.0: doc/release-notes/release-notes-22.0.0.md
+      - BitFinite Node v0.21.2: doc/release-notes/release-notes-0.21.2.md
+      - BitFinite Node v0.21.1: doc/release-notes/release-notes-0.21.1.md
+      - BitFinite Node v0.21.0: doc/release-notes/release-notes-0.21.0.md
       - Bitcoin ABC v0.14.1-v0.20:
           - Bitcoin ABC v0.20.12: doc/release-notes/release-notes-0.20.12.md
           - Bitcoin ABC v0.20.11: doc/release-notes/release-notes-0.20.11.md
@@ -194,7 +194,7 @@ nav:
       - ZeroMQ: doc/zmq.md
   - Technical standards:
       - BIPs: doc/bips.md
-      - Bitcoin Cash upgrades: doc/bch-upgrades.md
+      - BitFinite upgrades: doc/bch-upgrades.md
       - getblocktemplatelight: doc/getblocktemplatelight.md
       - XVersionMessage: doc/xversionmessage.md
       - DSProof implementation notes: doc/dsproof-implementation-notes.md

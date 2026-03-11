@@ -55,10 +55,10 @@ const int BITCOIN_IPC_CONNECT_TIMEOUT = 1000; // milliseconds
 const char *BIP70_MESSAGE_PAYMENTACK = "PaymentACK";
 const char *BIP70_MESSAGE_PAYMENTREQUEST = "PaymentRequest";
 // BIP71 payment protocol media types
-const char *BIP71_MIMETYPE_PAYMENT = "application/bitcoincash-payment";
-const char *BIP71_MIMETYPE_PAYMENTACK = "application/bitcoincash-paymentack";
+const char *BIP71_MIMETYPE_PAYMENT = "application/bitfinite-payment";
+const char *BIP71_MIMETYPE_PAYMENTACK = "application/bitfinite-paymentack";
 const char *BIP71_MIMETYPE_PAYMENTREQUEST =
-    "application/bitcoincash-paymentrequest";
+    "application/bitfinite-paymentrequest";
 #endif
 
 //
@@ -243,7 +243,7 @@ PaymentServer::PaymentServer(QObject *parent, bool startLocalServer)
 #endif
 
     // Install global event filter to catch QFileOpenEvents
-    // on Mac: sent when you click bitcoincash: links
+    // on Mac: sent when you click bitfinite: links
     // other OSes: helpful when dealing with payment request files
     if (parent) {
         parent->installEventFilter(this);
@@ -280,7 +280,7 @@ PaymentServer::~PaymentServer() {
 }
 
 //
-// OSX-specific way of handling bitcoincash: URIs and PaymentRequest mime types.
+// OSX-specific way of handling bitfinite: URIs and PaymentRequest mime types.
 // Also used by paymentservertests.cpp and when opening a payment request file
 // via "Open URI..." menu entry.
 //
@@ -364,7 +364,7 @@ bool PaymentServer::handleURI(const CChainParams &params, const QString &s) {
         Q_EMIT message(
             tr("URI handling"),
             tr("URI cannot be parsed! This can be caused by an invalid "
-               "Bitcoin Cash address or malformed URI parameters."),
+               "BitFinite address or malformed URI parameters."),
             CClientUIInterface::ICON_WARNING);
     }
 
@@ -377,7 +377,7 @@ void PaymentServer::handleURIOrFile(const QString &s) {
         return;
     }
 
-    // bitcoincash: CashAddr URI
+    // bitfinite: CashAddr URI
     if (handleURI(Params(), s)) {
         return;
     }
@@ -548,7 +548,7 @@ void PaymentServer::initNetManager() {
         delete netManager;
     }
 
-    // netManager is used to fetch paymentrequests given in bitcoincash: URIs
+    // netManager is used to fetch paymentrequests given in bitfinite: URIs
     netManager = new QNetworkAccessManager(this);
 
     QNetworkProxy proxy;
@@ -645,7 +645,7 @@ bool PaymentServer::processPaymentRequest(const PaymentRequestPlus &request,
             addresses.append(
                 QString::fromStdString(EncodeCashAddr(dest, Params())));
         } else if (!recipient.authenticatedMerchant.isEmpty()) {
-            // Unauthenticated payment requests to custom Bitcoin Cash addresses are
+            // Unauthenticated payment requests to custom BitFinite addresses are
             // not supported (there is no good way to tell the user where they
             // are paying in a way they'd have a chance of understanding).
             Q_EMIT message(tr("Payment request rejected"),

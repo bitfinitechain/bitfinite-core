@@ -33,7 +33,7 @@ def get_chainparams(rpc_caller, block):
     elif chaininfo['chain'] == 'scale':
         chain = Chain.ScaleNet
         # Comment-out the below to actually update chain params for scalenet
-        sys.exit("ScaleNet chainparams should not be updated. See BCHN issue "
+        sys.exit("ScaleNet chainparams should not be updated. See BFXN issue "
                  "#293. If you really wish to proceed anyway, then please "
                  "edit this script to comment-out this line of code.")
     elif chaininfo['chain'] == 'chip':

@@ -123,7 +123,7 @@ std::string BasicTestingSetup::GetUserNameFromEnv() {
 fs::path BasicTestingSetup::MakePathRoot() {
     // Note: It's important to make the test dir basename depend on username to avoid
     // concurrent users on the same system from clobbering each other's dirs and/or
-    // causing permissions issues with each other. See BCHN issue #43.
+    // causing permissions issues with each other. See BFXN issue #43.
     std::string baseName = "test_common_" + GetUserNameFromEnv() + "_" + PACKAGE_NAME;
     baseName = SanitizeString(baseName, SAFE_CHARS_FILENAME);
 

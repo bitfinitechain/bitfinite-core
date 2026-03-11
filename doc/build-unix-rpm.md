@@ -30,10 +30,10 @@ To build with Qt 5 you need the following packages installed:
 You can do without the `qrencode-devel` package, just pass `-DENABLE_QRCODE=OFF`
 on the cmake command line.
 
-## Building Bitcoin Cash Node
+## Building BitFinite Node
 
 Once you have installed the required dependencies (see sections above), you can
-build Bitcoin Cash Node as such:
+build BitFinite Node as such:
 
 First fetch the code (if you haven't done so already).
 

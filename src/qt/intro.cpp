@@ -89,16 +89,14 @@ void FreespaceChecker::check() {
         freeBytesAvailable = fs::space(parentDir).available;
         if (fs::exists(dataDir)) {
             if (fs::is_directory(dataDir)) {
-                QString separator = "<code>" + QDir::toNativeSeparators("/") +
-                                    tr("name") + "</code>";
+                QString separator = "<code>" + QDir::toNativeSeparators("/") + tr("name") + "</code>";
                 replyStatus = ST_OK;
                 replyMessage = tr("Directory already exists. Add %1 if you "
                                   "intend to create a new directory here.")
                                    .arg(separator);
             } else {
                 replyStatus = ST_ERROR;
-                replyMessage =
-                    tr("Path already exists, and is not a directory.");
+                replyMessage = tr("Path already exists, and is not a directory.");
             }
         }
     } catch (const fs::filesystem_error &) {
@@ -109,27 +107,21 @@ void FreespaceChecker::check() {
     Q_EMIT reply(replyStatus, replyMessage, freeBytesAvailable);
 }
 
-Intro::Intro(QWidget *parent, uint64_t blockchain_size,
-             uint64_t chain_state_size)
-    : QDialog(parent), ui(new Ui::Intro), thread(nullptr), signalled(false),
-      m_blockchain_size(blockchain_size), m_chain_state_size(chain_state_size) {
+Intro::Intro(QWidget *parent, uint64_t blockchain_size, uint64_t chain_state_size)
+    : QDialog(parent), ui(new Ui::Intro), thread(nullptr), signalled(false), m_blockchain_size(blockchain_size),
+      m_chain_state_size(chain_state_size) {
     ui->setupUi(this);
     ui->welcomeLabel->setText(ui->welcomeLabel->text().arg(PACKAGE_NAME));
     ui->storageLabel->setText(ui->storageLabel->text().arg(PACKAGE_NAME));
 
-    ui->lblExplanation1->setText(ui->lblExplanation1->text()
-                                     .arg(PACKAGE_NAME)
-                                     .arg(m_blockchain_size)
-                                     .arg(2009)
-                                     .arg(tr("Bitcoin")));
-    ui->lblExplanation2->setText(
-        ui->lblExplanation2->text().arg(PACKAGE_NAME));
+    ui->lblExplanation1->setText(
+        ui->lblExplanation1->text().arg(PACKAGE_NAME).arg(m_blockchain_size).arg(2009).arg(tr("Bitfinite")));
+    ui->lblExplanation2->setText(ui->lblExplanation2->text().arg(PACKAGE_NAME));
 
     uint64_t pruneTarget = std::max<int64_t>(0, gArgs.GetArg("-prune", 0));
     requiredSpace = m_blockchain_size;
-    QString storageRequiresMsg =
-        tr("At least %1 GB of data will be stored in this directory, and it "
-           "will grow over time.");
+    QString storageRequiresMsg = tr("At least %1 GB of data will be stored in this directory, and it "
+                                    "will grow over time.");
     if (pruneTarget) {
         uint64_t prunedGBs = std::ceil(pruneTarget * 1024 * 1024.0 / GB_BYTES);
         if (prunedGBs <= requiredSpace) {
@@ -143,10 +135,8 @@ Intro::Intro(QWidget *parent, uint64_t blockchain_size,
     }
     requiredSpace += m_chain_state_size;
     ui->sizeWarningLabel->setText(
-        tr("%1 will download and store a copy of the Bitcoin block chain.")
-            .arg(PACKAGE_NAME) +
-        " " + storageRequiresMsg.arg(requiredSpace) + " " +
-        tr("The wallet will also be stored in this directory."));
+        tr("%1 will download and store a copy of the Bitfinite block chain.").arg(PACKAGE_NAME) + " " +
+        storageRequiresMsg.arg(requiredSpace) + " " + tr("The wallet will also be stored in this directory."));
     startThread();
 }
 
@@ -191,8 +181,7 @@ bool Intro::pickDataDirectory(interfaces::Node &node) {
     dataDir = settings.value("strDataDir", dataDir).toString();
 
     if (!fs::exists(GUIUtil::qstringToBoostPath(dataDir)) ||
-        gArgs.GetBoolArg("-choosedatadir", DEFAULT_CHOOSE_DATADIR) ||
-        settings.value("fReset", false).toBool() ||
+        gArgs.GetBoolArg("-choosedatadir", DEFAULT_CHOOSE_DATADIR) || settings.value("fReset", false).toBool() ||
         gArgs.GetBoolArg("-resetguisettings", false)) {
         /**
          * Use selectParams here to guarantee Params() can be used by node
@@ -208,8 +197,7 @@ bool Intro::pickDataDirectory(interfaces::Node &node) {
          * If current default data directory does not exist, let the user choose
          * one.
          */
-        Intro intro(nullptr, node.getAssumedBlockchainSize(),
-                    node.getAssumedChainStateSize());
+        Intro intro(nullptr, node.getAssumedBlockchainSize(), node.getAssumedChainStateSize());
         intro.setDataDirectory(dataDir);
         intro.setWindowIcon(QIcon(":icons/bitcoin"));
 
@@ -220,12 +208,10 @@ bool Intro::pickDataDirectory(interfaces::Node &node) {
             }
             dataDir = intro.getDataDirectory();
             try {
-                if (TryCreateDirectories(
-                        GUIUtil::qstringToBoostPath(dataDir))) {
+                if (TryCreateDirectories(GUIUtil::qstringToBoostPath(dataDir))) {
                     // If a new data directory has been created, make wallets
                     // subdirectory too
-                    TryCreateDirectories(GUIUtil::qstringToBoostPath(dataDir) /
-                                         "wallets");
+                    TryCreateDirectories(GUIUtil::qstringToBoostPath(dataDir) / "wallets");
                 }
                 break;
             } catch (const fs::filesystem_error &) {
@@ -247,14 +233,12 @@ bool Intro::pickDataDirectory(interfaces::Node &node) {
      */
     if (dataDir != getDefaultDataDirectory()) {
         // use OS locale for path setting
-        node.softSetArg("-datadir",
-                        GUIUtil::qstringToBoostPath(dataDir).string());
+        node.softSetArg("-datadir", GUIUtil::qstringToBoostPath(dataDir).string());
     }
     return true;
 }
 
-void Intro::setStatus(int status, const QString &message,
-                      quint64 bytesAvailable) {
+void Intro::setStatus(int status, const QString &message, quint64 bytesAvailable) {
     switch (status) {
         case FreespaceChecker::ST_OK:
             ui->errorMessage->setText(message);
@@ -269,8 +253,7 @@ void Intro::setStatus(int status, const QString &message,
     if (status == FreespaceChecker::ST_ERROR) {
         ui->freeSpace->setText("");
     } else {
-        QString freeString =
-            tr("%n GB of free space available", "", bytesAvailable / GB_BYTES);
+        QString freeString = tr("%n GB of free space available", "", bytesAvailable / GB_BYTES);
         if (bytesAvailable < requiredSpace * GB_BYTES) {
             freeString += " " + tr("(of %n GB needed)", "", requiredSpace);
             ui->freeSpace->setStyleSheet("QLabel { color: #800000 }");
@@ -280,8 +263,7 @@ void Intro::setStatus(int status, const QString &message,
         ui->freeSpace->setText(freeString + ".");
     }
     /* Don't allow confirm in ERROR state */
-    ui->buttonBox->button(QDialogButtonBox::Ok)
-        ->setEnabled(status != FreespaceChecker::ST_ERROR);
+    ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(status != FreespaceChecker::ST_ERROR);
 }
 
 void Intro::on_dataDirectory_textChanged(const QString &dataDirStr) {
@@ -291,8 +273,8 @@ void Intro::on_dataDirectory_textChanged(const QString &dataDirStr) {
 }
 
 void Intro::on_ellipsisButton_clicked() {
-    QString dir = QDir::toNativeSeparators(QFileDialog::getExistingDirectory(
-        nullptr, "Choose data directory", ui->dataDirectory->text()));
+    QString dir = QDir::toNativeSeparators(
+        QFileDialog::getExistingDirectory(nullptr, "Choose data directory", ui->dataDirectory->text()));
     if (!dir.isEmpty()) {
         ui->dataDirectory->setText(dir);
     }

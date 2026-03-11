@@ -249,9 +249,9 @@ class PSBTTest(BitcoinTestFramework):
         self.nodes[0].decodepsbt(psbt['psbt'])
 
 
-class BCHNIssue440Test (BitcoinTestFramework):
+class BFXNIssue440Test (BitcoinTestFramework):
     '''
-    Regression test for bugfix (backport of D6029, D6030) for BCHN issue #440
+    Regression test for bugfix (backport of D6029, D6030) for BFXN issue #440
     https://gitlab.com/bitcoin-cash-node/bitcoin-cash-node/-/issues/440
     '''
     def set_test_params(self):
@@ -311,7 +311,7 @@ class BCHNIssue440Test (BitcoinTestFramework):
             assert_equal(address_assert['timestamp'], timestamp)
             assert_equal(address_assert['ischange'], False)
 
-        # Fund the first address with 0.5 BCH
+        # Fund the first address with 0.5 BFX
         self.nodes[1].sendtoaddress(node0_address1['address'], 0.5)
 
         # Mine it, check blockchain state on both nodes
@@ -346,4 +346,4 @@ class BCHNIssue440Test (BitcoinTestFramework):
 
 if __name__ == '__main__':
     PSBTTest().main()
-    BCHNIssue440Test().main()
+    BFXNIssue440Test().main()

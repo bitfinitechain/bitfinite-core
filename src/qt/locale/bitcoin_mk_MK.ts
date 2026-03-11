@@ -578,7 +578,7 @@
         <translation>Опции:</translation>
     </message>
     <message>
-        <source>Bitcoin Cash Node</source>
+        <source>BitFinite Node</source>
         <translation>Биткоин Cash Node</translation>
     </message>
     <message>

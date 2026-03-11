@@ -8,7 +8,7 @@
 #include <primitives/transaction.h>
 #include <wallet/wallet.h>
 
-#include <optional>
+#include "compat/optional.h"
 
 /** Coin Control Features. */
 class CCoinControl {

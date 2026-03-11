@@ -41,12 +41,12 @@ If you want to run ZMQ tests with the test framework, you need the zmq python mo
 pip3 install pyzmq
 ```
 
-Build Bitcoin Cash Node
+Build BitFinite Node
 ------------------------
 
 Before you start building, please make sure that your compiler supports C++17.
 
-Clone the Bitcoin Cash Node source code and cd into `bitcoin-cash-node`
+Clone the BitFinite Node source code and cd into `bitcoin-cash-node`
 
 ```
 git clone https://gitlab.com/bitcoin-cash-node/bitcoin-cash-node.git
@@ -60,7 +60,7 @@ mkdir build
 cd build
 ```
 
-Configure and build the headless Bitcoin Cash Node binaries, as well as the GUI.
+Configure and build the headless BitFinite Node binaries, as well as the GUI.
 
 You can disable the GUI build by passing `-DBUILD_BITCOIN_QT=OFF` to `cmake`.
 
@@ -81,7 +81,7 @@ You can create a .dmg that contains the .app bundle (optional):
 ninja osx-dmg
 ```
 
-After building the Bitcoin Cash Node binaries are available
+After building the BitFinite Node binaries are available
 at `./src/bitcoind`. You can install to the system with
 
 ```
@@ -91,7 +91,7 @@ sudo ninja install
 Disable-wallet mode
 --------------------
 
-When the intention is to run only a P2P node without a wallet, Bitcoin Cash Node
+When the intention is to run only a P2P node without a wallet, BitFinite Node
 may be compiled in disable-wallet mode with:
 
 ```

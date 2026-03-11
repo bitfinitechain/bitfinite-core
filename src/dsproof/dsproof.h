@@ -10,7 +10,7 @@
 #include <primitives/transaction.h>
 #include <primitives/txid.h>
 #include <script/script.h>
-#include <serialize.h>
+#include "serialize.h"
 #include <sync.h> // for thread safety macros
 
 class CTxMemPool;

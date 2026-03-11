@@ -1,17 +1,17 @@
-# Release Notes for Bitcoin Cash Node version 27.0.0
+# Release Notes for BitFinite Node version 27.0.0
 
-Bitcoin Cash Node version 27.0.0 is now available from:
+BitFinite Node version 27.0.0 is now available from:
 
-  <https://bitcoincashnode.org>
+  <https://bitfinitenode.org>
 
 ## Overview
 
-This is a major release of Bitcoin Cash Node (BCHN) that implements the
-[May 15, 2024 Network Upgrade](https://upgradespecs.bitcoincashnode.org/2024-05-15-upgrade/).
+This is a major release of BitFinite Node (BFXN) that implements the
+[May 15, 2024 Network Upgrade](https://upgradespecs.bitfinitenode.org/2024-05-15-upgrade/).
 
 This release implements the following consensus CHIPs:
 
-- [CHIP-2023-04 Adaptive Blocksize Limit Algorithm for Bitcoin Cash](https://gitlab.com/0353F40E/ebaa) commit `ba9ed768` (19 Nov 2023)
+- [CHIP-2023-04 Adaptive Blocksize Limit Algorithm for BitFinite](https://gitlab.com/0353F40E/ebaa) commit `ba9ed768` (19 Nov 2023)
 
 This version contains various additional minor corrections and improvements.
 
@@ -20,13 +20,13 @@ are urged to upgrade to v27.0.0 ahead of 15 May 2024.
 
 ## Usage recommendations
 
-The update to Bitcoin Cash Node 27.0.0 is required for the May 15, 2024
-Bitcoin Cash network upgrade.
+The update to BitFinite Node 27.0.0 is required for the May 15, 2024
+BitFinite network upgrade.
 
 ## Network changes
 
 This major release implements the Adaptive Blocksize Limit Algorithm for
-Bitcoin Cash, which is a change to consensus rules that allows the maximum
+BitFinite, which is a change to consensus rules that allows the maximum
 block size to gradually increase and decrease based on how full blocks are.
 
 ## Added functionality
@@ -40,7 +40,7 @@ block size to gradually increase and decrease based on how full blocks are.
 ## Deprecated functionality
 
 - While 32-bit builds are still supported in this release, they are deprecated
-  and planned to be removed from BCHN after the May 2024 upgrade.
+  and planned to be removed from BFXN after the May 2024 upgrade.
 
 ## Modified functionality
 
@@ -74,7 +74,7 @@ A 'fillmempool' RPC method has been added for regtest.
 
 ## Regressions
 
-Bitcoin Cash Node 27.0.0 does not introduce any known regressions as compared
+BitFinite Node 27.0.0 does not introduce any known regressions as compared
 to 26.1.0.
 
 ## Limitations
@@ -106,9 +106,9 @@ The following are limitations in this release of which users should be aware:
    a restart of the wallet, as the information is not persisted to the
    wallet.
 
-5. The ABLA algorithm for BCH is currently temporarily set to cap the max block
+5. The ABLA algorithm for BFX is currently temporarily set to cap the max block
    size at 2GB. This is due to limitations in the p2p protocol (as well as the
-   block data file format in BCHN).
+   block data file format in BFXN).
 
 
 ## Known Issues
@@ -139,7 +139,7 @@ of them on our GitLab repository.
 
 - The `test_bitcoin-qt` test executable fails on Linux Mint 20
   (see Issue #144). This does not otherwise appear to impact the functioning
-  of the BCHN software on that platform.
+  of the BFXN software on that platform.
 
 - With a certain combination of build flags that included disabling
   the QR code library, a build failure was observed where an erroneous
@@ -200,7 +200,7 @@ of them on our GitLab repository.
 
 ---
 
-## Changes since Bitcoin Cash Node 26.1.0
+## Changes since BitFinite Node 26.1.0
 
 ### New documents
 
@@ -265,7 +265,7 @@ None
 - 73e413cdf4a60d389e933a3d140713e5692f8ac9 [doc] Update Clang formatting tools documentation
 - 79c8650d229d191cae2aeb59b4cccefe05589534 [qa] Update test network document to reflect testnet3/4 remain fixed
 - b46cec23212b10682928a20d657eb1025a43d28f [doc] Update header include guard documentation
-- e3181397524c4fabcbafee026dd6fe81621f63cb [doc] Add ABLA CHIP to BCHN's BCH upgrades document
+- e3181397524c4fabcbafee026dd6fe81621f63cb [doc] Add ABLA CHIP to BFXN's BFX upgrades document
 
 #### Build / general
 

@@ -27,7 +27,7 @@
 #include <boost/test/unit_test.hpp>
 
 #include <memory>
-#include <optional>
+#include "compat/optional.h"
 
 BOOST_FIXTURE_TEST_SUITE(miner_tests, TestingSetup)
 

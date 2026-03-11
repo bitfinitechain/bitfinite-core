@@ -1,4 +1,4 @@
-# XVersionMessage: BCH node extended version and configuration fields
+# XVersionMessage: BFX node extended version and configuration fields
 
 DRAFT specification
 

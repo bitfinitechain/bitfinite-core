@@ -43,34 +43,26 @@ static void SetupCliArgs() {
     const auto chipnetBaseParams = CreateBaseChainParams(CBaseChainParams::CHIPNET);
     const auto regtestBaseParams = CreateBaseChainParams(CBaseChainParams::REGTEST);
 
-    gArgs.AddArg("-version", "Print version and exit", ArgsManager::ALLOW_ANY,
-                 OptionsCategory::OPTIONS);
+    gArgs.AddArg("-version", "Print version and exit", ArgsManager::ALLOW_ANY, OptionsCategory::OPTIONS);
     gArgs.AddArg("-conf=<file>",
                  strprintf("Specify configuration file. Relative paths will be "
                            "prefixed by datadir location. (default: %s)",
                            BITCOIN_CONF_FILENAME),
                  ArgsManager::ALLOW_ANY, OptionsCategory::OPTIONS);
-    gArgs.AddArg("-datadir=<dir>", _("Specify data directory"), ArgsManager::ALLOW_ANY,
-                 OptionsCategory::OPTIONS);
-    gArgs.AddArg(
-        "-getinfo",
-        "Get general information from the remote server. Note that unlike "
-        "server-side RPC calls, the results of -getinfo is the result of "
-        "multiple non-atomic requests. Some entries in the result may "
-        "represent results from different states (e.g. wallet balance may be "
-        "as of a different block from the chain state reported)",
-        ArgsManager::ALLOW_ANY, OptionsCategory::OPTIONS);
+    gArgs.AddArg("-datadir=<dir>", _("Specify data directory"), ArgsManager::ALLOW_ANY, OptionsCategory::OPTIONS);
+    gArgs.AddArg("-getinfo",
+                 "Get general information from the remote server. Note that unlike "
+                 "server-side RPC calls, the results of -getinfo is the result of "
+                 "multiple non-atomic requests. Some entries in the result may "
+                 "represent results from different states (e.g. wallet balance may be "
+                 "as of a different block from the chain state reported)",
+                 ArgsManager::ALLOW_ANY, OptionsCategory::OPTIONS);
     SetupChainParamsBaseOptions();
-    gArgs.AddArg(
-        "-named",
-        strprintf("Pass named instead of positional arguments (default: %s)",
-                  DEFAULT_NAMED),
-        ArgsManager::ALLOW_ANY, OptionsCategory::OPTIONS);
-    gArgs.AddArg(
-        "-rpcconnect=<ip>",
-        strprintf("Send commands to node running on <ip> (default: %s)",
-                  DEFAULT_RPCCONNECT),
-        ArgsManager::ALLOW_ANY, OptionsCategory::OPTIONS);
+    gArgs.AddArg("-named", strprintf("Pass named instead of positional arguments (default: %s)", DEFAULT_NAMED),
+                 ArgsManager::ALLOW_ANY, OptionsCategory::OPTIONS);
+    gArgs.AddArg("-rpcconnect=<ip>",
+                 strprintf("Send commands to node running on <ip> (default: %s)", DEFAULT_RPCCONNECT),
+                 ArgsManager::ALLOW_ANY, OptionsCategory::OPTIONS);
     gArgs.AddArg("-rpccookiefile=<loc>",
                  "Location of the auth cookie. Relative paths will be prefixed "
                  "by a net-specific datadir location. (default: data dir)",
@@ -78,19 +70,14 @@ static void SetupCliArgs() {
     gArgs.AddArg("-rpcport=<port>",
                  strprintf("Connect to JSON-RPC on <port> (default: %u, "
                            "testnet: %u, testnet4: %u, scalenet: %u, chipnet: %u, regtest: %u)",
-                           defaultBaseParams->RPCPort(),
-                           testnetBaseParams->RPCPort(),
-                           testnet4BaseParams->RPCPort(),
-                           scalenetBaseParams->RPCPort(),
-                           chipnetBaseParams->RPCPort(),
-                           regtestBaseParams->RPCPort()),
+                           defaultBaseParams->RPCPort(), testnetBaseParams->RPCPort(), testnet4BaseParams->RPCPort(),
+                           scalenetBaseParams->RPCPort(), chipnetBaseParams->RPCPort(), regtestBaseParams->RPCPort()),
                  ArgsManager::ALLOW_ANY | ArgsManager::NETWORK_ONLY, OptionsCategory::OPTIONS);
-    gArgs.AddArg("-rpcwait", "Wait for RPC server to start", ArgsManager::ALLOW_ANY,
-                 OptionsCategory::OPTIONS);
+    gArgs.AddArg("-rpcwait", "Wait for RPC server to start", ArgsManager::ALLOW_ANY, OptionsCategory::OPTIONS);
     gArgs.AddArg("-rpcuser=<user>", "Username for JSON-RPC connections", ArgsManager::ALLOW_ANY,
                  OptionsCategory::OPTIONS);
-    gArgs.AddArg("-rpcpassword=<pw>", "Password for JSON-RPC connections",
-                 ArgsManager::ALLOW_ANY, OptionsCategory::OPTIONS);
+    gArgs.AddArg("-rpcpassword=<pw>", "Password for JSON-RPC connections", ArgsManager::ALLOW_ANY,
+                 OptionsCategory::OPTIONS);
     gArgs.AddArg("-rpcclienttimeout=<n>",
                  strprintf("Timeout in seconds during HTTP requests, or 0 for "
                            "no timeout. (default: %d)",
@@ -107,11 +94,10 @@ static void SetupCliArgs() {
                  "EOF/Ctrl-D (recommended for sensitive information such as "
                  "passphrases)",
                  ArgsManager::ALLOW_ANY, OptionsCategory::OPTIONS);
-    gArgs.AddArg(
-        "-rpcwallet=<walletname>",
-        "Send RPC for non-default wallet on RPC server (needs to exactly match "
-        "corresponding -wallet option passed to bitcoind)",
-        ArgsManager::ALLOW_ANY, OptionsCategory::OPTIONS);
+    gArgs.AddArg("-rpcwallet=<walletname>",
+                 "Send RPC for non-default wallet on RPC server (needs to exactly match "
+                 "corresponding -wallet option passed to bitcoind)",
+                 ArgsManager::ALLOW_ANY, OptionsCategory::OPTIONS);
 }
 
 /** libevent event log callback */
@@ -137,8 +123,7 @@ static void libevent_log_cb(int severity, const char *msg) {
 //
 class CConnectionFailed : public std::runtime_error {
 public:
-    explicit inline CConnectionFailed(const std::string &msg)
-        : std::runtime_error(msg) {}
+    explicit inline CConnectionFailed(const std::string &msg) : std::runtime_error(msg) {}
 };
 
 //
@@ -152,23 +137,20 @@ static int AppInitRPC(int argc, char *argv[]) {
     SetupCliArgs();
     std::string error;
     if (!gArgs.ParseParameters(argc, argv, error)) {
-        fprintf(stderr, "Error parsing command line arguments: %s\n",
-                error.c_str());
+        fprintf(stderr, "Error parsing command line arguments: %s\n", error.c_str());
         return EXIT_FAILURE;
     }
     if (argc < 2 || HelpRequested(gArgs) || gArgs.IsArgSet("-version")) {
-        std::string strUsage =
-            PACKAGE_NAME " RPC client version " + FormatFullVersion() + "\n";
+        std::string strUsage = PACKAGE_NAME " RPC client version " + FormatFullVersion() + "\n";
         if (!gArgs.IsArgSet("-version")) {
             strUsage += "\n"
-                        "Usage:  bitcoin-cli [options] <command> [params]  "
+                        "Usage:  bitfinite-cli [options] <command> [params]  "
                         "Send command to " PACKAGE_NAME "\n"
-                        "or:     bitcoin-cli [options] -named <command> "
-                        "[name=value]...  Send command to " PACKAGE_NAME
-                        " (with named arguments)\n"
-                        "or:     bitcoin-cli [options] help                "
+                        "or:     bitfinite-cli [options] -named <command> "
+                        "[name=value]...  Send command to " PACKAGE_NAME " (with named arguments)\n"
+                        "or:     bitfinite-cli [options] help                "
                         "List commands\n"
-                        "or:     bitcoin-cli [options] help <command>      Get "
+                        "or:     bitfinite-cli [options] help <command>      Get "
                         "help for a command\n";
 
             strUsage += "\n" + gArgs.GetHelpMessage();
@@ -182,14 +164,12 @@ static int AppInitRPC(int argc, char *argv[]) {
         return EXIT_SUCCESS;
     }
     if (!fs::is_directory(GetDataDir(false))) {
-        fprintf(stderr,
-                "Error: Specified data directory \"%s\" does not exist.\n",
+        fprintf(stderr, "Error: Specified data directory \"%s\" does not exist.\n",
                 gArgs.GetArg("-datadir", "").c_str());
         return EXIT_FAILURE;
     }
     if (!gArgs.ReadConfigFiles(error, true)) {
-        fprintf(stderr, "Error reading configuration file: %s\n",
-                error.c_str());
+        fprintf(stderr, "Error reading configuration file: %s\n", error.c_str());
         return EXIT_FAILURE;
     }
     // Check for -testnet or -regtest parameter (BaseParams() calls are only
@@ -272,8 +252,7 @@ static void http_error_cb(enum evhttp_request_error err, void *ctx) {
 class BaseRequestHandler {
 public:
     virtual ~BaseRequestHandler() {}
-    virtual UniValue PrepareRequest(const std::string &method,
-                                    const std::vector<std::string> &args) = 0;
+    virtual UniValue PrepareRequest(const std::string &method, const std::vector<std::string> &args) = 0;
     virtual UniValue ProcessReply(const UniValue &batch_in) = 0;
 };
 
@@ -285,8 +264,7 @@ public:
     const int ID_WALLETINFO = 2;
 
     /** Create a simulated `getinfo` request. */
-    UniValue PrepareRequest(const std::string &method,
-                            const std::vector<std::string> &args) override {
+    UniValue PrepareRequest(const std::string &method, const std::vector<std::string> &args) override {
         if (!args.empty()) {
             throw std::runtime_error("-getinfo takes no arguments");
         }
@@ -341,21 +319,17 @@ public:
 /** Process default single requests */
 class DefaultRequestHandler : public BaseRequestHandler {
 public:
-    UniValue PrepareRequest(const std::string &method,
-                            const std::vector<std::string> &args) override {
+    UniValue PrepareRequest(const std::string &method, const std::vector<std::string> &args) override {
         if (gArgs.GetBoolArg("-named", DEFAULT_NAMED)) {
             return JSONRPCRequestObj(std::string(method), RPCConvertNamedValues(method, args), 1);
         }
         return JSONRPCRequestObj(std::string(method), RPCConvertValues(method, args), 1);
     }
 
-    UniValue ProcessReply(const UniValue &reply) override {
-        return UniValue(reply.get_obj());
-    }
+    UniValue ProcessReply(const UniValue &reply) override { return UniValue(reply.get_obj()); }
 };
 
-static UniValue CallRPC(BaseRequestHandler *rh, const std::string &strMethod,
-                        const std::vector<std::string> &args) {
+static UniValue CallRPC(BaseRequestHandler *rh, const std::string &strMethod, const std::vector<std::string> &args) {
     std::string host;
     // In preference order, we choose the following for the port:
     //     1. -rpcport
@@ -369,15 +343,11 @@ static UniValue CallRPC(BaseRequestHandler *rh, const std::string &strMethod,
     raii_event_base base = obtain_event_base();
 
     // Synchronously look up hostname
-    raii_evhttp_connection evcon =
-        obtain_evhttp_connection_base(base.get(), host, port);
-    evhttp_connection_set_timeout(
-        evcon.get(),
-        gArgs.GetArg("-rpcclienttimeout", DEFAULT_HTTP_CLIENT_TIMEOUT));
+    raii_evhttp_connection evcon = obtain_evhttp_connection_base(base.get(), host, port);
+    evhttp_connection_set_timeout(evcon.get(), gArgs.GetArg("-rpcclienttimeout", DEFAULT_HTTP_CLIENT_TIMEOUT));
 
     HTTPReply response;
-    raii_evhttp_request req =
-        obtain_evhttp_request(http_request_done, (void *)&response);
+    raii_evhttp_request req = obtain_evhttp_request(http_request_done, (void *)&response);
     if (req == nullptr) {
         throw std::runtime_error("create http request failed");
     }
@@ -395,23 +365,19 @@ static UniValue CallRPC(BaseRequestHandler *rh, const std::string &strMethod,
             failedToGetAuthCookie = true;
         }
     } else {
-        strRPCUserColonPass = gArgs.GetArg("-rpcuser", "") + ":" +
-                              gArgs.GetArg("-rpcpassword", "");
+        strRPCUserColonPass = gArgs.GetArg("-rpcuser", "") + ":" + gArgs.GetArg("-rpcpassword", "");
     }
 
-    struct evkeyvalq *output_headers =
-        evhttp_request_get_output_headers(req.get());
+    struct evkeyvalq *output_headers = evhttp_request_get_output_headers(req.get());
     assert(output_headers);
     evhttp_add_header(output_headers, "Host", host.c_str());
     evhttp_add_header(output_headers, "Connection", "close");
-    evhttp_add_header(
-        output_headers, "Authorization",
-        (std::string("Basic ") + EncodeBase64(strRPCUserColonPass)).c_str());
+    evhttp_add_header(output_headers, "Authorization",
+                      (std::string("Basic ") + EncodeBase64(strRPCUserColonPass)).c_str());
 
     // Attach request data
     std::string strRequest = UniValue::stringify(rh->PrepareRequest(strMethod, args)) + "\n";
-    struct evbuffer *output_buffer =
-        evhttp_request_get_output_buffer(req.get());
+    struct evbuffer *output_buffer = evhttp_request_get_output_buffer(req.get());
     assert(output_buffer);
     evbuffer_add(output_buffer, strRequest.data(), strRequest.size());
 
@@ -419,8 +385,7 @@ static UniValue CallRPC(BaseRequestHandler *rh, const std::string &strMethod,
     std::string endpoint = "/";
     if (!gArgs.GetArgs("-rpcwallet").empty()) {
         std::string walletName = gArgs.GetArg("-rpcwallet", "");
-        char *encodedURI =
-            evhttp_uriencode(walletName.c_str(), walletName.size(), false);
+        char *encodedURI = evhttp_uriencode(walletName.c_str(), walletName.size(), false);
         if (encodedURI) {
             endpoint = "/wallet/" + std::string(encodedURI);
             free(encodedURI);
@@ -428,8 +393,7 @@ static UniValue CallRPC(BaseRequestHandler *rh, const std::string &strMethod,
             throw CConnectionFailed("uri-encode failed");
         }
     }
-    int r = evhttp_make_request(evcon.get(), req.get(), EVHTTP_REQ_POST,
-                                endpoint.c_str());
+    int r = evhttp_make_request(evcon.get(), req.get(), EVHTTP_REQ_POST, endpoint.c_str());
     // ownership moved to evcon in above call
     req.release();
     if (r != 0) {
@@ -442,32 +406,25 @@ static UniValue CallRPC(BaseRequestHandler *rh, const std::string &strMethod,
         std::string responseErrorMessage;
         if (response.error != -1) {
             responseErrorMessage =
-                strprintf(" (error code %d - \"%s\")", response.error,
-                          http_errorstring(response.error));
+                strprintf(" (error code %d - \"%s\")", response.error, http_errorstring(response.error));
         }
-        throw CConnectionFailed(
-            strprintf("Could not connect to the server %s:%d%s\n\nMake sure "
-                      "the bitcoind server is running and that you are "
-                      "connecting to the correct RPC port.",
-                      host, port, responseErrorMessage));
+        throw CConnectionFailed(strprintf("Could not connect to the server %s:%d%s\n\nMake sure "
+                                          "the bitfinited server is running and that you are "
+                                          "connecting to the correct RPC port.",
+                                          host, port, responseErrorMessage));
     } else if (response.status == HTTP_UNAUTHORIZED) {
         if (failedToGetAuthCookie) {
-            throw std::runtime_error(strprintf(
-                "Could not locate RPC credentials. No authentication cookie "
-                "could be found, and RPC password is not set.  See "
-                "-rpcpassword and -stdinrpcpass.  Configuration file: (%s)",
-                GetConfigFile(gArgs.GetArg("-conf", BITCOIN_CONF_FILENAME))
-                    .string()
-                    .c_str()));
-        } else {
             throw std::runtime_error(
-                "Authorization failed: Incorrect rpcuser or rpcpassword");
+                strprintf("Could not locate RPC credentials. No authentication cookie "
+                          "could be found, and RPC password is not set.  See "
+                          "-rpcpassword and -stdinrpcpass.  Configuration file: (%s)",
+                          GetConfigFile(gArgs.GetArg("-conf", BITCOIN_CONF_FILENAME)).string().c_str()));
+        } else {
+            throw std::runtime_error("Authorization failed: Incorrect rpcuser or rpcpassword");
         }
-    } else if (response.status >= 400 && response.status != HTTP_BAD_REQUEST &&
-               response.status != HTTP_NOT_FOUND &&
+    } else if (response.status >= 400 && response.status != HTTP_BAD_REQUEST && response.status != HTTP_NOT_FOUND &&
                response.status != HTTP_INTERNAL_SERVER_ERROR) {
-        throw std::runtime_error(
-            strprintf("server returned HTTP error %d", response.status));
+        throw std::runtime_error(strprintf("server returned HTTP error %d", response.status));
     } else if (response.body.empty()) {
         throw std::runtime_error("no response from server");
     }
@@ -479,8 +436,7 @@ static UniValue CallRPC(BaseRequestHandler *rh, const std::string &strMethod,
     }
     UniValue reply = rh->ProcessReply(valReply);
     if (reply.empty()) {
-        throw std::runtime_error(
-            "expected reply to have result, error and id properties");
+        throw std::runtime_error("expected reply to have result, error and id properties");
     }
 
     return reply;
@@ -503,8 +459,7 @@ static int CommandLineRPC(int argc, char *argv[]) {
             }
             gArgs.ForceSetArg("-rpcpassword", rpcPass);
         }
-        std::vector<std::string> args =
-            std::vector<std::string>(&argv[1], &argv[argc]);
+        std::vector<std::string> args = std::vector<std::string>(&argv[1], &argv[argc]);
         if (gArgs.GetBoolArg("-stdin", false)) {
             // Read one arg per line from stdin and append
             std::string line;
@@ -520,8 +475,7 @@ static int CommandLineRPC(int argc, char *argv[]) {
         } else {
             rh.reset(new DefaultRequestHandler());
             if (args.size() < 1) {
-                throw std::runtime_error(
-                    "too few parameters (need at least command)");
+                throw std::runtime_error("too few parameters (need at least command)");
             }
             method = args[0];
             // Remove trailing method name from arguments vector
@@ -549,20 +503,16 @@ static int CommandLineRPC(int argc, char *argv[]) {
                     if (error.isObject()) {
                         const UniValue &errCode = error["code"];
                         const UniValue &errMsg = error["message"];
-                        strPrint =
-                            errCode.isNull()
-                                ? ""
-                                : "error code: " + errCode.getValStr() + "\n";
+                        strPrint = errCode.isNull() ? "" : "error code: " + errCode.getValStr() + "\n";
 
                         if (errMsg.isStr()) {
                             strPrint += "error message:\n" + errMsg.get_str();
                         }
 
-                        if (errCode.isNum() &&
-                            errCode.get_int() == RPC_WALLET_NOT_SPECIFIED) {
+                        if (errCode.isNum() && errCode.get_int() == RPC_WALLET_NOT_SPECIFIED) {
                             strPrint += "\nTry adding "
                                         "\"-rpcwallet=<filename>\" option to "
-                                        "bitcoin-cli command line.";
+                                        "bitfinite-cli command line.";
                         }
                     }
                 } else {

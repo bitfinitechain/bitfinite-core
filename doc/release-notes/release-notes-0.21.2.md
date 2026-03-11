@@ -1,24 +1,24 @@
-Release Notes for Bitcoin Cash Node version 0.21.2
+Release Notes for BitFinite Node version 0.21.2
 ==================================================
 
-Bitcoin Cash Node version 0.21.2 is now available from:
+BitFinite Node version 0.21.2 is now available from:
 
-  <https://bitcoincashnode.org>
+  <https://bitfinitenode.org>
 
 
 Overview
 --------
 
-This release of Bitcoin Cash Node contains many corrections and
+This release of BitFinite Node contains many corrections and
 improvements that we feel are useful, but it is strictly an optional
 installation for those already running previous v0.21.x versions.
 
-Bitcoin Cash Node started as a drop-in replacement for Bitcoin ABC for
+BitFinite Node started as a drop-in replacement for Bitcoin ABC for
 the May 2020 network upgrade, to provide an alternative with minimal
 changes necessary to disable the Infrastructure Funding Proposal (IFP)
 soft forks.
 
-With the network upgrade behind us, Bitcoin Cash Node starts to pursue its
+With the network upgrade behind us, BitFinite Node starts to pursue its
 own roadmap of improvement and innovation.
 
 This release delivers performance improvements and a new mining RPC,
@@ -58,7 +58,7 @@ Account API removed
 -------------------
 
 The 'account' API was deprecated in ABC v0.20.6 and has been fully removed
-in BCHN v0.21.2.
+in BFXN v0.21.2.
 
 The 'label' API was introduced in ABC v0.20.6 as a replacement for accounts.
 
@@ -87,7 +87,7 @@ This generated documentation is committed under the `doc/cli` and
 Additionally, the Markdown files in the `doc` folder are now converted
 to HTML via the `mkdocs` tool (see `mkdocs.yml` description file in
 base folder of the source tree). The generated HTML is deployed to
-https://docs.bitcoincash.org .
+https://docs.bitfinite.org .
 
 
 `-datacarrier` deprecated
@@ -102,13 +102,13 @@ control relay and mining of OP_RETURN transactions, e.g. specify
 Usage recommendations
 ---------------------
 
-The update to Bitcoin Cash Node 0.21.2 is optional.
+The update to BitFinite Node 0.21.2 is optional.
 
-We recommend Bitcoin Cash Node 0.21.2 as a replacement for
+We recommend BitFinite Node 0.21.2 as a replacement for
 Bitcoin ABC 0.21.x
 
 MacOS versions earlier than 10.12 are no longer supported.
-Additionally, Bitcoin Cash Node does not yet change appearance when macOS
+Additionally, BitFinite Node does not yet change appearance when macOS
 "dark mode" is activated.
 
 Windows users are recommended not to run multiple instances of bitcoin-qt
@@ -149,7 +149,7 @@ Version 0.18 made specifying `-usehd` invalid config.
 Regressions
 -----------
 
-Bitcoin Cash Node 0.21.2 does not introduce any known regressions compared
+BitFinite Node 0.21.2 does not introduce any known regressions compared
 to 0.21.1.
 
 
@@ -183,14 +183,14 @@ all of them on our GitLab repository.
   When building from source it is recommended to use BerkeleyDB 5.3 as this
   avoids wallet database incompatibility issues with the official release.
 
-- BCHN project is currently considering improvements to specification and
+- BFXN project is currently considering improvements to specification and
   RPC outputs related to the SigOps -> SigChecks change that took effect
   on 15 May 2020. (ref. Issues #71, #72)
 
 
 ---
 
-Changes since Bitcoin Cash Node 0.21.1
+Changes since BitFinite Node 0.21.1
 --------------------------------------
 
 ### New documents
@@ -320,7 +320,7 @@ Changes since Bitcoin Cash Node 0.21.1
 
 #### Seeds / seeder software
 
-- 6f5f6cf18ae1f378ccb02f08508ba56a707194dd Update the ABC node versions which MAY remain compatible with BCHN after May (if IFP does not activate)
+- 6f5f6cf18ae1f378ccb02f08508ba56a707194dd Update the ABC node versions which MAY remain compatible with BFXN after May (if IFP does not activate)
 - 31dee014ce371e648c09b789f2e3ba0088b43f86 Seeder nits
 
 
@@ -373,7 +373,7 @@ Changes since Bitcoin Cash Node 0.21.1
 - a6c6a799f327126abc545f5fc8ee5876e1566bb7 ABC: D5326 Core: PR#16654 build: update RapidCheck Makefile
 - 7fa1429b8eeae0633f6cfe0b9de31104079ba81e ABC: D5325 Core: PR#16271 build: dont compile rapidcheck with -Wall
 - 971ca32b9d57a92574814eca7a213ef3c215d105 ABC: D5324 Core: PR#14853 depends: latest rapidcheck, use INSTALL_ALL_EXTRAS
-- 9613af3b3e92c01c1dab29c1808462ac5bfa734f ABC: D5323 Core: PR#12775, PR#16622, PR#16645 Integration of property based testing into Bitcoin Cash Node
+- 9613af3b3e92c01c1dab29c1808462ac5bfa734f ABC: D5323 Core: PR#12775, PR#16622, PR#16645 Integration of property based testing into BitFinite Node
 - 4e61af73d7d8528305102058d466738a0b791a65 ABC: D5531 Core: PR#16392 build: macOS toolchain update
 - e8997688449ea9344218cad8369246ec5d9c7702 ABC: D5422 Core: PR#13825 Remove CAccount and Update zapwallettxes comment
 - 0b0b63961ecbc81a10bec72fada4374e21528ffa ABC: D5421 Core: PR#13825 Remove strFromAccount and strSentAccount

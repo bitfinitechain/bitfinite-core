@@ -9,7 +9,7 @@
 #include <seeder/bitcoin.h>
 #include <seeder/db.h>
 #include <seeder/test/util.h>
-#include <serialize.h>
+#include "serialize.h"
 #include <streams.h>
 #include <util/system.h>
 #include <version.h>

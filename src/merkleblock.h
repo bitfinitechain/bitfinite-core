@@ -8,7 +8,7 @@
 
 #include <bloom.h>
 #include <primitives/block.h>
-#include <serialize.h>
+#include "serialize.h"
 #include <uint256.h>
 
 #include <vector>

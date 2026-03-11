@@ -567,7 +567,7 @@ void CoinControlDialog::updateLabels(WalletModel *model, QDialog *dialog) {
     }
 
     // actually update labels
-    int nDisplayUnit = BitcoinUnits::BCH;
+    int nDisplayUnit = BitcoinUnits::BFX;
     if (model && model->getOptionsModel()) {
         nDisplayUnit = model->getOptionsModel()->getDisplayUnit();
     }
@@ -731,7 +731,7 @@ void CoinControlDialog::updateView() {
                 sAddress = QString::fromStdString(
                     EncodeCashAddr(outputAddress, model->getChainParams()));
 
-                // if listMode or change => show Bitcoin Cash address. In tree mode,
+                // if listMode or change => show BitFinite address. In tree mode,
                 // address is not shown again for direct wallet address outputs
                 if (!treeMode || (!(sAddress == sWalletAddress))) {
                     itemOutput->setText(COLUMN_ADDRESS, sAddress);

@@ -1,9 +1,9 @@
 bitcoin-seeder
 ==============
 
-Bitcoin-seeder is a crawler for the Bitcoin Cash network, which exposes a list
+Bitcoin-seeder is a crawler for the BitFinite network, which exposes a list
 of reliable nodes via a built-in DNS server. It is derived from Pieter Wuille's
-bitcoin-seeder, modified for use on the Bitcoin Cash network.
+bitcoin-seeder, modified for use on the BitFinite network.
 
 Features:
 
@@ -56,7 +56,7 @@ Generate Seed Lists
 -------------------
 
 Bitcoin-seeder is also be used to generate the seed lists that are compiled
-into every Bitcoin Cash Node release. It produces the `dnsseed.dump` files that are
+into every BitFinite Node release. It produces the `dnsseed.dump` files that are
 used as inputs to the scripts in [contrib/seeds](/contrib/seeds) to generate
 the seed lists. To generate seed lists, the seeder should be run continuously
 for 30 days or more.

@@ -7,7 +7,7 @@
 #pragma once
 
 #include <net.h>
-#include <serialize.h>
+#include "serialize.h"
 
 class CNetMsgMaker {
 public:

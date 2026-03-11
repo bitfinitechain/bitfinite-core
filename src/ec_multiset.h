@@ -5,7 +5,7 @@
 #pragma once
 
 #include <pubkey.h>
-#include <serialize.h>
+#include "serialize.h"
 #include <span.h>
 #include <uint256.h>
 #include <util/saltedhashers.h>

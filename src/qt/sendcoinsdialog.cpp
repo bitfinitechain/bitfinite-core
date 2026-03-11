@@ -845,7 +845,7 @@ void SendCoinsDialog::coinControlChangeEdited(const QString &text) {
         } else if (!IsValidDestination(dest)) {
             // Invalid address
             ui->labelCoinControlChangeLabel->setText(
-                tr("Warning: Invalid Bitcoin Cash address"));
+                tr("Warning: Invalid BitFinite address"));
         } else {
             // Valid address
             if (!model->wallet().isSpendable(dest)) {

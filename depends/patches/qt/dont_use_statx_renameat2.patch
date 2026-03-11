@@ -52,7 +52,7 @@ diff -urN a/qtbase/src/corelib/io/qfilesystemengine_unix.cpp b/qtbase/src/coreli
 -// whitelist and several Android vendors can't be bothered to update the list.
 -#  undef STATX_BASIC_STATS
 -#endif
-+// BCHN patch: statx() is disabled so we can be compatible with GLIBC 2.27 always
++// BFXN patch: statx() is disabled so we can be compatible with GLIBC 2.27 always
 +#undef STATX_BASIC_STATS
  
  #ifndef STATX_ALL

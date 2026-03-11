@@ -22,7 +22,7 @@
 #include <random.h>
 #include <script/script_flags.h>
 #include <script/standard.h>
-#include <serialize.h>
+#include "serialize.h"
 #include <streams.h>
 #include <tinyformat.h>
 #include <uint256.h>

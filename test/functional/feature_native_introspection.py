@@ -875,7 +875,7 @@ class NativeIntrospectionTest(BitcoinTestFramework):
         self.restart_node(0, self.extra_args[0] + ["-reindex-chainstate=1"])
         assert_equal(node.getbestblockhash(), tiphash)
 
-        # The below tests have been disabled since BCHN no longer has the -upgrade8activationtime argument
+        # The below tests have been disabled since BFXN no longer has the -upgrade8activationtime argument
         # (it has activated already and the height has been hard-coded for all chains).
         """
         # 2. Restart the node with native introspection disabled

@@ -1,12 +1,12 @@
-# Release Notes for Bitcoin Cash Node version 23.1.0
+# Release Notes for BitFinite Node version 23.1.0
 
-Bitcoin Cash Node version 23.1.0 is now available from:
+BitFinite Node version 23.1.0 is now available from:
 
-  <https://bitcoincashnode.org>
+  <https://bitfinitenode.org>
 
 ## Overview
 
-This is a minor release of Bitcoin Cash Node (BCHN) containing several minor bugfixes and some performance improvements, such as:
+This is a minor release of BitFinite Node (BFXN) containing several minor bugfixes and some performance improvements, such as:
 
 - Mempool: 40% performance speedup in removing confirmed txs and multiple speedups for other operations as well.
 - Mempool: removal of all pre-May 15 2021 logic and data structures, including structures dealing with unconfirmed ancestor limits, saving memory and CPU cycles.
@@ -23,7 +23,7 @@ This is a minor release of Bitcoin Cash Node (BCHN) containing several minor bug
 
 ## Usage recommendations
 
-Users who are running v22.x.x or earlier are strongly urged to upgrade to v23.1.0, since the v22 series (and previous) do not implement the recent [May 15, 2021 Network Upgrade](https://upgradespecs.bitcoincashnode.org/2021-05-15-upgrade/).  Users running v23.0.0 may also wish to upgrade to this version, since it does improve performance and does fix some minor bugs.
+Users who are running v22.x.x or earlier are strongly urged to upgrade to v23.1.0, since the v22 series (and previous) do not implement the recent [May 15, 2021 Network Upgrade](https://upgradespecs.bitfinitenode.org/2021-05-15-upgrade/).  Users running v23.0.0 may also wish to upgrade to this version, since it does improve performance and does fix some minor bugs.
 
 
 ## Network changes
@@ -69,7 +69,7 @@ The following CLI args (all related to the now-removed ancestor limit) have been
 
 This new method should help merchant or wallet server implementors quickly decide if a transaction is reliable for 0-conf (1.0: has no DSProofs and is eligible for DSProof mechanism), or is unreliable for 0-conf (<1.0: has DSProofs, or is ineligible for the DSProof mechanism, or has a very long ancestor chain).
 
-Please refer to the documentation pages for [getdsproofscore](https://docs.bitcoincashnode.org/doc/json-rpc/getdsproofscore/) for details about additional arguments and the returned data.
+Please refer to the documentation pages for [getdsproofscore](https://docs.bitfinitenode.org/doc/json-rpc/getdsproofscore/) for details about additional arguments and the returned data.
 
 ## Low-level RPC changes
 
@@ -81,18 +81,18 @@ The `getblocktemplate` and `getblocktemplatelight` template-request dictionary n
 
 ## User interface changes
 
-Bitcoin Cash Node 23.1.0 does not introduce any user interface changes as compared to 23.0.0.
+BitFinite Node 23.1.0 does not introduce any user interface changes as compared to 23.0.0.
 
 ## Regressions
 
-Bitcoin Cash Node 23.1.0 does not introduce any known regressions as compared to 23.0.0.
+BitFinite Node 23.1.0 does not introduce any known regressions as compared to 23.0.0.
 
 ## Known Issues
 
 Some issues could not be closed in time for release, but we are tracking all of them on our GitLab repository.
 
 - MacOS versions earlier than 10.12 are no longer supported. Additionally,
-  Bitcoin Cash Node does not yet change appearance when macOS "dark mode"
+  BitFinite Node does not yet change appearance when macOS "dark mode"
   is activated.
 
 - Windows users are recommended not to run multiple instances of bitcoin-qt
@@ -123,7 +123,7 @@ Some issues could not be closed in time for release, but we are tracking all of 
 
 - The `test_bitcoin-qt` test executable fails on Linux Mint 20
   (see Issue #144). This does not otherwise appear to impact the functioning
-  of the BCHN software on that platform.
+  of the BFXN software on that platform.
 
 - An 'autotools' build (the old build method) fails on OSX when using Clang.
   (Issue #129)
@@ -166,7 +166,7 @@ Some issues could not be closed in time for release, but we are tracking all of 
 
 ---
 
-## Changes since Bitcoin Cash Node 23.0.0
+## Changes since BitFinite Node 23.0.0
 
 ### New documents
 
@@ -174,7 +174,7 @@ Some issues could not be closed in time for release, but we are tracking all of 
 
 ### Removed documents
 
-There are no removed documents in the BCHN software repository.
+There are no removed documents in the BFXN software repository.
 
 ### Notable commits grouped by functionality
 

@@ -1,12 +1,12 @@
-# Bitcoin Cash Node Setup
+# BitFinite Node Setup
 
-Bitcoin Cash Node is a node and wallet implementation for the Bitcoin Cash network.
-It downloads and, by default, stores the entire history of Bitcoin Cash
+BitFinite Node is a node and wallet implementation for the BitFinite network.
+It downloads and, by default, stores the entire history of BitFinite
 transactions, which requires a few hundred gigabytes of disk space. Depending on
 the speed of your computer and network connection, the synchronization process
 can take anywhere from a few hours to a day or more.
 
-To download Bitcoin Cash Node, visit [bitcoincashnode.org](https://bitcoincashnode.org/).
+To download BitFinite Node, visit [bitfinitenode.org](https://bitfinitenode.org/).
 
 ## Verify
 
@@ -18,7 +18,7 @@ Get the keys for versions 25.0.0 or later:
 
 ```
 VERSION="25.0.0"
-URL="https://download.bitcoincashnode.org/releases/${VERSION}/src/bitcoin-cash-node-${VERSION}.tar.gz"
+URL="https://download.bitfinitenode.org/releases/${VERSION}/src/bitcoin-cash-node-${VERSION}.tar.gz"
 KEYS_FILE="bitcoin-cash-node-${VERSION}/contrib/gitian-signing/keys.txt"
 wget -q -O - "${URL}" | tar -zxOf - "${KEYS_FILE}" | while read FINGERPRINT _; do gpg --recv-keys "${FINGERPRINT}"; done
 ```
@@ -26,7 +26,7 @@ wget -q -O - "${URL}" | tar -zxOf - "${KEYS_FILE}" | while read FINGERPRINT _; d
 Get the keys for version 25.0.0:
 
 ```
-URL="https://download.bitcoincashnode.org/keys/keys.txt"
+URL="https://download.bitfinitenode.org/keys/keys.txt"
 wget -q -O - "${URL}" | while read FINGERPRINT _; do gpg --recv-keys "${FINGERPRINT}"; done
 ```
 
@@ -47,7 +47,7 @@ unexpectedly, the presence of those warnings should be heeded with extreme cauti
 
 ## Running
 
-The following are some helpful notes on how to run Bitcoin Cash Node on your
+The following are some helpful notes on how to run BitFinite Node on your
 native platform.
 
 ### Unix
@@ -67,4 +67,4 @@ Drag `bitcoin-cash-node` to your applications folder, and then run `bitcoin-cash
 
 ## Help
 
-- Ask for help on the [Bitcoin Cash Node Subreddit](https://www.reddit.com/r/bchnode/), [Bitcoin Cash Node Slack](https://join.slack.com/t/bitcoincashnode/shared_invite/zt-egg3c36d-2cglIrKcbnGpIQFaKFzCWA) or [Bitcoin Cash Node Telegram](https://t.me/bitcoincashnode).
+- Ask for help on the [BitFinite Node Subreddit](https://www.reddit.com/r/bchnode/), [BitFinite Node Slack](https://join.slack.com/t/bitfinitenode/shared_invite/zt-egg3c36d-2cglIrKcbnGpIQFaKFzCWA) or [BitFinite Node Telegram](https://t.me/bitfinitenode).

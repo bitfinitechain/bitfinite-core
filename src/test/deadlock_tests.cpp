@@ -12,7 +12,7 @@
 
 #include <atomic>
 #include <memory>
-#include <optional>
+#include "compat/optional.h"
 #include <thread>
 
 // The below code explicitly deadlocks in order to test the deadlock detector.

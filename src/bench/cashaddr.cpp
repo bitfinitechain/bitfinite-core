@@ -19,18 +19,18 @@ static void CashAddrEncode(benchmark::State &state) {
     const std::vector<uint8_t> buffer = PackCashAddrContent(content);
 
     BENCHMARK_LOOP {
-        cashaddr::Encode("bitcoincash", buffer);
+        cashaddr::Encode("bitfinite", buffer);
     }
 }
 
 static void CashAddrDecode(benchmark::State &state) {
     const char *addrWithPrefix =
-        "bitcoincash:qprnwmr02d7ky9m693qufj5mgkpf4wvssv0w86tkjd";
+        "bitfinite:qprnwmr02d7ky9m693qufj5mgkpf4wvssv0w86tkjd";
     const char *addrNoPrefix = "qprnwmr02d7ky9m693qufj5mgkpf4wvssv0w86tkjd";
 
     BENCHMARK_LOOP {
-        cashaddr::Decode(addrWithPrefix, "bitcoincash");
-        cashaddr::Decode(addrNoPrefix, "bitcoincash");
+        cashaddr::Decode(addrWithPrefix, "bitfinite");
+        cashaddr::Decode(addrNoPrefix, "bitfinite");
     }
 }
 

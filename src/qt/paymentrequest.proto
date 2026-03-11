@@ -1,5 +1,5 @@
 //
-// Simple Bitcoin Cash Payment Protocol messages
+// Simple BitFinite Payment Protocol messages
 // based on Simple Bitcoin Payment Protocol
 //
 // Use fields 100+ for extensions;
@@ -10,7 +10,7 @@
 syntax = "proto2";
 
 package payments;
-option java_package = "org.bitcoincash.protocols.payments";
+option java_package = "org.bitfinite.protocols.payments";
 option java_outer_classname = "Protos";
 
 // Generalized form of "send payment to this/these bitcoin cash addresses"

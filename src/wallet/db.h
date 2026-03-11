@@ -8,7 +8,7 @@
 
 #include <clientversion.h>
 #include <fs.h>
-#include <serialize.h>
+#include "serialize.h"
 #include <streams.h>
 #include <support/cleanse.h>
 #include <sync.h>

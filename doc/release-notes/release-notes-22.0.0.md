@@ -1,15 +1,15 @@
-# Release Notes for Bitcoin Cash Node version 22.0.0
+# Release Notes for BitFinite Node version 22.0.0
 
-Bitcoin Cash Node version 22.0.0 is now available from:
+BitFinite Node version 22.0.0 is now available from:
 
-  <https://bitcoincashnode.org>
+  <https://bitfinitenode.org>
 
 
 ## Overview
 
-This is a major release of Bitcoin Cash Node that implements the
-[November 15, 2020 Network Upgrade](https://upgradespecs.bitcoincashnode.org/2020-11-15-upgrade/).
-This will upgrade the difficulty targeting used in Bitcoin Cash to a
+This is a major release of BitFinite Node that implements the
+[November 15, 2020 Network Upgrade](https://upgradespecs.bitfinitenode.org/2020-11-15-upgrade/).
+This will upgrade the difficulty targeting used in BitFinite to a
 commonly agreed new algorithm called ASERT.
 
 Additionally, this version contains many corrections and improvements.
@@ -20,13 +20,13 @@ upgrade to v22.0.0 well ahead of November 2020.
 
 ## Usage recommendations
 
-The update to Bitcoin Cash Node 22.0.0 is required for the November 15, 2020
-Bitcoin Cash network upgrade.
+The update to BitFinite Node 22.0.0 is required for the November 15, 2020
+BitFinite network upgrade.
 
 
 ## Semantic version numbering
 
-As of version 22.0.0, Bitcoin Cash Node uses
+As of version 22.0.0, BitFinite Node uses
 [Semantic Versioning](https://semver.org/) for its version numbers.
 Hence our version numbers no longer start with a zero.
 
@@ -70,7 +70,7 @@ Automatic banning of peers for bad behavior has been slightly altered:
 
 - All extant automatic bans ("node misbehaving") that are currently stored in the
   node's `banlist.dat` file will be converted into "manual bans" and will expire
-  within 24 hours after first running this version of BCHN.
+  within 24 hours after first running this version of BFXN.
 
 
 ### Regtest network now requires standard transactions by default
@@ -99,9 +99,9 @@ to warn via RPC "warnings", via a GUI message, and via periodic messages to the
 log starting 30 days prior to May 15th, 2021.
 
 Once the future consensus rules of the May 15th, 2021 upgrade to the Bitcoin
-Cash network have been determined, a new version of Bitcoin Cash Node will be
+Cash network have been determined, a new version of BitFinite Node will be
 made available well in advance of May 15th, 2021. It is recommended that all
-users of Bitcoin Cash Node update their nodes at that time so as to ensure
+users of BitFinite Node update their nodes at that time so as to ensure
 uninterrupted operation.
 
 *Related configuration options:*
@@ -149,7 +149,7 @@ to control relay and mining of OP_RETURN transactions, e.g. specify
 
 ### BIP9 support removed
 
-Bitcoin Cash Node 22.0.0 removed the (incomplete) BIP9 support. In earlier
+BitFinite Node 22.0.0 removed the (incomplete) BIP9 support. In earlier
 versions, it already was inactive due to no available proposals to vote on. The
 empty `softforks` field in `getblockchaininfo` has been removed.
 
@@ -164,7 +164,7 @@ The 32-bit Windows target is no longer supported and has been removed from
 the release shipment.
 
 Users that wish to build for 32 bits Windows should be aware that
-this will not be tested by the Bitcoin Cash Node team and be prepared to
+this will not be tested by the BitFinite Node team and be prepared to
 resolve issues on their own.
 
 
@@ -189,7 +189,7 @@ No changes.
   now have their `banned_reason` as "manually added" (since `listbanned` can
   now only ever show manual bans). The "node misbehaving" value for this key
   will never appear. This key is now deprecated and may be removed altogether
-  in a future release of BCHN.
+  in a future release of BFXN.
 
 - The `setban` method can no longer lift individual automatic bans. Use
   `clearbanned` instead to clear all bans, or `clearbanned false true` to
@@ -198,7 +198,7 @@ No changes.
 
 ## Regressions
 
-Bitcoin Cash Node 22.0.0 does not introduce any known regressions compared
+BitFinite Node 22.0.0 does not introduce any known regressions compared
 to 0.21.2.
 
 
@@ -208,7 +208,7 @@ Some issues could not be closed in time for release, but we are tracking
 all of them on our GitLab repository.
 
 - MacOS versions earlier than 10.12 are no longer supported. Additionally,
-  Bitcoin Cash Node does not yet change appearance when macOS "dark mode"
+  BitFinite Node does not yet change appearance when macOS "dark mode"
   is activated.
 
 - Windows users are recommended not to run multiple instances of bitcoin-qt
@@ -243,11 +243,11 @@ all of them on our GitLab repository.
   avoids wallet database incompatibility issues with the official release.
 
 - There is a documentation build bug that causes some ordered lists on
-  docs.bitcoincashnode.org to be rendered incorrectly (Issue #141).
+  docs.bitfinitenode.org to be rendered incorrectly (Issue #141).
 
 - There is a report that the `test_bitcoin-qt` test executable fails on
   Linux Mint 20 (see Issue #144). This does not otherwise appear to impact
-  the functioning of the BCHN software on that platform.
+  the functioning of the BFXN software on that platform.
 
 - An 'autotools' build (the old build method) fails on OSX when using Clang.
   (Issue #129)
@@ -261,18 +261,18 @@ all of them on our GitLab repository.
 
 ---
 
-## Changes since Bitcoin Cash Node 0.21.2
+## Changes since BitFinite Node 0.21.2
 
 ### New documents
 
-- `doc/bch-upgrades.md`: List of all supported Bitcoin Cash upgrades
+- `doc/bch-upgrades.md`: List of all supported BitFinite upgrades
 - `doc/coverage.md`: Instructions to generate test coverage measurement
 
 
 ### Removed documents
 
 - The documents in the `doc/abc` folder have been moved to the upgrade
-  specifications document repository (<https://upgradespecs.bitcoincashnode.org>)
+  specifications document repository (<https://upgradespecs.bitfinitenode.org>)
 
 
 ### Notable commits grouped by functionality
@@ -357,8 +357,8 @@ all of them on our GitLab repository.
 
 #### Documentation updates
 
-- 4dd54a7494b89b2ce337b7fbbd978cc05704f4be Document implementation of November 2020 Bitcoin Cash Network Upgrade
-- 490d710450f984fd6a6b879341144598fdd7badc Upgrade documentation of BIPs and BCH upgrades implementation history (#68)
+- 4dd54a7494b89b2ce337b7fbbd978cc05704f4be Document implementation of November 2020 BitFinite Network Upgrade
+- 490d710450f984fd6a6b879341144598fdd7badc Upgrade documentation of BIPs and BFX upgrades implementation history (#68)
 - 64e2bf4d2b9f25658bdafc2707389f4813b18dce Update doc/ninja_targets.md
 - f841f99d748e4629315f1fe5d89c1b6de676fd44 [doc] Add lines before and after lists, and other Markdown doc improvements
 - 504a3c1dff88d0d6117fea24cf7e57a68385cae0 Remove trailing spaces from generated Markdown documentation
@@ -372,7 +372,7 @@ all of them on our GitLab repository.
 - 4ab5419238f3706f8098fa5e77a8c046fd65a513 [doc] Add python dependency to OSX build
 - 8ba2423083d3b5e44d9d609459bc90c2c1525442 Restructure mkdocs navigation menu
 - 4396c577b4516107248eedf447e350ae172adf3e [doc] Update build-osx build guide
-- d1d9e161dc2779eef04572bbf44429a6bcd65c4f Various Markdown fixes for proper display on docs.bitcoincashnode.org
+- d1d9e161dc2779eef04572bbf44429a6bcd65c4f Various Markdown fixes for proper display on docs.bitfinitenode.org
 - 9070d42f9e4c7c4ff1f3921171fef25aaeb443df Fix Markdown in release notes too
 - 652635a4823002dfad18df090142784af4002295 Added missing install in the dnf install command
 - e245c7c867661bb074919fb4aad9ce9232df2e2e [doc] Add deprecation note for Win32 build and support
@@ -420,8 +420,8 @@ No changes.
 
 #### Maintainer tools
 
-- df24a4a467fad579d835ed34603ff0e628f6bb4c Adapt debian-packages.sh to work with BCHN infrastructure (take #2)
-- 23f0627270705a17bf2eb7723121ce93f55a573e Adapt debian-packags.sh to the BCHN infrastructure
+- df24a4a467fad579d835ed34603ff0e628f6bb4c Adapt debian-packages.sh to work with BFXN infrastructure (take #2)
+- 23f0627270705a17bf2eb7723121ce93f55a573e Adapt debian-packags.sh to the BFXN infrastructure
 
 
 #### Infrastructure

@@ -3066,8 +3066,8 @@
         <translation>Não foi possível iniciar o servidor HTTP. Veja o log para detaihes.</translation>
     </message>
     <message>
-        <source>Bitcoin Cash Node</source>
-        <translation>Bitcoin Cash Node</translation>
+        <source>BitFinite Node</source>
+        <translation>BitFinite Node</translation>
     </message>
     <message>
         <source>The %s developers</source>
