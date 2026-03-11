@@ -144,3 +144,12 @@ nbproject/
 
 #Local Development Environment - Visual Studio Code
 .vscode
+
+# Release binaries & temp data (never commit these)
+BitFinite-release_*/
+release_v*/
+temp_datadir/
+test_output.txt
+update_branding.py
+check_full_charset.py
+verify_charset.py
