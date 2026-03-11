@@ -6,6 +6,9 @@
 
 #include "chainparams.h"
 
+#include <iostream>
+#include "arith_uint256.h"
+
 #include "amount.h"
 #include "chainparamsconstants.h"
 #include "chainparamsseeds.h"
@@ -50,7 +53,7 @@ static CBlock CreateGenesisBlock(const char *pszTimestamp, const CScript &genesi
  */
 CBlock CreateGenesisBlock(uint32_t nTime, uint32_t nNonce, uint32_t nBits, int32_t nVersion,
                           const Amount genesisReward) {
-    const char *pszTimestamp = "BFX 2026-01-30: BitFinite launches with enhanced security";
+    const char *pszTimestamp = "BFX 2026-03-11: BitFinite v3 - A new beginning";
     const CScript genesisOutputScript = CScript() << ParseHex("04678afdb0fe5548271967f1a67130b7105cd6a828e03909"
                                                               "a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112"
                                                               "de5c384df7ba0b8d578a4c702b6bf11d5f")
@@ -65,7 +68,7 @@ class CMainParams : public CChainParams {
 public:
     CMainParams() {
         strNetworkID = CBaseChainParams::MAIN;
-        consensus.nSubsidyHalvingInterval = 50000;
+        consensus.nSubsidyHalvingInterval = 210000;
 
         // --- BFX CLEAN SLATE: ACTIVATE ALL FORKS IMMEDIATELY ---
         // Setting heights to 0 ensures "Big Blocks" and "Script" features are active from Block 1.
@@ -111,13 +114,13 @@ public:
         assert(consensus.GetDefaultGeneratedBlockSizeBytes() <= consensus.nDefaultConsensusBlockSize);
 
         // --- BFX ASERT ANCHOR ---
-        // Bootstrap Phase: Blocks 0-10,000 use easy difficulty (0x1f7fffff)
-        // Transition Phase: Block 10,001+ transitions to BitAxe difficulty
-        // ASERT will smoothly adjust difficulty over ~2 days (half-life)
+        // ASERT activates from block 10,001 with BitAxe-targeted difficulty
+        // Anchor time = genesis_time + 10,001 blocks * 5min (300s)
+        // 1741651200 + (10001 * 300) = 1741651200 + 3000300 = 1744651500
         consensus.asertAnchorParams = Consensus::Params::ASERTAnchor{
-            10001,      // Anchor Height - transition at block 10,001
+            10001,      // Anchor Height
             0x1d01a000, // Anchor Bits (BitAxe difficulty ~100)
-            1741224300, // Anchor Time (genesis + 10,001 blocks * 5min = ~34.7 days)
+            1744651500, // Anchor Time
         };
 
         consensus.ablaConfig = abla::Config::MakeDefault(consensus.nDefaultConsensusBlockSize, /* fixedSize = */ false);
@@ -138,19 +141,40 @@ public:
         m_assumed_blockchain_size = 1;
         m_assumed_chain_state_size = 0;
 
-        // BFX GENESIS - 2026-01-30 Mainnet Launch
-        // Message: "BFX 2026-01-30: BitFinite launches with enhanced security"
-        // Time: 1738224000 (2026-01-30 00:00:00 UTC), Nonce: 35, Bits: 0x1f7fffff
-        genesis = CreateGenesisBlock(1738224000, 35, 0x1f7fffff, 1, 100 * COIN);
+        // BFX GENESIS - 2026-03-11 v3 Launch
+        // nBits = 0x1d00ffff (standard powLimit difficulty)
+        // Time: 1741651200 (2026-03-11 00:00:00 UTC)
+        genesis = CreateGenesisBlock(1741651200, 0, 0x1d00ffff, 1, 50 * COIN);
+
+        // --- TEMPORARY GENESIS MINER ---
+        // Mine the genesis block to find a valid nonce
+        if (true) {
+            arith_uint256 bnTarget;
+            bnTarget.SetCompact(genesis.nBits);
+            while (UintToArith256(genesis.GetHash()) > bnTarget) {
+                ++genesis.nNonce;
+                if (genesis.nNonce == 0) {
+                    ++genesis.nTime;
+                    std::cerr << "nTime incremented to " << genesis.nTime << std::endl;
+                }
+                if (genesis.nNonce % 1000000 == 0) {
+                    std::cerr << "Mining genesis... nonce=" << genesis.nNonce << std::endl;
+                }
+            }
+            std::cerr << "=== GENESIS MINED ===" << std::endl;
+            std::cerr << "nTime: " << genesis.nTime << std::endl;
+            std::cerr << "nNonce: " << genesis.nNonce << std::endl;
+            std::cerr << "nBits: 0x" << std::hex << genesis.nBits << std::dec << std::endl;
+            std::cerr << "Hash: " << genesis.GetHash().ToString() << std::endl;
+            std::cerr << "Merkle: " << genesis.hashMerkleRoot.ToString() << std::endl;
+        }
+        // --- END TEMPORARY GENESIS MINER ---
 
         consensus.hashGenesisBlock = genesis.GetHash();
 
-        // Verify Genesis Hash
-        assert(consensus.hashGenesisBlock ==
-               uint256S("0x7e9882cbfa7b59c327f0b3eb5c3549b62e92dab6d8eea1dd675366b927e374e2"));
-        // Verify Merkle Root
-        assert(genesis.hashMerkleRoot ==
-               uint256S("0x6b89c7254ce7c66e17fdc607fde751bd782f35fc05166c1f67dc42ba13c05bd5"));
+        // TODO: Replace with mined values
+        // assert(consensus.hashGenesisBlock == uint256S("0x..."));
+        // assert(genesis.hashMerkleRoot == uint256S("0x..."));
 
         // Clear old seeds
         vSeeds.clear();
