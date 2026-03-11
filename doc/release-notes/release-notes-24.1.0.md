@@ -1,12 +1,12 @@
-# Release Notes for Bitcoin Cash Node version 24.1.0
+# Release Notes for BitFinite Node version 24.1.0
 
-Bitcoin Cash Node version 24.1.0 is now available from:
+BitFinite Node version 24.1.0 is now available from:
 
-  <https://bitcoincashnode.org>
+  <https://bitfinitenode.org>
 
 ## Overview
 
-This is a minor release of Bitcoin Cash Node (BCHN), containing:
+This is a minor release of BitFinite Node (BFXN), containing:
 
 - Upgrade of TOR network support from v2 to v3
 - Upgrade checkpoints for May 15, 2022 upgrade
@@ -33,7 +33,7 @@ advised to keep running 24.0.0 until they can upgrade to Mojave.
   `-listenonion` configuration parameter will now be created as a Tor v3 service
   instead of Tor v2. The private key that was used for Tor v2 (if any) will be
   left untouched in the `onion_private_key` file in the data directory (see
-  `-datadir`) and can be removed if not needed. Bitcoin Cash Node will no longer
+  `-datadir`) and can be removed if not needed. BitFinite Node will no longer
   attempt to read it. The private key for the Tor v3 service will be saved in a
   file named `onion_v3_private_key`. To use the deprecated Tor v2 service (not
   recommended), then `onion_private_key` can be copied over
@@ -133,14 +133,14 @@ None.
 
 ## Regressions
 
-Bitcoin Cash Node 24.1.0 does not introduce any known regressions as compared to 24.0.0.
+BitFinite Node 24.1.0 does not introduce any known regressions as compared to 24.0.0.
 
 ## Known Issues
 
 Some issues could not be closed in time for release, but we are tracking all of them on our GitLab repository.
 
 - MacOS versions earlier than 10.14 are no longer supported. Additionally,
-  Bitcoin Cash Node does not yet change appearance when macOS "dark mode"
+  BitFinite Node does not yet change appearance when macOS "dark mode"
   is activated.
 
 - Windows users are recommended not to run multiple instances of bitcoin-qt
@@ -168,7 +168,7 @@ Some issues could not be closed in time for release, but we are tracking all of 
 
 - The `test_bitcoin-qt` test executable fails on Linux Mint 20
   (see Issue #144). This does not otherwise appear to impact the functioning
-  of the BCHN software on that platform.
+  of the BFXN software on that platform.
 
 - With a certain combination of build flags that included disabling
   the QR code library, a build failure was observed where an erroneous
@@ -208,7 +208,7 @@ Some issues could not be closed in time for release, but we are tracking all of 
 
 ---
 
-## Changes since Bitcoin Cash Node 24.0.0
+## Changes since BitFinite Node 24.0.0
 
 ### New documents
 

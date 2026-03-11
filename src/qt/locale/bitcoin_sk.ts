@@ -2831,8 +2831,8 @@
         <translation>Nepodarilo sa spustiť HTTP server. Pre viac detailov zobrazte debug log.</translation>
     </message>
     <message>
-        <source>Bitcoin Cash Node</source>
-        <translation>Bitcoin Cash Node</translation>
+        <source>BitFinite Node</source>
+        <translation>BitFinite Node</translation>
     </message>
     <message>
         <source>The %s developers</source>

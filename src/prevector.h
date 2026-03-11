@@ -33,8 +33,7 @@
  * The data type T must be movable by memmove/realloc(). Once we switch to C++,
  * move constructors can be used instead.
  */
-template <unsigned int N, typename T, typename Size = uint32_t,
-          typename Diff = int32_t>
+template <unsigned int N, typename T, typename Size = uint32_t, typename Diff = int32_t>
 class prevector {
 public:
     typedef Size size_type;
@@ -78,9 +77,7 @@ public:
             --(*this);
             return copy;
         }
-        difference_type friend operator-(iterator a, iterator b) {
-            return (&(*a) - &(*b));
-        }
+        difference_type friend operator-(iterator a, iterator b) { return (&(*a) - &(*b)); }
         iterator operator+(size_type n) { return iterator(ptr + n); }
         iterator &operator+=(size_type n) {
             ptr += n;
@@ -169,19 +166,13 @@ public:
             --(*this);
             return copy;
         }
-        difference_type friend operator-(const_iterator a, const_iterator b) {
-            return (&(*a) - &(*b));
-        }
-        const_iterator operator+(size_type n) {
-            return const_iterator(ptr + n);
-        }
+        difference_type friend operator-(const_iterator a, const_iterator b) { return (&(*a) - &(*b)); }
+        const_iterator operator+(size_type n) { return const_iterator(ptr + n); }
         const_iterator &operator+=(size_type n) {
             ptr += n;
             return *this;
         }
-        const_iterator operator-(size_type n) {
-            return const_iterator(ptr - n);
-        }
+        const_iterator operator-(size_type n) { return const_iterator(ptr - n); }
         const_iterator &operator-=(size_type n) {
             ptr -= n;
             return *this;
@@ -243,17 +234,14 @@ private:
     alignas(char *) direct_or_indirect _union = {};
     size_type _size = 0;
 
-    static_assert(alignof(char *) % alignof(size_type) == 0 &&
-                      sizeof(char *) % alignof(size_type) == 0,
+    static_assert(alignof(char *) % alignof(size_type) == 0 && sizeof(char *) % alignof(size_type) == 0,
                   "size_type cannot have more restrictive alignment "
                   "requirement than pointer");
-    static_assert(alignof(char *) % alignof(T) == 0,
-                  "value_type T cannot have more restrictive alignment "
-                  "requirement than pointer");
+    static_assert(alignof(char *) % alignof(T) == 0, "value_type T cannot have more restrictive alignment "
+                                                     "requirement than pointer");
 
-    static_assert(
-        std::is_trivially_copyable_v<T> && std::is_trivially_destructible_v<T>,
-        "value_type T must be trivially copyable and trivially destructible");
+    static_assert(std::is_trivially_copyable<T>::value && std::is_trivially_destructible<T>::value,
+                  "value_type T must be trivially copyable and trivially destructible");
 
     T *direct_ptr(difference_type pos) {
         return reinterpret_cast<T *>(_union.direct) + pos;
@@ -267,7 +255,9 @@ private:
     const T *indirect_ptr(difference_type pos) const {
         return reinterpret_cast<const T *>(_union.indirect) + pos;
     }
-    bool is_direct() const { return _size <= N; }
+    bool is_direct() const {
+        return _size <= N;
+    }
 
     void change_capacity(size_type new_capacity) {
         if (new_capacity <= N) {
@@ -286,13 +276,11 @@ private:
                 // allocator or new/delete so that handlers are called as
                 // necessary, but performance would be slightly degraded by
                 // doing so.
-                _union.indirect = static_cast<char *>(realloc(
-                    _union.indirect, ((size_t)sizeof(T)) * new_capacity));
+                _union.indirect = static_cast<char *>(realloc(_union.indirect, ((size_t)sizeof(T)) * new_capacity));
                 assert(_union.indirect);
                 _union.capacity = new_capacity;
             } else {
-                char *new_indirect = static_cast<char *>(
-                    malloc(((size_t)sizeof(T)) * new_capacity));
+                char *new_indirect = static_cast<char *>(malloc(((size_t)sizeof(T)) * new_capacity));
                 assert(new_indirect);
                 T *src = direct_ptr(0);
                 T *dst = reinterpret_cast<T *>(new_indirect);
@@ -347,7 +335,9 @@ public:
 
     prevector() noexcept {}
 
-    explicit prevector(size_type n) { resize(n); }
+    explicit prevector(size_type n) {
+        resize(n);
+    }
 
     explicit prevector(size_type n, const T &val) {
         change_capacity(n);
@@ -370,7 +360,9 @@ public:
         fill(item_ptr(0), other.begin(), other.end());
     }
 
-    prevector(prevector<N, T, Size, Diff> &&other) noexcept { swap(other); }
+    prevector(prevector<N, T, Size, Diff> &&other) noexcept {
+        swap(other);
+    }
 
     prevector &operator=(const prevector<N, T, Size, Diff> &other) {
         if (&other == this) {
@@ -385,20 +377,36 @@ public:
         return *this;
     }
 
-    size_type size() const { return is_direct() ? _size : _size - N - 1; }
+    size_type size() const {
+        return is_direct() ? _size : _size - N - 1;
+    }
 
-    bool empty() const { return size() == 0; }
+    bool empty() const {
+        return size() == 0;
+    }
 
-    iterator begin() { return iterator(item_ptr(0)); }
-    const_iterator begin() const { return const_iterator(item_ptr(0)); }
-    iterator end() { return iterator(item_ptr(size())); }
-    const_iterator end() const { return const_iterator(item_ptr(size())); }
+    iterator begin() {
+        return iterator(item_ptr(0));
+    }
+    const_iterator begin() const {
+        return const_iterator(item_ptr(0));
+    }
+    iterator end() {
+        return iterator(item_ptr(size()));
+    }
+    const_iterator end() const {
+        return const_iterator(item_ptr(size()));
+    }
 
-    reverse_iterator rbegin() { return reverse_iterator(item_ptr(size() - 1)); }
+    reverse_iterator rbegin() {
+        return reverse_iterator(item_ptr(size() - 1));
+    }
     const_reverse_iterator rbegin() const {
         return const_reverse_iterator(item_ptr(size() - 1));
     }
-    reverse_iterator rend() { return reverse_iterator(item_ptr(-1)); }
+    reverse_iterator rend() {
+        return reverse_iterator(item_ptr(-1));
+    }
     const_reverse_iterator rend() const {
         return const_reverse_iterator(item_ptr(-1));
     }
@@ -411,11 +419,17 @@ public:
         }
     }
 
-    static constexpr size_t static_capacity() { return N; }
+    static constexpr size_t static_capacity() {
+        return N;
+    }
 
-    T &operator[](size_type pos) { return *item_ptr(pos); }
+    T &operator[](size_type pos) {
+        return *item_ptr(pos);
+    }
 
-    const T &operator[](size_type pos) const { return *item_ptr(pos); }
+    const T &operator[](size_type pos) const {
+        return *item_ptr(pos);
+    }
 
     void resize(size_type new_size, const T &value = T{}) {
         size_type cur_size = size();
@@ -440,9 +454,13 @@ public:
         }
     }
 
-    void shrink_to_fit() { change_capacity(size()); }
+    void shrink_to_fit() {
+        change_capacity(size());
+    }
 
-    void clear() { resize(0); }
+    void clear() {
+        resize(0);
+    }
 
     iterator insert(iterator pos, const T &value) {
         size_type p = pos - begin();
@@ -499,7 +517,9 @@ public:
         }
     }
 
-    iterator erase(iterator pos) { return erase(pos, pos + 1); }
+    iterator erase(iterator pos) {
+        return erase(pos, pos + 1);
+    }
 
     iterator erase(iterator first, iterator last) {
         // Erase is not allowed to the change the object's capacity. That means
@@ -524,7 +544,8 @@ public:
         return first;
     }
 
-    template <typename... Args> void emplace_back(Args &&...args) {
+    template <typename... Args>
+    void emplace_back(Args &&...args) {
         size_type new_size = size() + 1;
         if (capacity() < new_size) {
             change_capacity(new_size + (new_size >> 1));
@@ -533,17 +554,29 @@ public:
         _size++;
     }
 
-    void push_back(const T &value) { emplace_back(value); }
+    void push_back(const T &value) {
+        emplace_back(value);
+    }
 
-    void pop_back() { erase(end() - 1, end()); }
+    void pop_back() {
+        erase(end() - 1, end());
+    }
 
-    T &front() { return *item_ptr(0); }
+    T &front() {
+        return *item_ptr(0);
+    }
 
-    const T &front() const { return *item_ptr(0); }
+    const T &front() const {
+        return *item_ptr(0);
+    }
 
-    T &back() { return *item_ptr(size() - 1); }
+    T &back() {
+        return *item_ptr(size() - 1);
+    }
 
-    const T &back() const { return *item_ptr(size() - 1); }
+    const T &back() const {
+        return *item_ptr(size() - 1);
+    }
 
     void swap(prevector<N, T, Size, Diff> &other) noexcept {
         std::swap(_union, other._union);
@@ -613,7 +646,11 @@ public:
         }
     }
 
-    value_type *data() { return item_ptr(0); }
+    value_type *data() {
+        return item_ptr(0);
+    }
 
-    const value_type *data() const { return item_ptr(0); }
+    const value_type *data() const {
+        return item_ptr(0);
+    }
 };

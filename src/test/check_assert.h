@@ -29,7 +29,7 @@ enum class CheckAssertResult {
 CheckAssertResult CheckAssert(std::function<void()> func, std::string_view expectMessage = "");
 
 /** Checks if an expression results in an assert() being raised. */
-#define BCHN_CHECK_ASSERT(stmt, expectMessage) \
+#define BFXN_CHECK_ASSERT(stmt, expectMessage) \
     do { \
         const auto res = CheckAssert([&]{ stmt; }, expectMessage); \
         if (res == CheckAssertResult::Unsupported) { \
@@ -47,7 +47,7 @@ CheckAssertResult CheckAssert(std::function<void()> func, std::string_view expec
  *  Define a macro that tests can use to check for an AssertEncountered unless running under sanitizers/unknown
  *  platform where CheckAssert is not supported (in which case accept CheckAssertResult::Unsupported as well).
  */
-#define BCHN_CHECK_ASSERT_IF_SUPPORTED(stmt) \
+#define BFXN_CHECK_ASSERT_IF_SUPPORTED(stmt) \
     do { \
         const auto res = CheckAssert([&]{ stmt; }); \
         BOOST_CHECK(res == CheckAssertResult::AssertEncountered || res == CheckAssertResult::Unsupported); \

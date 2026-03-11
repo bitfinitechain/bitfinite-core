@@ -5,7 +5,7 @@
 #pragma once
 
 #include <blockvalidity.h>
-#include <serialize.h>
+#include "serialize.h"
 
 #include <cstdint>
 

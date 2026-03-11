@@ -1,4 +1,4 @@
-# Support for Output Descriptors in Bitcoin Cash Node
+# Support for Output Descriptors in BitFinite Node
 
 Since Bitcoin ABC v0.20.7, there is support for Output Descriptors in the
 `scantxoutset` RPC call. This is a simple language which can be used to
@@ -34,7 +34,7 @@ Output descriptors currently support:
  represents a P2SH *2-of-2* multisig.
 - `pk(xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8NqtwybGhePY2gZ29ESFjqJoCu1Rupje8YtGqsefD265TMg7usUDFdp6W1EGMcet8)`
  refers to a single P2PK output, using the public key part from the specified xpub.
-- `pkh(xpub68Gmy5EdvgibQVfPdqkBBCHxA5htiqg55crXYuXoQRKfDBFA1WEjWgP6LHhwBZeNK1VTsfTFUHCdrfp1bgwQ9xv5ski8PX9rL2dZXvgGDnw/1'/2)`
+- `pkh(xpub68Gmy5EdvgibQVfPdqkBBFXxA5htiqg55crXYuXoQRKfDBFA1WEjWgP6LHhwBZeNK1VTsfTFUHCdrfp1bgwQ9xv5ski8PX9rL2dZXvgGDnw/1'/2)`
  refers to a single P2PKH output, using child key *1'/2* of the specified xpub.
 - `pkh([d34db33f/44'/0'/0']xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL/1/*)`
  describes a set of P2PKH outputs, but additionally specifies that the specified

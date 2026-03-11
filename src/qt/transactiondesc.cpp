@@ -1,5 +1,5 @@
 // Copyright (c) 2011-2016 The Bitcoin Core developers
-// Copyright (c) 2022 The Bitcoin Cash Node developers
+// Copyright (c) 2022 The BitFinite Node developers
 // Copyright (c) 2017-2022 The Bitcoin developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
@@ -314,7 +314,7 @@ QString TransactionDesc::toHTML(interfaces::Node &node,
     strHTML += "<b>" + tr("Output index") + ":</b> " +
                QString::number(rec->getOutputIndex()) + "<br>";
 
-    // Message from normal bitcoincash:URI (bitcoincash:123...?message=example)
+    // Message from normal bitfinite:URI (bitfinite:123...?message=example)
     for (const std::pair<std::string, std::string> &r : orderForm) {
         if (r.first == "Message") {
             strHTML += "<br><b>" + tr("Message") + ":</b><br>" +

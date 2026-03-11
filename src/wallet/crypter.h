@@ -6,7 +6,7 @@
 #pragma once
 
 #include <keystore.h>
-#include <serialize.h>
+#include "serialize.h"
 #include <support/allocators/secure.h>
 
 #include <atomic>

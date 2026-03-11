@@ -85,13 +85,13 @@
     </message>
     <message>
       <location line="+8"/>
-      <source>These are your Bitcoin Cash addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
-      <translation>Questi sono i tuoi indirizzi Bitcoin Cash per inviare i pagamenti. Controlla sempre l'importo e l'indirizzo di ricezione prima di inviare i fondi.</translation>
+      <source>These are your BitFinite addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
+      <translation>Questi sono i tuoi indirizzi BitFinite per inviare i pagamenti. Controlla sempre l'importo e l'indirizzo di ricezione prima di inviare i fondi.</translation>
     </message>
     <message>
       <location line="+8"/>
-      <source>These are your Bitcoin Cash addresses for receiving payments. It is recommended to use a new receiving address for each transaction.</source>
-      <translation>Questi sono i tuoi indirizzi Bitcoin Cash per ricevere i pagamenti. È consigliato utilizzare un nuovo indirizzo per ogni transazione.</translation>
+      <source>These are your BitFinite addresses for receiving payments. It is recommended to use a new receiving address for each transaction.</source>
+      <translation>Questi sono i tuoi indirizzi BitFinite per ricevere i pagamenti. È consigliato utilizzare un nuovo indirizzo per ogni transazione.</translation>
     </message>
     <message>
       <location line="+9"/>
@@ -325,8 +325,8 @@
     </message>
     <message>
       <location line="+8"/>
-      <source>Send coins to a Bitcoin Cash address</source>
-      <translation>Invia fondi a un indirizzo Bitcoin Cash</translation>
+      <source>Send coins to a BitFinite address</source>
+      <translation>Invia fondi a un indirizzo BitFinite</translation>
     </message>
     <message>
       <location line="+16"/>
@@ -400,13 +400,13 @@
     </message>
     <message>
       <location line="+7"/>
-      <source>Sign messages with your Bitcoin Cash addresses to prove you own them</source>
-      <translation>Firma i messaggi con i tuoi indirizzi Bitcoin Cash per dimostrarne la proprietà</translation>
+      <source>Sign messages with your BitFinite addresses to prove you own them</source>
+      <translation>Firma i messaggi con i tuoi indirizzi BitFinite per dimostrarne la proprietà</translation>
     </message>
     <message>
       <location line="+5"/>
-      <source>Verify messages to ensure they were signed with specified Bitcoin Cash addresses</source>
-      <translation>Verifica i messaggi per assicurare che siano siano stati firmato con gli indirizzi Bitcoin Cash specificati</translation>
+      <source>Verify messages to ensure they were signed with specified BitFinite addresses</source>
+      <translation>Verifica i messaggi per assicurare che siano siano stati firmato con gli indirizzi BitFinite specificati</translation>
     </message>
     <message>
       <location line="+23"/>
@@ -996,8 +996,8 @@
     </message>
     <message>
       <location line="-11"/>
-      <source>The entered address &quot;%1&quot; is not a valid Bitcoin Cash address.</source>
-      <translation>L'indirizzo &quot;%1&quot; inserito non è un indirizzo Bitcoin Cash valido.</translation>
+      <source>The entered address &quot;%1&quot; is not a valid BitFinite address.</source>
+      <translation>L'indirizzo &quot;%1&quot; inserito non è un indirizzo BitFinite valido.</translation>
     </message>
     <message>
       <location line="+16"/>
@@ -1737,8 +1737,8 @@ Per specificare più URL separarli con una barra verticale "|".</translation>
     </message>
     <message>
       <location line="+8"/>
-      <source>URI cannot be parsed! This can be caused by an invalid Bitcoin Cash address or malformed URI parameters.</source>
-      <translation>L'URI non è corretto! Questo può essere causato da un indirizzo Bitcoin Cash invalido o dai parametri URI invalidi.</translation>
+      <source>URI cannot be parsed! This can be caused by an invalid BitFinite address or malformed URI parameters.</source>
+      <translation>L'URI non è corretto! Questo può essere causato da un indirizzo BitFinite invalido o dai parametri URI invalidi.</translation>
     </message>
     <message>
       <location line="+25"/>
@@ -1919,8 +1919,8 @@ Per specificare più URL separarli con una barra verticale "|".</translation>
     </message>
     <message>
       <location line="-773"/>
-      <source>Enter a Bitcoin Cash address (e.g. %1)</source>
-      <translation>Inserisci un indirizzo Bitcoin Cash (e.g. %1)</translation>
+      <source>Enter a BitFinite address (e.g. %1)</source>
+      <translation>Inserisci un indirizzo BitFinite (e.g. %1)</translation>
     </message>
     <message numerus="yes">
       <location line="+790"/>
@@ -2980,8 +2980,8 @@ Nota:  Siccome la commissione è calcolata in base ai byte, una commissione di &
     </message>
     <message>
       <location line="+101"/>
-      <source>Warning: Invalid Bitcoin Cash address</source>
-      <translation>Attenzione: Indirizzo Bitcoin Cash invalido</translation>
+      <source>Warning: Invalid BitFinite address</source>
+      <translation>Attenzione: Indirizzo BitFinite invalido</translation>
     </message>
     <message>
       <location line="-140"/>
@@ -3025,8 +3025,8 @@ Nota:  Siccome la commissione è calcolata in base ai byte, una commissione di &
     </message>
     <message>
       <location line="+18"/>
-      <source>The Bitcoin Cash address to send the payment to</source>
-      <translation>L'indirizzo Bitcoin Cash al quale inviare il pagamento</translation>
+      <source>The BitFinite address to send the payment to</source>
+      <translation>L'indirizzo BitFinite al quale inviare il pagamento</translation>
     </message>
     <message>
       <location line="+75"/>
@@ -3164,8 +3164,8 @@ Nota:  Siccome la commissione è calcolata in base ai byte, una commissione di &
     </message>
     <message>
       <location line="+18"/>
-      <source>The Bitcoin Cash address to sign the message with</source>
-      <translation>L'indirizzo Bitcoin Cash con il quale firmare il messaggio</translation>
+      <source>The BitFinite address to sign the message with</source>
+      <translation>L'indirizzo BitFinite con il quale firmare il messaggio</translation>
     </message>
     <message>
       <location line="+7"/>
@@ -3206,18 +3206,18 @@ Nota:  Siccome la commissione è calcolata in base ai byte, una commissione di &
     </message>
     <message>
       <location line="+21"/>
-      <source>Sign the message to prove you own this Bitcoin Cash address</source>
-      <translation>Firma il messaggio per dimostrare la proprietà di questo indirizzo Bitcoin Cash</translation>
+      <source>Sign the message to prove you own this BitFinite address</source>
+      <translation>Firma il messaggio per dimostrare la proprietà di questo indirizzo BitFinite</translation>
     </message>
     <message>
       <location line="+106"/>
-      <source>The Bitcoin Cash address the message was signed with</source>
-      <translation>L'indirizzo Bitcoin Cash con il quale il messaggio è stato firmato</translation>
+      <source>The BitFinite address the message was signed with</source>
+      <translation>L'indirizzo BitFinite con il quale il messaggio è stato firmato</translation>
     </message>
     <message>
       <location line="+37"/>
-      <source>Verify the message to ensure it was signed with the specified Bitcoin Cash address</source>
-      <translation>Verifica il messaggio per accertare che sia stato firmato con l'indirizzo Bitcoin Cash specificato</translation>
+      <source>Verify the message to ensure it was signed with the specified BitFinite address</source>
+      <translation>Verifica il messaggio per accertare che sia stato firmato con l'indirizzo BitFinite specificato</translation>
     </message>
     <message>
       <location line="-140"/>

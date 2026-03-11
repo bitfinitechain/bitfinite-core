@@ -10,7 +10,7 @@
 #include <QValidator>
 
 /**
- * Bitcoin Cash address entry widget validator, checks for valid characters and
+ * BitFinite address entry widget validator, checks for valid characters and
  * removes some whitespace.
  */
 class BitcoinAddressEntryValidator : public QValidator {
@@ -22,7 +22,7 @@ public:
     State validate(QString &input, int &pos) const override;
 };
 
-/** Bitcoin Cash address widget validator, checks for a valid Bitcoin Cash address.
+/** BitFinite address widget validator, checks for a valid BitFinite address.
  */
 class BitcoinAddressCheckValidator : public QValidator {
     Q_OBJECT

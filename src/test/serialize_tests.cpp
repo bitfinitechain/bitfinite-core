@@ -3,7 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include <serialize.h>
+#include "serialize.h"
 
 #include <hash.h>
 #include <streams.h>
@@ -15,7 +15,7 @@
 
 #include <cstdint>
 #include <limits>
-#include <optional>
+#include "compat/optional.h"
 #include <string>
 #include <string_view>
 #include <vector>

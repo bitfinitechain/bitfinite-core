@@ -1,15 +1,15 @@
-# Installing Bitcoin Cash Node
+# Installing BitFinite Core
 
-This document describes how to install Bitcoin Cash Node.
+This document describes how to install BitFinite Core.
 
 **Please ensure to back up your wallet files before you run any new client.**
 
-## Downloading Bitcoin Cash Node
+## Downloading BitFinite Core
 
-If you just want to run the Bitcoin Cash Node software go to the
-[Download](https://bitcoincashnode.org/download.html) page and get the relevant
+If you just want to run the BitFinite Core software go to the
+[Download](https://bitfinitechain.org/download.html) page and get the relevant
 files for your system.
 
-## Building Bitcoin Cash Node
+## Building BitFinite Core
 
-See `doc/build-*.md` for instructions on building the Bitcoin Cash Node software.
+See `doc/build-*.md` for instructions on building the BitFinite Core software.

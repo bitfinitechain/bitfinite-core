@@ -21,7 +21,7 @@ class WalletSendToTokenAwareCashAddr(BitcoinTestFramework):
     def run_test(self):
         assert_greater_than(self.nodes[0].getbalance(), 4.0)
 
-        # Send 1 BCH normal
+        # Send 1 BFX normal
         node_1_balance = self.nodes[1].getbalance()
         address = self.nodes[1].getnewaddress("normal")
         fee_per_byte = Decimal('0.001') / 1000
@@ -32,7 +32,7 @@ class WalletSendToTokenAwareCashAddr(BitcoinTestFramework):
         node_1_balance += Decimal("1.0")
         assert_equal(self.nodes[1].getbalance(), node_1_balance)
 
-        # Send 1 BCH to a "token aware" p2pkh address owned by node1, and verify node1 sees the balance change
+        # Send 1 BFX to a "token aware" p2pkh address owned by node1, and verify node1 sees the balance change
         address = self.nodes[1].getnewaddress("tokan-aware-p2pkh")
         prefix, _, addr_hash = cashaddr.decode(address)
         token_address = cashaddr.encode(prefix, cashaddr.TOKEN_PUBKEY_TYPE, addr_hash)
@@ -45,7 +45,7 @@ class WalletSendToTokenAwareCashAddr(BitcoinTestFramework):
         node_1_balance += Decimal("1.0")
         assert_equal(self.nodes[1].getbalance(), node_1_balance)
 
-        # Send 1 BCH to a "token aware" p2sh address owned by node1, and verify node1 sees the balance change
+        # Send 1 BFX to a "token aware" p2sh address owned by node1, and verify node1 sees the balance change
         address = self.nodes[1].getnewaddress("token-aware-p2pkh-2")
         p2sh_address = self.nodes[1].addmultisigaddress(1, [address], "token-aware-p2sh")["address"]
         prefix, _, addr_hash = cashaddr.decode(p2sh_address)

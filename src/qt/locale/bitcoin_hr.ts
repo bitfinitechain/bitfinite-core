@@ -1046,8 +1046,8 @@
         <translation>Izvršavaj u pozadini kao uslužnik i prihvaćaj komande</translation>
     </message>
     <message>
-        <source>Bitcoin Cash Node</source>
-        <translation>Bitcoin Cash Node</translation>
+        <source>BitFinite Node</source>
+        <translation>BitFinite Node</translation>
     </message>
     <message>
         <source>Block creation options:</source>

@@ -69,8 +69,7 @@ void ForceActivation();
 namespace GUIUtil {
 
 QString dateTimeStr(const QDateTime &date) {
-    return date.date().toString(QLocale().dateFormat(QLocale::ShortFormat)) +
-           QString(" ") + date.toString("hh:mm");
+    return date.date().toString(QLocale().dateFormat(QLocale::ShortFormat)) + QString(" ") + date.toString("hh:mm");
 }
 
 QString dateTimeStr(qint64 nTime) {
@@ -104,8 +103,7 @@ QFont fixedPitchFont() {
 #endif
 }
 
-static std::string MakeAddrInvalid(std::string addr,
-                                   const CChainParams &params) {
+static std::string MakeAddrInvalid(std::string addr, const CChainParams &params) {
     if (addr.size() < 2) {
         return "";
     }
@@ -122,9 +120,8 @@ static std::string MakeAddrInvalid(std::string addr,
 std::string DummyAddress(const CChainParams &params) {
     // Just some dummy data to generate a convincing random-looking (but
     // consistent) address
-    static const std::vector<uint8_t> dummydata = {
-        0xeb, 0x15, 0x23, 0x1d, 0xfc, 0xeb, 0x60, 0x92, 0x58, 0x86,
-        0xb6, 0x7d, 0x06, 0x52, 0x99, 0x92, 0x59, 0x15, 0xae, 0xb1};
+    static const std::vector<uint8_t> dummydata = {0xeb, 0x15, 0x23, 0x1d, 0xfc, 0xeb, 0x60, 0x92, 0x58, 0x86,
+                                                   0xb6, 0x7d, 0x06, 0x52, 0x99, 0x92, 0x59, 0x15, 0xae, 0xb1};
 
     const CTxDestination dstKey = CKeyID(uint160(dummydata));
     return MakeAddrInvalid(EncodeCashAddr(dstKey, params), params);
@@ -151,13 +148,12 @@ void setupAddressWidget(QValidatedLineEdit *widget, QWidget *parent) {
     // We don't want translators to use own addresses in translations
     // and this is the only place, where this address is supplied.
     widget->setPlaceholderText(
-        QObject::tr("Enter a Bitcoin Cash address (e.g. %1)").arg(QString::fromStdString(DummyAddress(Params()))));
+        QObject::tr("Enter a BitFinite address (e.g. %1)").arg(QString::fromStdString(DummyAddress(Params()))));
     widget->setValidator(new BitcoinAddressEntryValidator(parent));
     widget->setCheckValidator(new BitcoinAddressCheckValidator(parent));
 }
 
-bool parseBitcoinURI(const QString &scheme, const QUrl &uri,
-                     SendCoinsRecipient *out) {
+bool parseBitcoinURI(const QString &scheme, const QUrl &uri, SendCoinsRecipient *out) {
     // return if URI has wrong scheme.
     if (!uri.isValid() || uri.scheme() != scheme) {
         return false;
@@ -186,7 +182,7 @@ bool parseBitcoinURI(const QString &scheme, const QUrl &uri,
             rv.message = value;
         } else if (key == "amount") {
             if (!value.isEmpty()) {
-                const auto amount = BitcoinUnits::parse(BitcoinUnits::BCH, false, value);
+                const auto amount = BitcoinUnits::parse(BitcoinUnits::BFX, false, value);
                 if (!amount) {
                     return false;
                 }
@@ -202,10 +198,9 @@ bool parseBitcoinURI(const QString &scheme, const QUrl &uri,
     return true;
 }
 
-bool parseBitcoinURI(const QString &scheme, QString uri,
-                     SendCoinsRecipient *out) {
+bool parseBitcoinURI(const QString &scheme, QString uri, SendCoinsRecipient *out) {
     //
-    //    Cannot handle this later, because bitcoincash://
+    //    Cannot handle this later, because bitfinite://
     //    will cause Qt to see the part after // as host,
     //    which will lower-case it (and thus invalidate the address).
     if (uri.startsWith(scheme + "://", Qt::CaseInsensitive)) {
@@ -219,16 +214,13 @@ QString formatBitcoinURI(const SendCoinsRecipient &info) {
     return formatBitcoinURI(Params(), info);
 }
 
-QString formatBitcoinURI(const CChainParams &params,
-                         const SendCoinsRecipient &info) {
+QString formatBitcoinURI(const CChainParams &params, const SendCoinsRecipient &info) {
     QString ret = convertToCashAddr(params, info.address);
     int paramCount = 0;
 
     if (info.amount != Amount::zero()) {
-        ret +=
-            QString("?amount=%1")
-                .arg(BitcoinUnits::format(BitcoinUnits::BCH, info.amount, false,
-                                          BitcoinUnits::separatorNever));
+        ret += QString("?amount=%1")
+                   .arg(BitcoinUnits::format(BitcoinUnits::BFX, info.amount, false, BitcoinUnits::separatorNever));
         paramCount++;
     }
 
@@ -240,16 +232,14 @@ QString formatBitcoinURI(const CChainParams &params,
 
     if (!info.message.isEmpty()) {
         QString msg(QUrl::toPercentEncoding(info.message));
-        ret +=
-            QString("%1message=%2").arg(paramCount == 0 ? "?" : "&").arg(msg);
+        ret += QString("%1message=%2").arg(paramCount == 0 ? "?" : "&").arg(msg);
         paramCount++;
     }
 
     return ret;
 }
 
-bool isDust(interfaces::Node &node, const QString &address, const Amount amount,
-            const CChainParams &chainParams) {
+bool isDust(interfaces::Node &node, const QString &address, const Amount amount, const CChainParams &chainParams) {
     CTxDestination dest = DecodeDestination(address.toStdString(), chainParams);
     CScript script = GetScriptForDestination(dest);
     CTxOut txOut(amount, script);
@@ -287,21 +277,19 @@ QList<QModelIndex> getEntryData(QAbstractItemView *view, int column) {
     return view->selectionModel()->selectedRows(column);
 }
 
-QString getSaveFileName(QWidget *parent, const QString &caption,
-                        const QString &dir, const QString &filter,
+QString getSaveFileName(QWidget *parent, const QString &caption, const QString &dir, const QString &filter,
                         QString *selectedSuffixOut) {
     QString selectedFilter;
     QString myDir;
     // Default to user documents location
     if (dir.isEmpty()) {
-        myDir =
-            QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+        myDir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
     } else {
         myDir = dir;
     }
     /* Directly convert path to native OS path separators */
-    QString result = QDir::toNativeSeparators(QFileDialog::getSaveFileName(
-        parent, caption, myDir, filter, &selectedFilter));
+    QString result =
+        QDir::toNativeSeparators(QFileDialog::getSaveFileName(parent, caption, myDir, filter, &selectedFilter));
 
     /* Extract first suffix from filter pattern "Description (*.foo)" or
      * "Description (*.foo *.bar ...) */
@@ -330,21 +318,19 @@ QString getSaveFileName(QWidget *parent, const QString &caption,
     return result;
 }
 
-QString getOpenFileName(QWidget *parent, const QString &caption,
-                        const QString &dir, const QString &filter,
+QString getOpenFileName(QWidget *parent, const QString &caption, const QString &dir, const QString &filter,
                         QString *selectedSuffixOut) {
     QString selectedFilter;
     QString myDir;
     // Default to user documents location
     if (dir.isEmpty()) {
-        myDir =
-            QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+        myDir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
     } else {
         myDir = dir;
     }
     /* Directly convert path to native OS path separators */
-    QString result = QDir::toNativeSeparators(QFileDialog::getOpenFileName(
-        parent, caption, myDir, filter, &selectedFilter));
+    QString result =
+        QDir::toNativeSeparators(QFileDialog::getOpenFileName(parent, caption, myDir, filter, &selectedFilter));
 
     if (selectedSuffixOut) {
         /* Extract first suffix from filter pattern "Description (*.foo)" or
@@ -376,10 +362,8 @@ bool checkPoint(const QPoint &p, const QWidget *w) {
 }
 
 bool isObscured(QWidget *w) {
-    return !(checkPoint(QPoint(0, 0), w) &&
-             checkPoint(QPoint(w->width() - 1, 0), w) &&
-             checkPoint(QPoint(0, w->height() - 1), w) &&
-             checkPoint(QPoint(w->width() - 1, w->height() - 1), w) &&
+    return !(checkPoint(QPoint(0, 0), w) && checkPoint(QPoint(w->width() - 1, 0), w) &&
+             checkPoint(QPoint(0, w->height() - 1), w) && checkPoint(QPoint(w->width() - 1, w->height() - 1), w) &&
              checkPoint(QPoint(w->width() / 2, w->height() / 2), w));
 }
 
@@ -405,14 +389,12 @@ void openDebugLogfile() {
 
     /* Open debug.log with the associated application */
     if (fs::exists(pathDebug)) {
-        QDesktopServices::openUrl(
-            QUrl::fromLocalFile(boostPathToQString(pathDebug)));
+        QDesktopServices::openUrl(QUrl::fromLocalFile(boostPathToQString(pathDebug)));
     }
 }
 
 bool openBitcoinConf() {
-    fs::path pathConfig =
-        GetConfigFile(gArgs.GetArg("-conf", BITCOIN_CONF_FILENAME));
+    fs::path pathConfig = GetConfigFile(gArgs.GetArg("-conf", BITCOIN_CONF_FILENAME));
 
     /* Create the file */
     fs::ofstream configFile(pathConfig, std::ios_base::app);
@@ -424,8 +406,7 @@ bool openBitcoinConf() {
     configFile.close();
 
     /* Open bitcoin.conf with the associated application */
-    return QDesktopServices::openUrl(
-        QUrl::fromLocalFile(boostPathToQString(pathConfig)));
+    return QDesktopServices::openUrl(QUrl::fromLocalFile(boostPathToQString(pathConfig)));
 }
 
 QStringList splitSkipEmptyParts(const QString &s, const QString &separator) {
@@ -438,16 +419,14 @@ QStringList splitSkipEmptyParts(const QString &s, const QString &separator) {
     );
 }
 
-ToolTipToRichTextFilter::ToolTipToRichTextFilter(int _size_threshold,
-                                                 QObject *parent)
+ToolTipToRichTextFilter::ToolTipToRichTextFilter(int _size_threshold, QObject *parent)
     : QObject(parent), size_threshold(_size_threshold) {}
 
 bool ToolTipToRichTextFilter::eventFilter(QObject *obj, QEvent *evt) {
     if (evt->type() == QEvent::ToolTipChange) {
         QWidget *widget = static_cast<QWidget *>(obj);
         QString tooltip = widget->toolTip();
-        if (tooltip.size() > size_threshold && !tooltip.startsWith("<qt") &&
-            !Qt::mightBeRichText(tooltip)) {
+        if (tooltip.size() > size_threshold && !tooltip.startsWith("<qt") && !Qt::mightBeRichText(tooltip)) {
             // Envelop with <qt></qt> to make sure Qt detects this as rich text
             // Escape the current message as HTML and replace \n by <br>
             tooltip = "<qt>" + HtmlEscape(tooltip, true) + "</qt>";
@@ -461,30 +440,27 @@ bool ToolTipToRichTextFilter::eventFilter(QObject *obj, QEvent *evt) {
 void TableViewLastColumnResizingFixer::connectViewHeadersSignals() {
     connect(tableView->horizontalHeader(), &QHeaderView::sectionResized, this,
             &TableViewLastColumnResizingFixer::on_sectionResized);
-    connect(tableView->horizontalHeader(), &QHeaderView::geometriesChanged,
-            this, &TableViewLastColumnResizingFixer::on_geometriesChanged);
+    connect(tableView->horizontalHeader(), &QHeaderView::geometriesChanged, this,
+            &TableViewLastColumnResizingFixer::on_geometriesChanged);
 }
 
 // We need to disconnect these while handling the resize events, otherwise we
 // can enter infinite loops.
 void TableViewLastColumnResizingFixer::disconnectViewHeadersSignals() {
-    disconnect(tableView->horizontalHeader(), &QHeaderView::sectionResized,
-               this, &TableViewLastColumnResizingFixer::on_sectionResized);
-    disconnect(tableView->horizontalHeader(), &QHeaderView::geometriesChanged,
-               this, &TableViewLastColumnResizingFixer::on_geometriesChanged);
+    disconnect(tableView->horizontalHeader(), &QHeaderView::sectionResized, this,
+               &TableViewLastColumnResizingFixer::on_sectionResized);
+    disconnect(tableView->horizontalHeader(), &QHeaderView::geometriesChanged, this,
+               &TableViewLastColumnResizingFixer::on_geometriesChanged);
 } // namespace GUIUtil
 
 // Setup the resize mode, handles compatibility for Qt5 and below as the method
 // signatures changed.
 // Refactored here for readability.
-void TableViewLastColumnResizingFixer::setViewHeaderResizeMode(
-    int logicalIndex, QHeaderView::ResizeMode resizeMode) {
-    tableView->horizontalHeader()->setSectionResizeMode(logicalIndex,
-                                                        resizeMode);
+void TableViewLastColumnResizingFixer::setViewHeaderResizeMode(int logicalIndex, QHeaderView::ResizeMode resizeMode) {
+    tableView->horizontalHeader()->setSectionResizeMode(logicalIndex, resizeMode);
 }
 
-void TableViewLastColumnResizingFixer::resizeColumn(int nColumnIndex,
-                                                    int width) {
+void TableViewLastColumnResizingFixer::resizeColumn(int nColumnIndex, int width) {
     tableView->setColumnWidth(nColumnIndex, width);
     tableView->horizontalHeader()->resizeSection(nColumnIndex, width);
 }
@@ -502,9 +478,7 @@ int TableViewLastColumnResizingFixer::getAvailableWidthForColumn(int column) {
     int nTableWidth = tableView->horizontalHeader()->width();
 
     if (nTableWidth > 0) {
-        int nOtherColsWidth =
-            getColumnsWidth() -
-            tableView->horizontalHeader()->sectionSize(column);
+        int nOtherColsWidth = getColumnsWidth() - tableView->horizontalHeader()->sectionSize(column);
         nResult = std::max(nResult, nTableWidth - nOtherColsWidth);
     }
 
@@ -520,8 +494,7 @@ void TableViewLastColumnResizingFixer::adjustTableColumnsWidth() {
     int nTableWidth = tableView->horizontalHeader()->width();
     int nColsWidth = getColumnsWidth();
     if (nColsWidth > nTableWidth) {
-        resizeColumn(secondToLastColumnIndex,
-                     getAvailableWidthForColumn(secondToLastColumnIndex));
+        resizeColumn(secondToLastColumnIndex, getAvailableWidthForColumn(secondToLastColumnIndex));
     }
 }
 
@@ -533,9 +506,7 @@ void TableViewLastColumnResizingFixer::stretchColumnWidth(int column) {
 }
 
 // When a section is resized this is a slot-proxy for ajustAmountColumnWidth().
-void TableViewLastColumnResizingFixer::on_sectionResized(int logicalIndex,
-                                                         int oldSize,
-                                                         int newSize) {
+void TableViewLastColumnResizingFixer::on_sectionResized(int logicalIndex, int oldSize, int newSize) {
     adjustTableColumnsWidth();
     int remainingWidth = getAvailableWidthForColumn(logicalIndex);
     if (newSize > remainingWidth) {
@@ -547,11 +518,9 @@ void TableViewLastColumnResizingFixer::on_sectionResized(int logicalIndex,
 // "Message" column,
 // as the "Stretch" resize mode does not allow for interactive resizing.
 void TableViewLastColumnResizingFixer::on_geometriesChanged() {
-    if ((getColumnsWidth() - this->tableView->horizontalHeader()->width()) !=
-        0) {
+    if ((getColumnsWidth() - this->tableView->horizontalHeader()->width()) != 0) {
         disconnectViewHeadersSignals();
-        resizeColumn(secondToLastColumnIndex,
-                     getAvailableWidthForColumn(secondToLastColumnIndex));
+        resizeColumn(secondToLastColumnIndex, getAvailableWidthForColumn(secondToLastColumnIndex));
         connectViewHeadersSignals();
     }
 }
@@ -560,17 +529,14 @@ void TableViewLastColumnResizingFixer::on_geometriesChanged() {
  * Initializes all internal variables and prepares the
  * the resize modes of the last 2 columns of the table and
  */
-TableViewLastColumnResizingFixer::TableViewLastColumnResizingFixer(
-    QTableView *table, int lastColMinimumWidth, int allColsMinimumWidth,
-    QObject *parent)
-    : QObject(parent), tableView(table),
-      lastColumnMinimumWidth(lastColMinimumWidth),
+TableViewLastColumnResizingFixer::TableViewLastColumnResizingFixer(QTableView *table, int lastColMinimumWidth,
+                                                                   int allColsMinimumWidth, QObject *parent)
+    : QObject(parent), tableView(table), lastColumnMinimumWidth(lastColMinimumWidth),
       allColumnsMinimumWidth(allColsMinimumWidth) {
     columnCount = tableView->horizontalHeader()->count();
     lastColumnIndex = columnCount - 1;
     secondToLastColumnIndex = columnCount - 2;
-    tableView->horizontalHeader()->setMinimumSectionSize(
-        allColumnsMinimumWidth);
+    tableView->horizontalHeader()->setMinimumSectionSize(allColumnsMinimumWidth);
     setViewHeaderResizeMode(secondToLastColumnIndex, QHeaderView::Interactive);
     setViewHeaderResizeMode(lastColumnIndex, QHeaderView::Interactive);
 }
@@ -581,22 +547,22 @@ static fs::path StartupShortcutPath() {
        in the uninstaller NSIS script (see: cmake/modules/NSIS.template.in) */
     std::string chain = gArgs.GetChainName();
     if (chain == CBaseChainParams::MAIN) {
-        return GetSpecialFolderPath(CSIDL_STARTUP) / "Bitcoin Cash Node.lnk";
+        return GetSpecialFolderPath(CSIDL_STARTUP) / "BitFinite Node.lnk";
     }
     if (chain == CBaseChainParams::TESTNET) {
-        return GetSpecialFolderPath(CSIDL_STARTUP) / "Bitcoin Cash Node (testnet).lnk";
+        return GetSpecialFolderPath(CSIDL_STARTUP) / "BitFinite Node (testnet).lnk";
     }
     if (chain == CBaseChainParams::TESTNET4) {
-        return GetSpecialFolderPath(CSIDL_STARTUP) / "Bitcoin Cash Node (testnet4).lnk";
+        return GetSpecialFolderPath(CSIDL_STARTUP) / "BitFinite Node (testnet4).lnk";
     }
     if (chain == CBaseChainParams::SCALENET) {
-        return GetSpecialFolderPath(CSIDL_STARTUP) / "Bitcoin Cash Node (scalenet).lnk";
+        return GetSpecialFolderPath(CSIDL_STARTUP) / "BitFinite Node (scalenet).lnk";
     }
     if (chain == CBaseChainParams::CHIPNET) {
-        return GetSpecialFolderPath(CSIDL_STARTUP) / "Bitcoin Cash Node (chipnet).lnk";
+        return GetSpecialFolderPath(CSIDL_STARTUP) / "BitFinite Node (chipnet).lnk";
     }
     return GetSpecialFolderPath(CSIDL_STARTUP) /
-           strprintf("Bitcoin Cash Node (%s).lnk", chain); // If we get here: "regtest"
+           strprintf("BitFinite Node (%s).lnk", chain); // If we get here: "regtest"
 }
 
 bool GetStartOnSystemStartup() {
@@ -613,9 +579,8 @@ bool SetStartOnSystemStartup(bool fAutoStart) {
 
         // Get a pointer to the IShellLink interface.
         IShellLinkW *psl = nullptr;
-        HRESULT hres =
-            CoCreateInstance(CLSID_ShellLink, nullptr, CLSCTX_INPROC_SERVER,
-                             IID_IShellLinkW, reinterpret_cast<void **>(&psl));
+        HRESULT hres = CoCreateInstance(CLSID_ShellLink, nullptr, CLSCTX_INPROC_SERVER, IID_IShellLinkW,
+                                        reinterpret_cast<void **>(&psl));
 
         if (SUCCEEDED(hres)) {
             // Get the current executable path
@@ -625,9 +590,8 @@ bool SetStartOnSystemStartup(bool fAutoStart) {
             // Start client minimized
             QString strArgs = "-min";
             // Set -testnet /-regtest options
-            strArgs += QString::fromStdString(strprintf(
-                " -testnet=%d -regtest=%d", gArgs.GetBoolArg("-testnet", false),
-                gArgs.GetBoolArg("-regtest", false)));
+            strArgs += QString::fromStdString(strprintf(" -testnet=%d -regtest=%d", gArgs.GetBoolArg("-testnet", false),
+                                                        gArgs.GetBoolArg("-regtest", false)));
 
             // Set the path to the shortcut target
             psl->SetPath(pszExePath);
@@ -639,8 +603,7 @@ bool SetStartOnSystemStartup(bool fAutoStart) {
             // Query IShellLink for the IPersistFile interface for
             // saving the shortcut in persistent storage.
             IPersistFile *ppf = nullptr;
-            hres = psl->QueryInterface(IID_IPersistFile,
-                                       reinterpret_cast<void **>(&ppf));
+            hres = psl->QueryInterface(IID_IPersistFile, reinterpret_cast<void **>(&ppf));
             if (SUCCEEDED(hres)) {
                 // Save the link by calling IPersistFile::Save.
                 hres = ppf->Save(StartupShortcutPath().wstring().c_str(), TRUE);
@@ -690,8 +653,7 @@ bool GetStartOnSystemStartup() {
     std::string line;
     while (!optionFile.eof()) {
         getline(optionFile, line);
-        if (line.find("Hidden") != std::string::npos &&
-            line.find("true") != std::string::npos) {
+        if (line.find("Hidden") != std::string::npos && line.find("true") != std::string::npos) {
             return false;
         }
     }
@@ -705,8 +667,7 @@ bool SetStartOnSystemStartup(bool fAutoStart) {
         fs::remove(GetAutostartFilePath());
     } else {
         char pszExePath[MAX_PATH + 1];
-        ssize_t r =
-            readlink("/proc/self/exe", pszExePath, sizeof(pszExePath) - 1);
+        ssize_t r = readlink("/proc/self/exe", pszExePath, sizeof(pszExePath) - 1);
         if (r == -1) {
             return false;
         }
@@ -714,8 +675,7 @@ bool SetStartOnSystemStartup(bool fAutoStart) {
 
         fs::create_directories(GetAutostartDir());
 
-        fs::ofstream optionFile(GetAutostartFilePath(),
-                                std::ios_base::out | std::ios_base::trunc);
+        fs::ofstream optionFile(GetAutostartFilePath(), std::ios_base::out | std::ios_base::trunc);
         if (!optionFile.good()) {
             return false;
         }
@@ -724,13 +684,12 @@ bool SetStartOnSystemStartup(bool fAutoStart) {
         optionFile << "[Desktop Entry]\n";
         optionFile << "Type=Application\n";
         if (chain == CBaseChainParams::MAIN) {
-            optionFile << "Name=Bitcoin\n";
+            optionFile << "Name=Bitfinite\n";
         } else {
-            optionFile << strprintf("Name=Bitcoin (%s)\n", chain);
+            optionFile << strprintf("Name=Bitfinite (%s)\n", chain);
         }
         optionFile << "Exec=" << pszExePath
-                   << strprintf(" -min -testnet=%d -regtest=%d\n",
-                                gArgs.GetBoolArg("-testnet", false),
+                   << strprintf(" -min -testnet=%d -regtest=%d\n", gArgs.GetBoolArg("-testnet", false),
                                 gArgs.GetBoolArg("-regtest", false));
         optionFile << "Terminal=false\n";
         optionFile << "Hidden=false\n";
@@ -744,36 +703,27 @@ bool SetStartOnSystemStartup(bool fAutoStart) {
 // https://github.com/Mozketo/LaunchAtLoginController/blob/master/LaunchAtLoginController.m
 
 // NB: caller must release returned ref if it's not NULL
-LSSharedFileListItemRef findStartupItemInList(LSSharedFileListRef list,
-                                              CFURLRef findUrl);
-LSSharedFileListItemRef findStartupItemInList(LSSharedFileListRef list,
-                                              CFURLRef findUrl) {
+LSSharedFileListItemRef findStartupItemInList(LSSharedFileListRef list, CFURLRef findUrl);
+LSSharedFileListItemRef findStartupItemInList(LSSharedFileListRef list, CFURLRef findUrl) {
     LSSharedFileListItemRef foundItem = nullptr;
     // loop through the list of startup items and try to find the bitcoin app
     CFArrayRef listSnapshot = LSSharedFileListCopySnapshot(list, nullptr);
     for (int i = 0; !foundItem && i < CFArrayGetCount(listSnapshot); ++i) {
-        LSSharedFileListItemRef item =
-            (LSSharedFileListItemRef)CFArrayGetValueAtIndex(listSnapshot, i);
-        UInt32 resolutionFlags = kLSSharedFileListNoUserInteraction |
-                                 kLSSharedFileListDoNotMountVolumes;
+        LSSharedFileListItemRef item = (LSSharedFileListItemRef)CFArrayGetValueAtIndex(listSnapshot, i);
+        UInt32 resolutionFlags = kLSSharedFileListNoUserInteraction | kLSSharedFileListDoNotMountVolumes;
         CFURLRef currentItemURL = nullptr;
 
-#if defined(MAC_OS_X_VERSION_MAX_ALLOWED) &&                                   \
-    MAC_OS_X_VERSION_MAX_ALLOWED >= 10100
+#if defined(MAC_OS_X_VERSION_MAX_ALLOWED) && MAC_OS_X_VERSION_MAX_ALLOWED >= 10100
         if (&LSSharedFileListItemCopyResolvedURL) {
-            currentItemURL = LSSharedFileListItemCopyResolvedURL(
-                item, resolutionFlags, nullptr);
+            currentItemURL = LSSharedFileListItemCopyResolvedURL(item, resolutionFlags, nullptr);
         }
-#if defined(MAC_OS_X_VERSION_MIN_REQUIRED) &&                                  \
-    MAC_OS_X_VERSION_MIN_REQUIRED < 10100
+#if defined(MAC_OS_X_VERSION_MIN_REQUIRED) && MAC_OS_X_VERSION_MIN_REQUIRED < 10100
         else {
-            LSSharedFileListItemResolve(item, resolutionFlags, &currentItemURL,
-                                        nullptr);
+            LSSharedFileListItemResolve(item, resolutionFlags, &currentItemURL, nullptr);
         }
 #endif
 #else
-        LSSharedFileListItemResolve(item, resolutionFlags, &currentItemURL,
-                                    nullptr);
+        LSSharedFileListItemResolve(item, resolutionFlags, &currentItemURL, nullptr);
 #endif
 
         if (currentItemURL && CFEqual(currentItemURL, findUrl)) {
@@ -790,10 +740,8 @@ LSSharedFileListItemRef findStartupItemInList(LSSharedFileListRef list,
 
 bool GetStartOnSystemStartup() {
     CFURLRef bitcoinAppUrl = CFBundleCopyBundleURL(CFBundleGetMainBundle());
-    LSSharedFileListRef loginItems = LSSharedFileListCreate(
-        nullptr, kLSSharedFileListSessionLoginItems, nullptr);
-    LSSharedFileListItemRef foundItem =
-        findStartupItemInList(loginItems, bitcoinAppUrl);
+    LSSharedFileListRef loginItems = LSSharedFileListCreate(nullptr, kLSSharedFileListSessionLoginItems, nullptr);
+    LSSharedFileListItemRef foundItem = findStartupItemInList(loginItems, bitcoinAppUrl);
     // findStartupItemInList retains the item it returned, need to release
     if (foundItem) {
         CFRelease(foundItem);
@@ -805,16 +753,13 @@ bool GetStartOnSystemStartup() {
 
 bool SetStartOnSystemStartup(bool fAutoStart) {
     CFURLRef bitcoinAppUrl = CFBundleCopyBundleURL(CFBundleGetMainBundle());
-    LSSharedFileListRef loginItems = LSSharedFileListCreate(
-        nullptr, kLSSharedFileListSessionLoginItems, nullptr);
-    LSSharedFileListItemRef foundItem =
-        findStartupItemInList(loginItems, bitcoinAppUrl);
+    LSSharedFileListRef loginItems = LSSharedFileListCreate(nullptr, kLSSharedFileListSessionLoginItems, nullptr);
+    LSSharedFileListItemRef foundItem = findStartupItemInList(loginItems, bitcoinAppUrl);
 
     if (fAutoStart && !foundItem) {
         // add bitcoin app to startup item list
-        LSSharedFileListInsertItemURL(loginItems,
-                                      kLSSharedFileListItemBeforeFirst, nullptr,
-                                      nullptr, bitcoinAppUrl, nullptr, nullptr);
+        LSSharedFileListInsertItemURL(loginItems, kLSSharedFileListItemBeforeFirst, nullptr, nullptr, bitcoinAppUrl,
+                                      nullptr, nullptr);
     } else if (!fAutoStart && foundItem) {
         // remove item
         LSSharedFileListItemRemove(loginItems, foundItem);
@@ -879,8 +824,7 @@ QString formatServicesStr(quint64 mask) {
     QStringList strList;
 
     // Don't display experimental service bits
-    for (uint64_t check = 1; check <= NODE_LAST_NON_EXPERIMENTAL_SERVICE_BIT;
-         check <<= 1) {
+    for (uint64_t check = 1; check <= NODE_LAST_NON_EXPERIMENTAL_SERVICE_BIT; check <<= 1) {
         if (mask & check) {
             switch (check) {
                 case NODE_NETWORK:
@@ -924,8 +868,7 @@ QString formatServicesStr(quint64 mask) {
 }
 
 QString formatPingTime(double dPingTime) {
-    return (dPingTime >= double(std::numeric_limits<int64_t>::max()) / 1e6 ||
-            dPingTime <= 0.)
+    return (dPingTime >= double(std::numeric_limits<int64_t>::max()) / 1e6 || dPingTime <= 0.)
                ? QObject::tr("N/A")
                : QString("%1 ms").arg(QString::number((int)(dPingTime * 1000), 10));
 }
@@ -957,8 +900,7 @@ QString formatNiceTimeOffset(qint64 secs) {
         qint64 remainder = secs % YEAR_IN_SECONDS;
         timeBehindText = QObject::tr("%1 and %2")
                              .arg(QObject::tr("%n year(s)", "", years))
-                             .arg(QObject::tr("%n week(s)", "",
-                                              remainder / WEEK_IN_SECONDS));
+                             .arg(QObject::tr("%n week(s)", "", remainder / WEEK_IN_SECONDS));
     }
     return timeBehindText;
 }
@@ -971,7 +913,8 @@ QString formatBytes(uint64_t bytes) {
         return QString::number(bytes / 1'000) + " kB";
     }
     if (bytes < 1'000'000'000) {
-        return QString::number(bytes / 1'000'000) + QLocale().decimalPoint() + QString::number(bytes % 1'000'000 / 100'000) + " MB";
+        return QString::number(bytes / 1'000'000) + QLocale().decimalPoint() +
+               QString::number(bytes % 1'000'000 / 100'000) + " MB";
     }
     QString decimals = QString::number(bytes % 1'000'000'000 / 10'000'000);
     if (decimals.length() < 2) {

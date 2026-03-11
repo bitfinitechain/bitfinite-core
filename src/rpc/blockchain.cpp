@@ -45,7 +45,7 @@
 #include <list>
 #include <memory>
 #include <mutex>
-#include <optional>
+#include "compat/optional.h"
 #include <string_view>
 
 struct CUpdatedBlock {
@@ -1029,7 +1029,7 @@ static UniValue getblock(const Config &config, const JSONRPCRequest &request) {
             "              \"asm\" : \"str\",            (string) The asm\n"
             "              \"hex\" : \"str\",            (string) The hex\n"
             "              \"type\" : \"str\",           (string) The type (one of: nonstandard, pubkey, pubkeyhash, scripthash, multisig, nulldata)\n"
-            "              \"address\" : \"str\"         (string, optional) The Bitcoin Cash address (only if well-defined address exists)\n"
+            "              \"address\" : \"str\"         (string, optional) The BitFinite address (only if well-defined address exists)\n"
             "            },\n"
             "            \"tokenData\" : {             (json object, optional) CashToken data (only if the input contained a token)\n"
             "              \"category\" : \"hex\",       (string) Token id\n"
@@ -1312,8 +1312,8 @@ UniValue gettxout(const Config &config, const JSONRPCRequest &request) {
             "     \"reqSigs\" : n,          (numeric) Number of required "
             "signatures\n"
             "     \"type\" : \"pubkeyhash\", (string) The type, eg pubkeyhash\n"
-            "     \"addresses\" : [          (array of string) array of Bitcoin Cash addresses\n"
-            "        \"address\"     (string) Bitcoin Cash address\n"
+            "     \"addresses\" : [          (array of string) array of BitFinite addresses\n"
+            "        \"address\"     (string) BitFinite address\n"
             "        ,...\n"
             "     ]\n"
             "  },\n"

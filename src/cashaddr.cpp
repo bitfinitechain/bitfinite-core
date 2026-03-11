@@ -3,8 +3,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include <cashaddr.h>
-#include <util/vector.h>
+#include "cashaddr.h"
+#include "util/vector.h"
 
 namespace {
 
@@ -13,23 +13,21 @@ using data = std::vector<uint8_t>;
 /**
  * The cashaddr character set for encoding.
  */
-const char CHARSET[] = "qpzry9x8gf2tvdw0s3jn54khce6mua7l";
+const char CHARSET[] = "fpzry9x8gq2tvdw0s3jn54khce6mua7l";
 
 // Ensure basic sanity as per the spec. This should match the strlen() of above.
 constexpr const uint8_t PACKED_VAL_LIMIT = 32u;
-static_assert(std::size(CHARSET) - 1u == PACKED_VAL_LIMIT);
+static_assert(sizeof(CHARSET) - 1u == PACKED_VAL_LIMIT, "CHARSET size mismatch");
 
 /**
  * The cashaddr character set for decoding.
  */
-const int8_t CHARSET_REV[128] = {
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 15, -1, 10, 17, 21, 20, 26, 30, 7,
-    5,  -1, -1, -1, -1, -1, -1, -1, 29, -1, 24, 13, 25, 9,  8,  23, -1, 18, 22,
-    31, 27, 19, -1, 1,  0,  3,  16, 11, 28, 12, 14, 6,  4,  2,  -1, -1, -1, -1,
-    -1, -1, 29, -1, 24, 13, 25, 9,  8,  23, -1, 18, 22, 31, 27, 19, -1, 1,  0,
-    3,  16, 11, 28, 12, 14, 6,  4,  2,  -1, -1, -1, -1, -1};
+const int8_t CHARSET_REV[128] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+                                 -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+                                 -1, -1, -1, -1, 15, -1, 10, 17, 21, 20, 26, 30, 7,  5,  -1, -1, -1, -1, -1, -1, -1, 29,
+                                 -1, 24, 13, 25, 0,  8,  23, -1, 18, 22, 31, 27, 19, -1, 1,  9,  3,  16, 11, 28, 12, 14,
+                                 6,  4,  2,  -1, -1, -1, -1, -1, -1, 29, -1, 24, 13, 25, 0,  8,  23, -1, 18, 22, 31, 27,
+                                 19, -1, 1,  9,  3,  16, 11, 28, 12, 14, 6,  4,  2,  -1, -1, -1, -1, -1};
 
 /**
  * This function will compute what 8 5-bit values to XOR into the last 8 input
@@ -47,9 +45,9 @@ uint64_t PolyMod(const data &v) {
      * The output is a 40-bit integer whose 5-bit groups are the coefficients of
      * the remainder of v(x) mod g(x), where g(x) is the cashaddr generator, x^8
      * + {19}*x^7 + {3}*x^6 + {25}*x^5 + {11}*x^4 + {25}*x^3 + {3}*x^2 + {19}*x
-     * + {1}. g(x) is chosen in such a way that the resulting code is a BCH
+     * + {1}. g(x) is chosen in such a way that the resulting code is a BFX
      * code, guaranteeing detection of up to 4 errors within a window of 1025
-     * characters. Among the various possible BCH codes, one was selected to in
+     * characters. Among the various possible BFX codes, one was selected to in
      * fact guarantee detection of up to 5 errors within a window of 160
      * characters and 6 erros within a window of 126 characters. In addition,
      * the code guarantee the detection of a burst of up to 8 errors.
@@ -215,8 +213,7 @@ std::string Encode(const std::string &prefix, const data &payload) {
 /**
  * Decode a cashaddr string.
  */
-std::pair<std::string, data> Decode(const std::string &str,
-                                    const std::string &default_prefix) {
+std::pair<std::string, data> Decode(const std::string &str, const std::string &default_prefix) {
     // Go over the string and do some sanity checks.
     bool lower = false, upper = false, hasNumber = false;
     size_t prefixSize = 0;

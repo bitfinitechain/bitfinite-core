@@ -1,13 +1,13 @@
-# Release Notes for Bitcoin Cash Node version 25.0.0
+# Release Notes for BitFinite Node version 25.0.0
 
-Bitcoin Cash Node version 25.0.0 is now available from:
+BitFinite Node version 25.0.0 is now available from:
 
-  <https://bitcoincashnode.org>
+  <https://bitfinitenode.org>
 
 ## Overview
 
-This is a major release of Bitcoin Cash Node (BCHN) that implements the
-[May 15, 2023 Network Upgrade](https://upgradespecs.bitcoincashnode.org/2023-05-15-upgrade/).
+This is a major release of BitFinite Node (BFXN) that implements the
+[May 15, 2023 Network Upgrade](https://upgradespecs.bitfinitenode.org/2023-05-15-upgrade/).
 This release implements the following consensus CHIPs:
 
 - [CHIP-2021-01 Restrict Transaction Version](https://gitlab.com/bitcoin.cash/chips/-/blob/3b0e5d55e1e139046794e850287b7acb795f4e66/CHIP-2021-01-Restrict%20Transaction%20Versions.md) v1.0
@@ -27,8 +27,8 @@ to upgrade to v25.0.0 ahead of 15 May 2023.
 
 ## Usage recommendations
 
-The update to Bitcoin Cash Node 25.0.0 is required for the May 15, 2023
-Bitcoin Cash network upgrade.
+The update to BitFinite Node 25.0.0 is required for the May 15, 2023
+BitFinite network upgrade.
 
 While there are no known regressions in this version at this time, as
 always we recommend that all users inform us of any potential regressions
@@ -40,7 +40,7 @@ swapping binaries and restarting the node before May 2023, as long as
 they do not need the additional functionalities of Cashtokens and P2SH32.
 While Cashtokens and P2SH32 usage will already be possible after activation
 through custom software, exchanges looking to gain these capabilities may
-want to watch for a future release of BCHN that includes better support in
+want to watch for a future release of BFXN that includes better support in
 the bundled wallet and RPC commands.
 
 No post-activation tokens are going to be accidentally lost for any legacy
@@ -82,7 +82,7 @@ Further parameters are described in more detail in `doc/test-networks.md`.
 
 Historical discussion on its creation can be found here:
 
-https://bitcoincashresearch.org/t/staging-chips-on-testnet
+https://bitfiniteresearch.org/t/staging-chips-on-testnet
 
 Seeders for this network should be started with -chipnet, and bitcoind
 should be started with `-chipnet` and also have a section `[chip]` for the
@@ -103,7 +103,7 @@ except through RPC commands. Receipt of P2SH-32 transactions is supported.
 For more information on P2SH-32, see:
 
 - [CHIP-2022-05 P2SH32](https://gitlab.com/0353F40E/p2sh32/-/blob/f58ecf835f58555c9087c53af25da92a0e74534c/CHIP-2022-05_Pay-to-Script-Hash-32_%28P2SH32%29_for_Bitcoin_Cash.md)
-- Discussion: https://bitcoincashresearch.org/t/chip-2022-05-pay-to-script-hash-32-p2sh32-for-bitcoin-cash/
+- Discussion: https://bitfiniteresearch.org/t/chip-2022-05-pay-to-script-hash-32-p2sh32-for-bitcoin-cash/
 
 ### 'sort' command added to bitcoin-tx
 
@@ -160,14 +160,14 @@ making token-aware addresses distinct from the plain cash addresses.
 For example the following p2pkh:
 
 ```
-bitcoincash:qr6m7j9njldwwzlg9v7v53unlr4jkmx6eylep8ekg2
+bitfinite:qr6m7j9njldwwzlg9v7v53unlr4jkmx6eylep8ekg2
 ```
 
 Could also be encoded as signaling token-awareness and it would look
 like this:
 
 ```
-bitcoincash:zr6m7j9njldwwzlg9v7v53unlr4jkmx6eycnjehshe
+bitfinite:zr6m7j9njldwwzlg9v7v53unlr4jkmx6eycnjehshe
 ```
 
 Both of these addresses end up mapping to the same locking script.
@@ -249,7 +249,7 @@ until P2SH-32 activates on May 15, 2023.
 P2SH-32 addresses are longer than regular P2SH addresses, for example:
 
 ```
-bitcoincash:pwqwzrf7z06m7nn58tkdjyxqfewanlhyrpxysack85xvf3mt0rv02l9dxc5uf
+bitfinite:pwqwzrf7z06m7nn58tkdjyxqfewanlhyrpxysack85xvf3mt0rv02l9dxc5uf
 ```
 
 is a P2SH-32 address.
@@ -342,7 +342,7 @@ It defaults to false (same as the other testnet selector options).
 
 For more details on 'chipnet' and other test networks, refer to:
 
-https://docs.bitcoincashnode.org/doc/test-networks
+https://docs.bitfinitenode.org/doc/test-networks
 
 Note: The bitcoin.conf configuration file option is `chipnet=1`
       with a corresponding new section title of '[chip]'.
@@ -381,7 +381,7 @@ will not be of interest to most users.
 
 ## Regressions
 
-Bitcoin Cash Node 25.0.0 does not introduce any known regressions as compared to 24.1.0.
+BitFinite Node 25.0.0 does not introduce any known regressions as compared to 24.1.0.
 
 ## Limitations
 
@@ -443,7 +443,7 @@ Some issues could not be closed in time for release, but we are tracking all of 
 
 - The `test_bitcoin-qt` test executable fails on Linux Mint 20
   (see Issue #144). This does not otherwise appear to impact the functioning
-  of the BCHN software on that platform.
+  of the BFXN software on that platform.
 
 - With a certain combination of build flags that included disabling
   the QR code library, a build failure was observed where an erroneous
@@ -458,7 +458,7 @@ Some issues could not be closed in time for release, but we are tracking all of 
 
 - At the time of writing, scalenet has not been mined for a while (since
   10 August 2022), thus synchronization will stop at that block time.
-  This isn't considered a BCHN issue per se, it depends on miners to
+  This isn't considered a BFXN issue per se, it depends on miners to
   resume mining this testnet.
 
 - Startup and shutdown time of nodes on scalenet can be long (see Issue #313).
@@ -487,7 +487,7 @@ Some issues could not be closed in time for release, but we are tracking all of 
 
 ---
 
-## Changes since Bitcoin Cash Node 24.1.0
+## Changes since BitFinite Node 24.1.0
 
 ### New documents
 
@@ -508,7 +508,7 @@ None.
 - af9f6f3178e16c9cf7ec7cdfa16f1f6a7fa32204 Add CLI option `-allowunconnectedmining` (default false) + small code quality fix
 - 64fc83e5189213a0fa85a19b3dcd2c668df32184 [rpc] createrawtransaction accepts "data" array
 - e0f70a83506e978d4f9aa29135fce0e450fe141c [rpc] getrawtransaction extended verbosity
-- 8647eecaa302ba078cd3a284f8c83aca3b40269e [rpc] Update user-agent string of BCHN in getnetworkinfo RPC help
+- 8647eecaa302ba078cd3a284f8c83aca3b40269e [rpc] Update user-agent string of BFXN in getnetworkinfo RPC help
 - 9dee9c365597d52538176f2039670dcbd95d59aa Remove deprecated setexcessiveblock RPC call
 - 8c134e30c4182947768fad493f9b2321e7ca8d8c Nit: Uniform dumping stats for mempool and dsproofs
 - 5234ededd867e60736b4893479bc1be6ed4f4941 Define `upgrade10activationtime` for `-chipnet` (was undefined!)
@@ -583,7 +583,7 @@ None.
 - 1f11ca804f481adbb7f14c8d6a3c0542d4ccf201 [test] Add test harness for UI tests
 - d624f87a832415dbc54055d594c696deaacc59db test: Count blocks and headers consistently in case of reorg
 - 4f2851cf832e0673bc81893d24150c21307a27e4 [test] Fix fuzz test for script_flags
-- e61dc9ff3aec4abd2664b7402800bc3efbc1351b [test] Integrate BCHN issue #440 regression test into rpc_psbt.py
+- e61dc9ff3aec4abd2664b7402800bc3efbc1351b [test] Integrate BFXN issue #440 regression test into rpc_psbt.py
 - 61edcc8808dd0946dc6ed8fcded3062f8fec99c3 [test] Revert RSS limit change in fuzz test runner
 - 91f5e93142aa1ef45c284a8e30171546b3c4a8b9 [test] Tune libFuzzer parameters passed by fuzz test runner
 - d28be6e06da8f31c9fd3a9dc15e430e2494da8c6 Remove "replay protection" column from sighash json test data

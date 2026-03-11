@@ -1,13 +1,13 @@
-# Release Notes for Bitcoin Cash Node version 23.0.0
+# Release Notes for BitFinite Node version 23.0.0
 
-Bitcoin Cash Node version 23.0.0 is now available from:
+BitFinite Node version 23.0.0 is now available from:
 
-  <https://bitcoincashnode.org>
+  <https://bitfinitenode.org>
 
 ## Overview
 
-This is a major release of Bitcoin Cash Node (BCHN) that implements the
-[May 15, 2021 Network Upgrade](https://upgradespecs.bitcoincashnode.org/2021-05-15-upgrade/).
+This is a major release of BitFinite Node (BFXN) that implements the
+[May 15, 2021 Network Upgrade](https://upgradespecs.bitfinitenode.org/2021-05-15-upgrade/).
 This upgrade will remove the unconfirmed chain limit and enable
 transactions with multiple OP_RETURN outputs.
 
@@ -35,8 +35,8 @@ to upgrade to v23.0.0 ahead of May 2021.
 
 ## Usage recommendations
 
-The update to Bitcoin Cash Node 23.0.0 is required for the May 15, 2021
-Bitcoin Cash network upgrade.
+The update to BitFinite Node 23.0.0 is required for the May 15, 2021
+BitFinite network upgrade.
 
 ## About the CPFP & unconfirmed chain limit removal
 
@@ -48,12 +48,12 @@ This has been accomplished by removing the algorithmically complex and slow code
 from Bitcoin Core which tries to maintain what is known as "Child Pays for Parent" (CPFP) -- a way
 in which a child transaction can bump up the priority of its parent transaction via paying a
 larger fee.  Maintaining
-this feature, which is not even being used on BCH, was the reason for the algorithmic complexity
+this feature, which is not even being used on BFX, was the reason for the algorithmic complexity
 in the mempool code and why we had a limit of 50 for unconfirmed tx chains.
 
 Additionally, we removed a lot of the slow "quadratic" (complex) per-tx stats that were being maintained (also inherited from Core, and also used in fee calculations). Removing those stats,
 which only were added so that Core could limit the blocksize and also get a hyper-fee-market,
-allowed us to unleash the true scalability of BCH.  The mempool code was slow -- and it was only
+allowed us to unleash the true scalability of BFX.  The mempool code was slow -- and it was only
 slow because of Bitcoin Core's philosophy about what Bitcoin should be.
 
 One might wonder if allowing limitless unconfirmed transaction chains opens up avenues of attack or flood/DoS.  It does not do this.  Since now our mempool and mining algorithm is linear and not quadratic, there is no real difference between a transaction that has an unconfirmed parent and
@@ -89,13 +89,13 @@ existing implementations in Bitcoin Unlimited and Flowee The Hub.
 Double spend proofs are enabled by default, but can be turned
 off with the `doublespendproof=0` configuration setting.
 
-This functionality is still in beta. In future BCHN releases
+This functionality is still in beta. In future BFXN releases
 we plan to gradually add more application interfaces to query
 double spend proof information about transactions and to provide
 wallet user with double spend notifications.
 
 Please refer to <doc/dsproof-implementation-notes.md> for more
-information details on the DSProof implementation in BCHN,
+information details on the DSProof implementation in BFXN,
 and the sections on New RPC methods and New ZeroMQ notifications
 below for a listing of the new API calls.
 
@@ -132,7 +132,7 @@ bitcoind -rejectsubversion="Bitcoin SV" -rejectsubversion="Bitcoin ABC"
 ```
 
 Care should be taken to filter out only peers which are definitely not
-useful to your Bitcoin Cash node.
+useful to your BitFinite node.
 
 ## Deprecated functionality
 
@@ -173,10 +173,10 @@ system has been deprecated since v22.0.0.
 
 The 'validateblocktemplate' RPC call has been added.
 This call checks if a block template would be accepted if the hash solution
-were solved.  The semantics of this call are the same as on BCHUnlimited from
+were solved.  The semantics of this call are the same as on BFXUnlimited from
 where a substantial portion of this new functionality has been ported.
 It is intended to be used by services that test compatibility of block
-generation with BCHN's consensus rules.
+generation with BFXN's consensus rules.
 
 ### `getdsproof` and `getdsprooflist`
 
@@ -186,19 +186,19 @@ generation with BCHN's consensus rules.
 transactions in the node's mempool.
 
 Please refer to the documentation pages for
-[getdsproof](https://docs.bitcoincashnode.org/doc/json-rpc/getdsproof/) and
-[getdsprooflist](https://docs.bitcoincashnode.org/doc/json-rpc/getdsprooflist/)
+[getdsproof](https://docs.bitfinitenode.org/doc/json-rpc/getdsproof/) and
+[getdsprooflist](https://docs.bitfinitenode.org/doc/json-rpc/getdsprooflist/)
 for details about additional arguments and the returned data.
 
 ## New ZeroMQ (ZMQ) notifications
 
-BCHN can now publish notification of both hashes and full raw double spend
+BFXN can now publish notification of both hashes and full raw double spend
 proofs generated or accepted by the node.
 
 The notifications can be enabled via the `-zmqpubhashds=address` and
 `-zmqpubrawds=address` configuration options where `address` must be a
 valid ZeroMQ endpoint. Please refer to the [ZMQ
-API](https://docs.bitcoincashnode.org/doc/zmq/) documentation for further
+API](https://docs.bitfinitenode.org/doc/zmq/) documentation for further
 details.
 
 ## Low-level RPC changes
@@ -216,7 +216,7 @@ subobject instead.
 The (non-default) option in the `getnetworkhashps` RPC call to calculate average
 hashrate using "blocks since last difficulty change" has been removed. The
 option relied on an incorrect assumption of when the last difficulty change
-happened. On Bitcoin Cash, difficulty changes every block, rendering the option
+happened. On BitFinite, difficulty changes every block, rendering the option
 meaningless. The removal of this option was announced in the release notes of
 v22.2.0.
 
@@ -228,11 +228,11 @@ Existing URLs that do not conform to these schemes are not displayed in
 the context menu.
 
 Qt GUI settings are no longer automatically copied from Bitcoin ABC on first
-use of Bitcoin Cash Node.
+use of BitFinite Node.
 
 ## Regressions
 
-Bitcoin Cash Node 23.0.0 does not introduce any known regressions compared
+BitFinite Node 23.0.0 does not introduce any known regressions compared
 to 22.2.0.
 
 ## Known Issues
@@ -241,7 +241,7 @@ Some issues could not be closed in time for release, but we are tracking
 all of them on our GitLab repository.
 
 - MacOS versions earlier than 10.12 are no longer supported. Additionally,
-  Bitcoin Cash Node does not yet change appearance when macOS "dark mode"
+  BitFinite Node does not yet change appearance when macOS "dark mode"
   is activated.
 
 - Windows users are recommended not to run multiple instances of bitcoin-qt
@@ -272,7 +272,7 @@ all of them on our GitLab repository.
 
 - The `test_bitcoin-qt` test executable fails on Linux Mint 20
   (see Issue #144). This does not otherwise appear to impact the functioning
-  of the BCHN software on that platform.
+  of the BFXN software on that platform.
 
 - An 'autotools' build (the old build method) fails on OSX when using Clang.
   (Issue #129)
@@ -315,15 +315,15 @@ all of them on our GitLab repository.
 
 ---
 
-## Changes since Bitcoin Cash Node 22.2.0
+## Changes since BitFinite Node 22.2.0
 
 ### New documents
 
-The following are new documents in the BCHN software repository:
+The following are new documents in the BFXN software repository:
 
 - [doc/dsproof-implementation-notes.md](../dsproof-implementation-notes.md): Technical notes about the
-  implementation of the Double Spend Proofs in the BCHN software
-- [doc/linting.md](../linting.md): Information for developers about the linting of BCHN
+  implementation of the Double Spend Proofs in the BFXN software
+- [doc/linting.md](../linting.md): Information for developers about the linting of BFXN
   software and some package dependencies needed for this
 - [doc/release-notes/release-notes-22.2.0.md](release-notes-22.2.0.md): The previous Release Notes
 
@@ -333,7 +333,7 @@ All Markdown (.md) documents previously in the `doc/json-rpc/` folder have
 been removed.
 
 These are now generated on the fly during the build and deployed to the
-documentation website at <https://docs.bitcoincashnode.org>.
+documentation website at <https://docs.bitfinitenode.org>.
 It is planned in future to provide a downloadable standalone documentation
 set (in HTML and Markdown).
 
@@ -360,7 +360,7 @@ set (in HTML and Markdown).
 - 31bf662e4df16e4508cba20ff8e5303d09f823ea Add debug CLI/conf option `-rejectsubversion=`
 - a199ff469098a3227a491466e3493f51e3747ea7 mempool & dsproof: Make orphans stickier, make tx removal "orphanize" dsproofs first before removal later
 - 58ee973d20a624bb68e7d52d5b72a2bae69bbd05 Tachyon: Allow multiple OP_RETURN outputs in a transaction
-- f58576a9c532adc967707968f54628349fa3cb42 Add tentative activation time for the 8th BCH Upgrade (May2022)
+- f58576a9c532adc967707968f54628349fa3cb42 Add tentative activation time for the 8th BFX Upgrade (May2022)
 - 2d4963e0851ef5a5b78a3f14bf4029cb9cf74271 Push back the "software outdated" warning to May 15, 2022
 - f32f72da7106dfcc42219bc27e7190c452496603 Deprecate options related to unconfirmed transaction chain limits
 - d7b8b0ed701795465815e842db3399f346784f9f Deprecate height field in getmempoolentry RPC and friends
@@ -436,7 +436,7 @@ set (in HTML and Markdown).
 - 02ac581b6cfe40f59116a2c86a7eba852dd05d2d Block index: Add an additional sanity check when loading the block index
 - 7df431d3a1d427052b0ee1b6f4090e32dd303333 C++17: Replace NODISCARD with [[nodiscard]]
 - 8dc1c7da99f0bf3875c94bd6d849136615aa0846 C++17: Replace boost::optional with std::optional
-- 5d7407805187b5eaa2a71ac7bf84004ee17c9277 Change text "Bitcoin address" into "Bitcoin Cash address"
+- 5d7407805187b5eaa2a71ac7bf84004ee17c9277 Change text "Bitcoin address" into "BitFinite address"
 - 6d40c0ff5eef5e445a5f1f63b86740416230641f Code improvements (in mempool code)
 - 0f8e8da8e65bba305bb8cd0630e419d9fccd0ef9 Code quality: Fix encapsulation of CTxMemPoolEntry::dspId
 - de799128279b133a8ee38ead7faeddfd539d8e3d Code quality: Miscellaneous nits and fixups
@@ -491,7 +491,7 @@ set (in HTML and Markdown).
 - a34314d4dd8cb87d5c9ca59dbd1626c4ce309a20 Document implementation of BIP158
 - 91b120b5ed4941e8d546b953803fe0a2eb1ba51f Document implementation of BIP340
 - 16a3e8c7f6100386ded4b8458bccfa1a374515df Documentation: Clarify what version 0.14.1 was
-- 63cda98ac8e2f1986f0293fd5f1b0601edcde848 Link DSProof spec on upgradespecs.bitcoincashnode.org
+- 63cda98ac8e2f1986f0293fd5f1b0601edcde848 Link DSProof spec on upgradespecs.bitfinitenode.org
 - 0b071607f0b615b7eed5397ef4404cb1d362fe78 New translation process based on Crowdin
 - a1edf52d9886dd083cfa85dc25f6f8abd69d8861 Remove table of contents
 - ab3c74aa9055f72ab6843b7a80c301ee0a14f20b Show licence in documentation
@@ -671,7 +671,7 @@ None.
 - 333436177e9e5b457cde82bb03c1e32276dfc7d0 ABC:D8992,Core PR#18754 [backport#18754] bench: add CAddrMan benchmarks
 - 511a1e7d098b1576b1e4e44805cc1b17ecc699c0 ABC:D8998,Core PR#18769 qt: remove todo bug fix for old versions of Qt
 - be0453753c02e7027e57661059f1f51fb4d7a1e2 ABC:D9094,Core PR#18931 net: use CMessageHeader::HEADER_SIZE, add missing include
-- 27206031e03fb59502ec7b1ced37de883ec75faa BCHUnlimited MR2401 [backport] Transaction viewer URL validation
+- 27206031e03fb59502ec7b1ced37de883ec75faa BFXUnlimited MR2401 [backport] Transaction viewer URL validation
 - d60b32074098d50b04e408c1304dd6f6120654ed Core PR#11835 practicalswift - Add Travis check for unused Python imports
 - c36b720d009f1ab1c3900750e05c1f17412e564d Core PR#11878 practicalswift - Add Travis check for duplicate includes
 - ea04bf786263eb0c933648bce43627c0de4d84ef Core PR#12284 practicalswift - Enable flake8 warning F841 ("local variable 'foo' is assigned to but never used")

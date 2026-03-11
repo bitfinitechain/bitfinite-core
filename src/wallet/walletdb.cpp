@@ -12,7 +12,7 @@
 #include <fs.h>
 #include <key_io.h>
 #include <protocol.h>
-#include <serialize.h>
+#include "serialize.h"
 #include <sync.h>
 #include <util/system.h>
 #include <util/time.h>

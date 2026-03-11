@@ -31,7 +31,7 @@
 
 #include <algorithm>
 #include <functional>
-#include <optional>
+#include "compat/optional.h"
 #include <stdexcept>
 #include <tuple>
 #include <utility>

@@ -8,7 +8,7 @@
 #include <amount.h>
 #include <qt/bitcoinspaces.h>
 
-#include <optional>
+#include "compat/optional.h"
 
 #include <QAbstractListModel>
 #include <QString>
@@ -24,11 +24,11 @@ public:
     explicit BitcoinUnits(QObject *parent);
 
     /**
-     * Bitcoin units (Bitcoin Cash unit work the same as Bitoin).
+     * Bitcoin units (BitFinite unit work the same as Bitoin).
      * @note Source: https://en.bitcoin.it/wiki/Units.
      * Please add only sensible ones.
      */
-    enum Unit { BCH, mBCH, uBCH, SAT };
+    enum Unit { BFX, mBFX, uBFX, SAT };
 
     enum SeparatorStyle { separatorNever, separatorStandard, separatorAlways };
 

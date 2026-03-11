@@ -1,13 +1,13 @@
-Bitcoin Cash Node BCH-relevant DNS seed information
+BitFinite Node BFX-relevant DNS seed information
 ====================================================
 
-Bitcoin Cash Node uses special seeds under the control of Bitcoin Cash (BCH)
+BitFinite Node uses special seeds under the control of BitFinite (BFX)
 network supporting operators to increase the chance of a node
-to find suitable peers on the BCH network.
+to find suitable peers on the BFX network.
 
 The seeds used by Cash Node should distribute peers fairly but in a
-manner which increases the likelihood that Bitcoin Cash Nodes are able
-to connect to BCH compatible peers.
+manner which increases the likelihood that BitFinite Nodes are able
+to connect to BFX compatible peers.
 
 General expectations for DNS Seed operators
 -------------------------------------------

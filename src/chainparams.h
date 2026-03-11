@@ -6,10 +6,10 @@
 
 #pragma once
 
-#include <chainparamsbase.h>
-#include <consensus/params.h>
-#include <primitives/block.h>
-#include <protocol.h>
+#include "chainparamsbase.h"
+#include "consensus/params.h"
+#include "primitives/block.h"
+#include "protocol.h"
 
 #include <array>
 #include <memory>
@@ -38,7 +38,7 @@ struct SeedSpec6 : public CService {
 
     //! Constructor used for inline aggregate initialization
     SeedSpec6(const Span<const uint8_t> addr_, uint16_t port_) noexcept {
-        static_assert(std::is_same_v<decltype(m_addr)::value_type, uint8_t>);
+        static_assert(std::is_same<decltype(m_addr)::value_type, uint8_t>::value);
         port = port_;
         SetLegacyIPv6(addr_);
     }
@@ -71,6 +71,8 @@ struct ChainTxData {
  */
 class CChainParams {
 public:
+    virtual ~CChainParams() {}
+
     enum Base58Type {
         PUBKEY_ADDRESS,
         SCRIPT_ADDRESS,
@@ -100,18 +102,14 @@ public:
      * Minimum free space (in GB) needed for data directory when pruned; Does
      * not include prune target
      */
-    uint64_t AssumedChainStateSize() const {
-        return m_assumed_chain_state_size;
-    }
+    uint64_t AssumedChainStateSize() const { return m_assumed_chain_state_size; }
     /** Whether it is possible to mine blocks on demand (no retargeting) */
     bool MineBlocksOnDemand() const { return consensus.fPowNoRetargeting; }
     /** Return the BIP70 network string (main, test or regtest) */
     std::string NetworkIDString() const { return strNetworkID; }
     /** Return the list of hostnames to look up for DNS seeds */
     const std::vector<std::string> &DNSSeeds() const { return vSeeds; }
-    const std::vector<uint8_t> &Base58Prefix(Base58Type type) const {
-        return base58Prefixes[type];
-    }
+    const std::vector<uint8_t> &Base58Prefix(Base58Type type) const { return base58Prefixes[type]; }
     const std::string &CashAddrPrefix() const { return cashaddrPrefix; }
     const std::vector<SeedSpec6> &FixedSeeds() const { return vFixedSeeds; }
     const CCheckpointData &Checkpoints() const { return checkpointData; }
@@ -147,8 +145,8 @@ protected:
  */
 std::unique_ptr<CChainParams> CreateChainParams(const std::string &chain);
 
-CBlock CreateGenesisBlock(uint32_t nTime, uint32_t nNonce, uint32_t nBits,
-                          int32_t nVersion, const Amount genesisReward);
+CBlock CreateGenesisBlock(uint32_t nTime, uint32_t nNonce, uint32_t nBits, int32_t nVersion,
+                          const Amount genesisReward);
 
 /**
  * Return the currently selected parameters. This won't change after app

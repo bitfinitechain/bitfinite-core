@@ -8,7 +8,7 @@
 #include <util/moneystr.h>
 #include <util/system.h>
 
-#include <optional>
+#include "compat/optional.h"
 
 // Descending order comparator
 struct {

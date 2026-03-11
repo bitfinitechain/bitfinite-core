@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-# Copyright (c) 2020 The Bitcoin Cash Node developers
+# Copyright (c) 2020 The BitFinite Node developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Additional tests of ancestor/descendant limit & counting scenarios.
-Refers to BCHN GitLab https://gitlab.com/bitcoin-cash-node/bitcoin-cash-node/-/issues/225
+Refers to BFXN GitLab https://gitlab.com/bitcoin-cash-node/bitcoin-cash-node/-/issues/225
 and scenarios raised for investigation by TG @readdotcash in
-https://bitcoincashresearch.org/t/specific-needs-for-increasing-or-removing-chained-tx-limit/240"""
+https://bitfiniteresearch.org/t/specific-needs-for-increasing-or-removing-chained-tx-limit/240"""
 
 from decimal import Decimal
 

@@ -6,7 +6,7 @@
 #pragma once
 
 // This class handles payment requests from clicking on
-// bitcoincash: URIs
+// bitfinite: URIs
 //
 // This is somewhat tricky, because we have to deal with the situation where the
 // user clicks on a link during startup/initialization, when the splash-screen

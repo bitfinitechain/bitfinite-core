@@ -15,7 +15,7 @@
 #include <script/standard.h>
 
 #include <limits>
-#include <optional>
+#include "compat/optional.h"
 #include <vector>
 
 static void DoubleSpendProofCreate(benchmark::State &state) {

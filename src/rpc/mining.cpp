@@ -62,10 +62,9 @@ static double GetNetworkHashPS(int lookup, int height) EXCLUSIVE_LOCKS_REQUIRED(
 
     // If lookup is -1, then use blocks since last difficulty change.
     if (lookup <= 0) {
-        throw JSONRPCError(RPC_INVALID_PARAMETER,
-                           "Number of blocks must be positive "
-                           "(using blocks since last difficulty change is no longer possible, "
-                           "because difficulty changes every block)");
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Number of blocks must be positive "
+                                                  "(using blocks since last difficulty change is no longer possible, "
+                                                  "because difficulty changes every block)");
     }
 
     // If lookup is larger than chain, then set it to chain length.
@@ -95,8 +94,7 @@ static double GetNetworkHashPS(int lookup, int height) EXCLUSIVE_LOCKS_REQUIRED(
     return workDiff.getdouble() / timeDiff;
 }
 
-static UniValue getnetworkhashps(const Config &config,
-                                 const JSONRPCRequest &request) {
+static UniValue getnetworkhashps(const Config &config, const JSONRPCRequest &request) {
     if (request.fHelp || request.params.size() > 2) {
         throw std::runtime_error(RPCHelpMan{
             "getnetworkhashps",
@@ -107,22 +105,19 @@ static UniValue getnetworkhashps(const Config &config,
                 {"height", RPCArg::Type::NUM, /* opt */ true, /* default_val */ "-1",
                  "Estimate the network hashrate at the time of this block height (-1 for current block height)."},
             },
-            RPCResult{
-                "x             (numeric) Hashes per second estimated\n"},
-            RPCExamples{HelpExampleCli("getnetworkhashps", "") +
-                        HelpExampleRpc("getnetworkhashps", "")},
-        }.ToStringWithResultsAndExamples());
+            RPCResult{"x             (numeric) Hashes per second estimated\n"},
+            RPCExamples{HelpExampleCli("getnetworkhashps", "") + HelpExampleRpc("getnetworkhashps", "")},
+        }
+                                     .ToStringWithResultsAndExamples());
     }
 
     LOCK(cs_main);
-    return GetNetworkHashPS(
-        !request.params[0].isNull() ? request.params[0].get_int() : 120,
-        !request.params[1].isNull() ? request.params[1].get_int() : -1);
+    return GetNetworkHashPS(!request.params[0].isNull() ? request.params[0].get_int() : 120,
+                            !request.params[1].isNull() ? request.params[1].get_int() : -1);
 }
 
-UniValue generateBlocks(const Config &config,
-                        std::shared_ptr<CReserveScript> coinbaseScript,
-                        int nGenerate, uint64_t nMaxTries, bool keepScript) {
+UniValue generateBlocks(const Config &config, std::shared_ptr<CReserveScript> coinbaseScript, int nGenerate,
+                        uint64_t nMaxTries, bool keepScript) {
     static const int nInnerLoopCount = 0x100000;
     int nHeightEnd = 0;
     int nHeight = 0;
@@ -156,8 +151,7 @@ UniValue generateBlocks(const Config &config,
         IncrementExtraNonce(pblock, pindexMinedTip, config, nExtraNonce);
 
         while (nMaxTries > 0 && pblock->nNonce < nInnerLoopCount &&
-               !CheckProofOfWork(pblock->GetHash(), pblock->nBits,
-                                 config.GetChainParams().GetConsensus())) {
+               !CheckProofOfWork(pblock->GetHash(), pblock->nBits, config.GetChainParams().GetConsensus())) {
             ++pblock->nNonce;
             --nMaxTries;
         }
@@ -170,11 +164,9 @@ UniValue generateBlocks(const Config &config,
             continue;
         }
 
-        std::shared_ptr<const CBlock> shared_pblock =
-            std::make_shared<const CBlock>(*pblock);
+        std::shared_ptr<const CBlock> shared_pblock = std::make_shared<const CBlock>(*pblock);
         if (!ProcessNewBlock(config, shared_pblock, true, nullptr)) {
-            throw JSONRPCError(RPC_INTERNAL_ERROR,
-                               "ProcessNewBlock, block not accepted");
+            throw JSONRPCError(RPC_INTERNAL_ERROR, "ProcessNewBlock, block not accepted");
         }
         ++nHeight;
         blockHashes.emplace_back(pblock->GetHash().GetHex());
@@ -189,10 +181,8 @@ UniValue generateBlocks(const Config &config,
     return blockHashes;
 }
 
-static UniValue generatetoaddress(const Config &config,
-                                  const JSONRPCRequest &request) {
-    if (request.fHelp || request.params.size() < 2 ||
-        request.params.size() > 3) {
+static UniValue generatetoaddress(const Config &config, const JSONRPCRequest &request) {
+    if (request.fHelp || request.params.size() < 2 || request.params.size() > 3) {
         throw std::runtime_error(RPCHelpMan{
             "generatetoaddress",
             "\nMine blocks immediately to a specified address (before the RPC call returns).\n",
@@ -201,14 +191,14 @@ static UniValue generatetoaddress(const Config &config,
                  "How many blocks are generated immediately."},
                 {"address", RPCArg::Type::STR, /* opt */ false, /* default_val */ "",
                  "The address to send the newly generated bitcoin to."},
-                {"maxtries", RPCArg::Type::NUM, /* opt */ true, /* default_val */ "1000000", "How many iterations to try."},
+                {"maxtries", RPCArg::Type::NUM, /* opt */ true, /* default_val */ "1000000",
+                 "How many iterations to try."},
             },
-            RPCResult{
-                "[ blockhashes ]     (array) hashes of blocks generated\n"},
-            RPCExamples{
-                "\nGenerate 11 blocks to myaddress\n" +
-                HelpExampleCli("generatetoaddress", "11 \"myaddress\"")},
-        }.ToStringWithResultsAndExamples());
+            RPCResult{"[ blockhashes ]     (array) hashes of blocks generated\n"},
+            RPCExamples{"\nGenerate 11 blocks to myaddress\n" +
+                        HelpExampleCli("generatetoaddress", "11 \"myaddress\"")},
+        }
+                                     .ToStringWithResultsAndExamples());
     }
 
     int nGenerate = request.params[0].get_int();
@@ -217,22 +207,18 @@ static UniValue generatetoaddress(const Config &config,
         nMaxTries = request.params[2].get_int();
     }
 
-    CTxDestination destination =
-        DecodeDestination(request.params[1].get_str(), config.GetChainParams());
+    CTxDestination destination = DecodeDestination(request.params[1].get_str(), config.GetChainParams());
     if (!IsValidDestination(destination)) {
-        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY,
-                           "Error: Invalid address");
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Error: Invalid address");
     }
 
-    std::shared_ptr<CReserveScript> coinbaseScript =
-        std::make_shared<CReserveScript>();
+    std::shared_ptr<CReserveScript> coinbaseScript = std::make_shared<CReserveScript>();
     coinbaseScript->reserveScript = GetScriptForDestination(destination);
 
     return generateBlocks(config, coinbaseScript, nGenerate, nMaxTries, false);
 }
 
-static UniValue getmininginfo(const Config &config,
-                              const JSONRPCRequest &request) {
+static UniValue getmininginfo(const Config &config, const JSONRPCRequest &request) {
     if (request.fHelp || request.params.size() != 0) {
         throw std::runtime_error(RPCHelpMan{
             "getmininginfo",
@@ -247,12 +233,13 @@ static UniValue getmininginfo(const Config &config,
                 "  \"networkhashps\": nnn,        (numeric) The network hashes per second\n"
                 "  \"miningblocksizelimit\": nnn  (numeric) The mining block size limit configured for this node\n"
                 "  \"pooledtx\": n                (numeric) The size of the mempool\n"
-                "  \"chain\": \"xxxx\",             (string) current network name as defined in BIP70 (main, test, regtest)\n"
+                "  \"chain\": \"xxxx\",             (string) current network name as defined in BIP70 (main, test, "
+                "regtest)\n"
                 "  \"warnings\": \"...\"            (string) any network and blockchain warnings\n"
                 "}\n"},
-            RPCExamples{HelpExampleCli("getmininginfo", "") +
-                        HelpExampleRpc("getmininginfo", "")},
-        }.ToStringWithResultsAndExamples());
+            RPCExamples{HelpExampleCli("getmininginfo", "") + HelpExampleRpc("getmininginfo", "")},
+        }
+                                     .ToStringWithResultsAndExamples());
     }
 
     LOCK(cs_main);
@@ -273,10 +260,9 @@ static UniValue getmininginfo(const Config &config,
     return obj;
 }
 
-// NOTE: Unlike wallet RPC (which use BCH values), mining RPCs follow GBT (BIP
+// NOTE: Unlike wallet RPC (which use BFX values), mining RPCs follow GBT (BIP
 // 22) in using satoshi amounts
-static UniValue prioritisetransaction(const Config &config,
-                                      const JSONRPCRequest &request) {
+static UniValue prioritisetransaction(const Config &config, const JSONRPCRequest &request) {
     if (request.fHelp || request.params.size() != 3) {
         throw std::runtime_error(RPCHelpMan{
             "prioritisetransaction",
@@ -285,19 +271,21 @@ static UniValue prioritisetransaction(const Config &config,
                 {"txid", RPCArg::Type::STR_HEX, /* opt */ false, /* default_val */ "", "The transaction id."},
                 {"dummy", RPCArg::Type::NUM, /* opt */ true, /* default_val */ "null",
                  "API-Compatibility for previous API. Must be zero or null.\n"
-                 "                  DEPRECATED. For forward compatibility use named arguments and omit this parameter."},
+                 "                  DEPRECATED. For forward compatibility use named arguments and omit this "
+                 "parameter."},
                 {"fee_delta", RPCArg::Type::NUM, /* opt */ false, /* default_val */ "",
                  "The fee value (in satoshis) to add (or subtract, if negative).\n"
-                 "                  Note, that this value is not a fee rate. It is a value to modify absolute fee of the TX.\n"
-                 "                  The fee is not actually paid, only the algorithm for selecting transactions into a block\n"
+                 "                  Note, that this value is not a fee rate. It is a value to modify absolute fee of "
+                 "the TX.\n"
+                 "                  The fee is not actually paid, only the algorithm for selecting transactions into a "
+                 "block\n"
                  "                  considers the transaction as it would have paid a higher (or lower) fee."},
             },
-            RPCResult{
-                "true              (boolean) Returns true\n"},
-            RPCExamples{
-                HelpExampleCli("prioritisetransaction", "\"txid\" 0.0 10000") +
-                HelpExampleRpc("prioritisetransaction", "\"txid\", 0.0, 10000")},
-        }.ToStringWithResultsAndExamples());
+            RPCResult{"true              (boolean) Returns true\n"},
+            RPCExamples{HelpExampleCli("prioritisetransaction", "\"txid\" 0.0 10000") +
+                        HelpExampleRpc("prioritisetransaction", "\"txid\", 0.0, 10000")},
+        }
+                                     .ToStringWithResultsAndExamples());
     }
 
     LOCK(cs_main);
@@ -306,9 +294,8 @@ static UniValue prioritisetransaction(const Config &config,
     Amount nAmount = request.params[2].get_int64() * SATOSHI;
 
     if (!(request.params[1].isNull() || request.params[1].get_real() == 0)) {
-        throw JSONRPCError(RPC_INVALID_PARAMETER,
-                           "Priority is no longer supported, dummy argument to "
-                           "prioritisetransaction must be 0.");
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Priority is no longer supported, dummy argument to "
+                                                  "prioritisetransaction must be 0.");
     }
 
     g_mempool.PrioritiseTransaction(txid, nAmount);
@@ -317,8 +304,7 @@ static UniValue prioritisetransaction(const Config &config,
 
 // NOTE: Assumes a conclusive result; if result is inconclusive, it must be
 // handled by caller
-static UniValue BIP22ValidationResult(const Config &config,
-                                      const CValidationState &state) {
+static UniValue BIP22ValidationResult(const Config &config, const CValidationState &state) {
     if (state.IsValid()) {
         return UniValue();
     }
@@ -342,27 +328,27 @@ static UniValue BIP22ValidationResult(const Config &config,
 /// Namespace for private data used by getblocktemplatelight and submitblocklight
 namespace gbtl {
 namespace {
-// for use with unordered_map below
-struct TrivialJobIdHasher {
-    std::size_t operator()(const JobId &jobId) const noexcept {
-        constexpr auto size = sizeof(std::size_t);
-        static_assert(JobId::size() >= size, "sizeof(JobId) must be >= sizeof(size_t)");
-        // this is faster than calling jobId.GetUint64(), especially for 32-bit.
-        // note: we must use memcpy to guarantee aligned access.
-        std::size_t ret;
-        std::memcpy(&ret, jobId.begin(), size);
-        return ret;
-    }
-};
-/// Lock for the below two data structures
-Mutex gJobIdMut;
-/// Cache of transactions for block templates returned from getblocktemplatelight, used by submitblocklight
-std::unordered_map<JobId, std::vector<CTransactionRef>, TrivialJobIdHasher> gJobIdTxCache GUARDED_BY(gJobIdMut);
-/// This list allows us to implement an LRU cache. We remove items when this grows too large.
-std::list<JobId> gJobIdList GUARDED_BY(gJobIdMut);
+    // for use with unordered_map below
+    struct TrivialJobIdHasher {
+        std::size_t operator()(const JobId &jobId) const noexcept {
+            constexpr auto size = sizeof(std::size_t);
+            static_assert(JobId::size() >= size, "sizeof(JobId) must be >= sizeof(size_t)");
+            // this is faster than calling jobId.GetUint64(), especially for 32-bit.
+            // note: we must use memcpy to guarantee aligned access.
+            std::size_t ret;
+            std::memcpy(&ret, jobId.begin(), size);
+            return ret;
+        }
+    };
+    /// Lock for the below two data structures
+    Mutex gJobIdMut;
+    /// Cache of transactions for block templates returned from getblocktemplatelight, used by submitblocklight
+    std::unordered_map<JobId, std::vector<CTransactionRef>, TrivialJobIdHasher> gJobIdTxCache GUARDED_BY(gJobIdMut);
+    /// This list allows us to implement an LRU cache. We remove items when this grows too large.
+    std::list<JobId> gJobIdList GUARDED_BY(gJobIdMut);
 
-/// Bytes used as header and footer for the getblocktemplatelight data files we write out.
-const std::string kDataFileMagic = "GBT";
+    /// Bytes used as header and footer for the getblocktemplatelight data files we write out.
+    const std::string kDataFileMagic = "GBT";
 } // namespace
 } // namespace gbtl
 
@@ -398,14 +384,12 @@ static UniValue getblocktemplatecommon(bool fLight, const Config &config, const 
         if (strMode == "proposal") {
             const UniValue &dataval = oparam["data"];
             if (!dataval.isStr()) {
-                throw JSONRPCError(RPC_TYPE_ERROR,
-                                   "Missing data String key for proposal");
+                throw JSONRPCError(RPC_TYPE_ERROR, "Missing data String key for proposal");
             }
 
             CBlock block;
             if (!DecodeHexBlk(block, dataval.get_str())) {
-                throw JSONRPCError(RPC_DESERIALIZATION_ERROR,
-                                   "Block decode failed");
+                throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "Block decode failed");
             }
 
             const BlockHash hash = block.GetHash();
@@ -427,9 +411,7 @@ static UniValue getblocktemplatecommon(bool fLight, const Config &config, const 
             }
             CValidationState state;
             TestBlockValidity(state, config.GetChainParams(), block, pindexPrev,
-                              BlockValidationOptions(config)
-                                  .withCheckPoW(false)
-                                  .withCheckMerkleRoot(true));
+                              BlockValidationOptions(config).withCheckPoW(false).withCheckMerkleRoot(true));
             return BIP22ValidationResult(config, state);
         }
     }
@@ -440,20 +422,16 @@ static UniValue getblocktemplatecommon(bool fLight, const Config &config, const 
 
     if (!config.GetAllowUnconnectedMining()) {
         if (!g_connman) {
-            throw JSONRPCError(
-                RPC_CLIENT_P2P_DISABLED,
-                "Error: Peer-to-peer functionality missing or disabled");
+            throw JSONRPCError(RPC_CLIENT_P2P_DISABLED, "Error: Peer-to-peer functionality missing or disabled");
         }
 
         if (g_connman->GetNodeCount(CConnman::CONNECTIONS_ALL) == 0) {
-            throw JSONRPCError(RPC_CLIENT_NOT_CONNECTED,
-                               "Bitcoin is not connected!");
+            throw JSONRPCError(RPC_CLIENT_NOT_CONNECTED, "Bitfinite is not connected!");
         }
     }
 
     if (IsInitialBlockDownload()) {
-        throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD,
-                           "Bitcoin is downloading blocks...");
+        throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, "Bitfinite is downloading blocks...");
     }
 
     static unsigned int nTransactionsUpdatedLast;
@@ -481,16 +459,13 @@ static UniValue getblocktemplatecommon(bool fLight, const Config &config, const 
         // Release the wallet and main lock while waiting
         LEAVE_CRITICAL_SECTION(cs_main);
         {
-            checktxtime =
-                std::chrono::steady_clock::now() + std::chrono::minutes(1);
+            checktxtime = std::chrono::steady_clock::now() + std::chrono::minutes(1);
 
             WAIT_LOCK(g_best_block_mutex, lock);
             while (g_best_block == hashWatchedChain && IsRPCRunning()) {
-                if (g_best_block_cv.wait_until(lock, checktxtime) ==
-                    std::cv_status::timeout) {
+                if (g_best_block_cv.wait_until(lock, checktxtime) == std::cv_status::timeout) {
                     // Timeout: Check transactions for update
-                    if (g_mempool.GetTransactionsUpdated() !=
-                        nTransactionsUpdatedLastLP) {
+                    if (g_mempool.GetTransactionsUpdated() != nTransactionsUpdatedLastLP) {
                         break;
                     }
                     checktxtime += std::chrono::seconds(10);
@@ -509,7 +484,7 @@ static UniValue getblocktemplatecommon(bool fLight, const Config &config, const 
     struct LightResult {
         const gbtl::JobId jobId;
         const UniValue::Array merkle;
-        LightResult(const gbtl::JobId& _jobId, const UniValue::Array& _merkle) : jobId(_jobId), merkle(_merkle) {}
+        LightResult(const gbtl::JobId &_jobId, const UniValue::Array &_merkle) : jobId(_jobId), merkle(_merkle) {}
     };
     // Update block
     static CBlockIndex *pindexPrev;
@@ -519,8 +494,7 @@ static UniValue getblocktemplatecommon(bool fLight, const Config &config, const 
     static bool fIgnoreCache = false;
     bool fNewTip = (pindexPrev && pindexPrev != ::ChainActive().Tip());
     if (pindexPrev != ::ChainActive().Tip() || fIgnoreCache || ignoreCacheOverride ||
-        (g_mempool.GetTransactionsUpdated() != nTransactionsUpdatedLast &&
-         GetTime() - nStart > 5)) {
+        (g_mempool.GetTransactionsUpdated() != nTransactionsUpdatedLast && GetTime() - nStart > 5)) {
         // Clear pindexPrev so future calls make a new block, despite any
         // failures from here on
         pindexPrev = nullptr;
@@ -548,8 +522,8 @@ static UniValue getblocktemplatecommon(bool fLight, const Config &config, const 
         // Create new block
         CScript scriptDummy = CScript() << OP_TRUE;
         const CBlockIndex *pindexMinedTip{};
-        pblocktemplate =
-            BlockAssembler(config, g_mempool).CreateNewBlock(scriptDummy, timeLimitSecs, checkValidity, &pindexMinedTip);
+        pblocktemplate = BlockAssembler(config, g_mempool)
+                             .CreateNewBlock(scriptDummy, timeLimitSecs, checkValidity, &pindexMinedTip);
         plightresult.reset();
         if (!pblocktemplate) {
             throw JSONRPCError(RPC_OUT_OF_MEMORY, "Out of memory");
@@ -605,10 +579,9 @@ static UniValue getblocktemplatecommon(bool fLight, const Config &config, const 
             const Consensus::Params &consensusParams = config.GetChainParams().GetConsensus();
             if (IsMagneticAnomalyEnabled(consensusParams, pindexPrev)) {
                 auto start = pvtx->front()->IsCoinBase() ? std::next(pvtx->begin()) : pvtx->begin();
-                std::sort(start, pvtx->end(),
-                          [](const CTransactionRef &a, const CTransactionRef &b) -> bool {
-                              return a->GetId() < b->GetId();
-                          });
+                std::sort(start, pvtx->end(), [](const CTransactionRef &a, const CTransactionRef &b) -> bool {
+                    return a->GetId() < b->GetId();
+                });
             }
             // From this point forward the fLight code below must operate on the pvtx (private copy) of the tx set,
             // and not pblock->vtx.
@@ -623,15 +596,15 @@ static UniValue getblocktemplatecommon(bool fLight, const Config &config, const 
     aCaps.reserve(1);
     aCaps.emplace_back("proposal");
 
-    uint160 jobId; // fLight version only, ends up in results["job_id"]
-    UniValue::Array merkle; // fLight version only, ends up in results["merkle"]
+    uint160 jobId;                // fLight version only, ends up in results["job_id"]
+    UniValue::Array merkle;       // fLight version only, ends up in results["merkle"]
     UniValue::Array transactions; // !fLight version only, ends up in results["transactions"]
     if (fLight) {
         assert(pvtx && (!tmpBlockTxsWithAdditionalTxs || pvtx == tmpBlockTxsWithAdditionalTxs.get()));
         if (plightresult && pvtx == &pblock->vtx) {
             // use cached light result since we know it's for this tx set (no additional_txs and result is valid)
             LogPrint(BCLog::RPC, "Using cached merkle result\n");
-            jobId = plightresult->jobId; // copy jobId
+            jobId = plightresult->jobId;   // copy jobId
             merkle = plightresult->merkle; // copy UniValue
         } else {
             // merkle cached result not available (new template) or we have additional_txs and can't use cached result
@@ -640,8 +613,7 @@ static UniValue getblocktemplatecommon(bool fLight, const Config &config, const 
             // we reserve 1 more than we need, because makeMerkleBranch may use a little more space
             vtxIdsNoCoinbase.reserve(pvtx->size());
             for (const auto &tx : *pvtx) {
-                if (tx->IsCoinBase())
-                    continue;
+                if (tx->IsCoinBase()) continue;
                 vtxIdsNoCoinbase.push_back(tx->GetId());
             }
             // make merkleSteps and merkle branch
@@ -649,10 +621,10 @@ static UniValue getblocktemplatecommon(bool fLight, const Config &config, const 
             merkle.reserve(merkleSteps.size());
             // hash source is Hash160(hashPrevBlock + concatenation_of_all_merkle_step_hashes)
             std::vector<uint8_t> hashSource;
-            hashSource.reserve(pblock->hashPrevBlock.size() + merkleSteps.size()*32);
+            hashSource.reserve(pblock->hashPrevBlock.size() + merkleSteps.size() * 32);
             hashSource.insert(hashSource.end(), pblock->hashPrevBlock.begin(), pblock->hashPrevBlock.end());
             for (const auto &h : merkleSteps) {
-                merkle.emplace_back(h.GetHex()); // push UniValue
+                merkle.emplace_back(h.GetHex());                         // push UniValue
                 hashSource.insert(hashSource.end(), h.begin(), h.end()); // add to hash source
             }
             // Compute the jobId -- we will return this jobId to the client and also generate a cache entry based on it
@@ -722,7 +694,8 @@ static UniValue getblocktemplatecommon(bool fLight, const Config &config, const 
     }
     result.emplace_back("coinbaseaux", std::move(aux));
     result.emplace_back("coinbasevalue", pblock->vtx[0]->vout[0].nValue / SATOSHI);
-    result.emplace_back("longpollid", ::ChainActive().Tip()->GetBlockHash().GetHex() + i64tostr(nTransactionsUpdatedLast));
+    result.emplace_back("longpollid",
+                        ::ChainActive().Tip()->GetBlockHash().GetHex() + i64tostr(nTransactionsUpdatedLast));
     result.emplace_back("target", hashTarget.GetHex());
     result.emplace_back("mintime", pindexPrev->GetMedianTimePast() + 1);
     result.emplace_back("mutable", std::move(aMutable));
@@ -745,17 +718,24 @@ static UniValue getblocktemplatecommon(bool fLight, const Config &config, const 
 
 static std::vector<RPCArg> getGBTArgs(const Config &config, bool fLight) {
     std::vector<RPCArg> ret{
-        {"template_request", RPCArg::Type::OBJ, /* opt */ true, /* default_val */ "",
+        {"template_request",
+         RPCArg::Type::OBJ,
+         /* opt */ true,
+         /* default_val */ "",
          "A json object in the following spec",
          {
              {"mode", RPCArg::Type::STR, /* opt */ true, /* default_val */ "",
               "This must be set to \"template\", \"proposal\" (see BIP23), or omitted"},
-             {"capabilities", RPCArg::Type::ARR, /* opt */ true, /* default_val */ "",
-              "A list of strings",
-              {
-                  {"support", RPCArg::Type::STR, /* opt */ true, /* default_val */ "",
-                   "client side supported feature, "
-                   "'longpoll', 'coinbasetxn', 'coinbasevalue', 'proposal', 'serverlist', 'workid'"},
+             {
+                 "capabilities",
+                 RPCArg::Type::ARR,
+                 /* opt */ true,
+                 /* default_val */ "",
+                 "A list of strings",
+                 {
+                     {"support", RPCArg::Type::STR, /* opt */ true, /* default_val */ "",
+                      "client side supported feature, "
+                      "'longpoll', 'coinbasetxn', 'coinbasevalue', 'proposal', 'serverlist', 'workid'"},
                  },
              },
              {"longpollid", RPCArg::Type::STR, /* opt */ true, /* default_val */ "",
@@ -765,12 +745,17 @@ static std::vector<RPCArg> getGBTArgs(const Config &config, bool fLight) {
               "Specify whether to test the generated block template for validity (\"template\" mode only)"},
              {"ignorecache", RPCArg::Type::BOOL, /* opt */ true, /* default_val */ "false",
               "Specify whether to unconditionally ignore the cached block template"},
-         }, "\"template_request\""},
+         },
+         "\"template_request\""},
     };
     if (fLight) {
-        ret.push_back({"additional_txs", RPCArg::Type::ARR, /* opt */ true, /* default_val */ "[]",
+        ret.push_back({"additional_txs",
+                       RPCArg::Type::ARR,
+                       /* opt */ true,
+                       /* default_val */ "[]",
                        "Hex encoded transactions to add to the block (each tx must be unique and valid)",
-                       {}, "\"additional_txs\""});
+                       {},
+                       "\"additional_txs\""});
     }
     return ret;
 }
@@ -793,8 +778,10 @@ static UniValue getblocktemplate(const Config &config, const JSONRPCRequest &req
                 "  \"transactions\" : [                (array) "
                 "contents of non-coinbase transactions that should be included in the next block\n"
                 "      {\n"
-                "         \"data\" : \"xxxx\",             (string) transaction data encoded in hexadecimal (byte-for-byte)\n"
-                "         \"txid\" : \"xxxx\",             (string) transaction id encoded in little-endian hexadecimal\n"
+                "         \"data\" : \"xxxx\",             (string) transaction data encoded in hexadecimal "
+                "(byte-for-byte)\n"
+                "         \"txid\" : \"xxxx\",             (string) transaction id encoded in little-endian "
+                "hexadecimal\n"
                 "         \"hash\" : \"xxxx\",             (string) hash encoded in little-endian hexadecimal\n"
                 "         \"depends\" : [                (array) array of numbers\n"
                 "             n                          (numeric) "
@@ -816,7 +803,8 @@ static UniValue getblocktemplate(const Config &config, const JSONRPCRequest &req
                 "  ],\n"
                 "  \"coinbaseaux\" : {                 (json object) "
                 "data that should be included in the coinbase's scriptSig content\n"
-                "      \"flags\" : \"xx\"                  (string) key name is to be ignored, and value included in scriptSig\n"
+                "      \"flags\" : \"xx\"                  (string) key name is to be ignored, and value included in "
+                "scriptSig\n"
                 "  },\n"
                 "  \"coinbasevalue\" : n,              (numeric) "
                 "maximum allowable input to coinbase transaction, including the generation award and transaction fees "
@@ -825,7 +813,8 @@ static UniValue getblocktemplate(const Config &config, const JSONRPCRequest &req
                 "  \"target\" : \"xxxx\",                (string) The hash target\n"
                 "  \"mintime\" : xxx,                  (numeric) "
                 "The minimum timestamp appropriate for next block time in seconds since epoch (Jan 1 1970 GMT)\n"
-                "  \"mutable\" : [                     (array of string) list of ways the block template may be changed\n"
+                "  \"mutable\" : [                     (array of string) list of ways the block template may be "
+                "changed\n"
                 "     \"value\"                          (string) "
                 "A way the block template may be changed, e.g. 'time', 'transactions', 'prevblock'\n"
                 "     ,...\n"
@@ -833,14 +822,14 @@ static UniValue getblocktemplate(const Config &config, const JSONRPCRequest &req
                 "  \"noncerange\" : \"00000000ffffffff\",(string) A range of valid nonces\n"
                 "  \"sigoplimit\" : n,                 (numeric) limit of sigchecks in blocks\n"
                 "  \"sizelimit\" : n,                  (numeric) limit of block size\n"
-                "  \"curtime\" : ttt,                  (numeric) current timestamp in seconds since epoch (Jan 1 1970 GMT)\n"
+                "  \"curtime\" : ttt,                  (numeric) current timestamp in seconds since epoch (Jan 1 1970 "
+                "GMT)\n"
                 "  \"bits\" : \"xxxxxxxx\",              (string) compressed target of next block\n"
                 "  \"height\" : n                      (numeric) The height of the next block\n"
-                "}\n"
-            },
-            RPCExamples{HelpExampleCli("getblocktemplate", "") +
-                        HelpExampleRpc("getblocktemplate", "")},
-        }.ToStringWithResultsAndExamples());
+                "}\n"},
+            RPCExamples{HelpExampleCli("getblocktemplate", "") + HelpExampleRpc("getblocktemplate", "")},
+        }
+                                     .ToStringWithResultsAndExamples());
     }
     return getblocktemplatecommon(false, config, request);
 }
@@ -866,7 +855,8 @@ static UniValue getblocktemplatelight(const Config &config, const JSONRPCRequest
                 "  \"merkle\" : [ \"xxxx\", ... ],       (array) Hashes encoded in little-endian hexadecimal\n"
                 "  \"coinbaseaux\" : {                 (json object) "
                 "data that should be included in the coinbase's scriptSig content\n"
-                "      \"flags\" : \"xx\"                  (string) key name is to be ignored, and value included in scriptSig\n"
+                "      \"flags\" : \"xx\"                  (string) key name is to be ignored, and value included in "
+                "scriptSig\n"
                 "  },\n"
                 "  \"coinbasevalue\" : n,              (numeric) "
                 "maximum allowable input to coinbase transaction, including the generation award and transaction fees "
@@ -875,7 +865,8 @@ static UniValue getblocktemplatelight(const Config &config, const JSONRPCRequest
                 "  \"target\" : \"xxxx\",                (string) The hash target\n"
                 "  \"mintime\" : xxx,                  (numeric) "
                 "The minimum timestamp appropriate for next block time in seconds since epoch (Jan 1 1970 GMT)\n"
-                "  \"mutable\" : [                     (array of string) list of ways the block template may be changed\n"
+                "  \"mutable\" : [                     (array of string) list of ways the block template may be "
+                "changed\n"
                 "     \"value\"                          (string) "
                 "A way the block template may be changed, e.g. 'time', 'transactions', 'prevblock'\n"
                 "     ,...\n"
@@ -883,14 +874,14 @@ static UniValue getblocktemplatelight(const Config &config, const JSONRPCRequest
                 "  \"noncerange\" : \"00000000ffffffff\",(string) A range of valid nonces\n"
                 "  \"sigoplimit\" : n,                 (numeric) limit of sigchecks in blocks\n"
                 "  \"sizelimit\" : n,                  (numeric) limit of block size\n"
-                "  \"curtime\" : ttt,                  (numeric) current timestamp in seconds since epoch (Jan 1 1970 GMT)\n"
+                "  \"curtime\" : ttt,                  (numeric) current timestamp in seconds since epoch (Jan 1 1970 "
+                "GMT)\n"
                 "  \"bits\" : \"xxxxxxxx\",              (string) compressed target of next block\n"
                 "  \"height\" : n                      (numeric) The height of the next block\n"
-                "}\n"
-            },
-            RPCExamples{HelpExampleCli("getblocktemplatelight", "") +
-                        HelpExampleRpc("getblocktemplatelight", "")},
-        }.ToStringWithResultsAndExamples());
+                "}\n"},
+            RPCExamples{HelpExampleCli("getblocktemplatelight", "") + HelpExampleRpc("getblocktemplatelight", "")},
+        }
+                                     .ToStringWithResultsAndExamples());
     }
     return getblocktemplatecommon(true, config, request);
 }
@@ -900,7 +891,7 @@ struct submitblock_StateCatcher final : CValidationInterface, std::enable_shared
     struct ReqEntry {
         Mutex mut;
         CValidationState state GUARDED_BY(mut);
-        bool found GUARDED_BY(mut) {false};
+        bool found GUARDED_BY(mut){false};
     };
 
 private:
@@ -921,7 +912,7 @@ public:
     std::shared_ptr<ReqEntry> AddRequest(const BlockHash &hash) {
         LOCK(mut);
         auto it = requests.emplace(std::piecewise_construct, std::forward_as_tuple(hash), std::forward_as_tuple());
-        std::shared_ptr<ReqEntry> ret(new ReqEntry, [weakSelf=weak_from_this(), it](ReqEntry *e){
+        std::shared_ptr<ReqEntry> ret(new ReqEntry, [weakSelf = weak_from_this(), it](ReqEntry *e) {
             // this deleter will auto-clean entry from the multimap when caller is done with the Request instance
             if (auto self = weakSelf.lock()) {
                 LOCK(self->mut);
@@ -1057,14 +1048,15 @@ static UniValue submitblock(const Config &config, const JSONRPCRequest &request)
             "\nAttempts to submit new block to network.\n"
             "See BIP22 for full specification.\n",
             {
-                {"hexdata", RPCArg::Type::STR_HEX, /* opt */ false, /* default_val */ "", "the hex-encoded block data to submit"},
+                {"hexdata", RPCArg::Type::STR_HEX, /* opt */ false, /* default_val */ "",
+                 "the hex-encoded block data to submit"},
                 {"dummy", RPCArg::Type::STR, /* opt */ true, /* default_val */ "",
                  "dummy value, for compatibility with BIP22. This value is ignored."},
             },
             RPCResults{},
-            RPCExamples{HelpExampleCli("submitblock", "\"mydata\"") +
-                        HelpExampleRpc("submitblock", "\"mydata\"")},
-        }.ToStringWithResultsAndExamples());
+            RPCExamples{HelpExampleCli("submitblock", "\"mydata\"") + HelpExampleRpc("submitblock", "\"mydata\"")},
+        }
+                                     .ToStringWithResultsAndExamples());
     }
     return submitblockcommon(config, request);
 }
@@ -1086,45 +1078,43 @@ static UniValue submitblocklight(const Config &config, const JSONRPCRequest &req
             RPCResults{},
             RPCExamples{HelpExampleCli("submitblocklight", "\"mydata\" \"myjobid\"") +
                         HelpExampleRpc("submitblocklight", "\"mydata\", \"myjobid\"")},
-        }.ToStringWithResultsAndExamples());
+        }
+                                     .ToStringWithResultsAndExamples());
     }
 
     const auto jobIdStr = request.params[1].get_str();
     gbtl::JobId jobId; // uint160
     if (!ParseHashStr(jobIdStr, jobId)) {
-         throw std::runtime_error("job_id must be a 40 character hexadecimal string (not '" + jobIdStr + "')");
+        throw std::runtime_error("job_id must be a 40 character hexadecimal string (not '" + jobIdStr + "')");
     }
     return submitblockcommon(config, request, &jobId);
 }
 
-static UniValue submitheader(const Config &config,
-                             const JSONRPCRequest &request) {
+static UniValue submitheader(const Config &config, const JSONRPCRequest &request) {
     if (request.fHelp || request.params.size() != 1) {
         throw std::runtime_error(RPCHelpMan{
             "submitheader",
             "\nDecode the given hexdata as a header and submit it as a candidate chain tip if valid."
             "\nThrows when the header is invalid.\n",
             {
-                {"hexdata", RPCArg::Type::STR_HEX, /* opt */ false, /* default_val */ "", "the hex-encoded block header data"},
+                {"hexdata", RPCArg::Type::STR_HEX, /* opt */ false, /* default_val */ "",
+                 "the hex-encoded block header data"},
             },
-            RPCResult{
-                "None\n"},
-            RPCExamples{HelpExampleCli("submitheader", "\"aabbcc\"") +
-                        HelpExampleRpc("submitheader", "\"aabbcc\"")},
-        }.ToStringWithResultsAndExamples());
+            RPCResult{"None\n"},
+            RPCExamples{HelpExampleCli("submitheader", "\"aabbcc\"") + HelpExampleRpc("submitheader", "\"aabbcc\"")},
+        }
+                                     .ToStringWithResultsAndExamples());
     }
 
     CBlockHeader h;
     if (!DecodeHexBlockHeader(h, request.params[0].get_str())) {
-        throw JSONRPCError(RPC_DESERIALIZATION_ERROR,
-                           "Block header decode failed");
+        throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "Block header decode failed");
     }
     {
         LOCK(cs_main);
         if (!LookupBlockIndex(h.hashPrevBlock)) {
             throw JSONRPCError(RPC_VERIFY_ERROR,
-                               "Must submit previous header (" +
-                                   h.hashPrevBlock.GetHex() + ") first");
+                               "Must submit previous header (" + h.hashPrevBlock.GetHex() + ") first");
         }
     }
 
@@ -1140,21 +1130,21 @@ static UniValue submitheader(const Config &config,
     throw JSONRPCError(RPC_VERIFY_ERROR, state.GetRejectReason());
 }
 
-static UniValue validateblocktemplate(const Config &config,
-                                      const JSONRPCRequest &request) {
+static UniValue validateblocktemplate(const Config &config, const JSONRPCRequest &request) {
     if (request.fHelp || request.params.size() != 1) {
         throw std::runtime_error(RPCHelpMan{
             "validateblocktemplate",
             "\nReturns whether this block template will be accepted if a hash solution is found."
             "\nReturns a JSON error when the header is invalid.\n",
             {
-                {"hexdata", RPCArg::Type::STR_HEX, /* opt */ false, /* default_val */ "", "the hex-encoded block to validate (same format as submitblock)"},
+                {"hexdata", RPCArg::Type::STR_HEX, /* opt */ false, /* default_val */ "",
+                 "the hex-encoded block to validate (same format as submitblock)"},
             },
-            RPCResult{
-                "true\n"},
+            RPCResult{"true\n"},
             RPCExamples{HelpExampleCli("validateblocktemplate", "\"mydata\"") +
                         HelpExampleRpc("validateblocktemplate", "\"mydata\"")},
-        }.ToStringWithResultsAndExamples());
+        }
+                                     .ToStringWithResultsAndExamples());
     }
 
     CBlock block;
@@ -1165,7 +1155,8 @@ static UniValue validateblocktemplate(const Config &config,
     {
         LOCK(cs_main);
         if (!LookupBlockIndex(block.hashPrevBlock)) {
-            throw JSONRPCError(RPC_VERIFY_ERROR, "Invalid block: unknown parent (" + block.hashPrevBlock.GetHex() + ")");
+            throw JSONRPCError(RPC_VERIFY_ERROR,
+                               "Invalid block: unknown parent (" + block.hashPrevBlock.GetHex() + ")");
         }
 
         // Check that block builds on chain tip
@@ -1177,26 +1168,23 @@ static UniValue validateblocktemplate(const Config &config,
 
         CValidationState state;
         if (!TestBlockValidity(state, config.GetChainParams(), block, pindexPrev,
-                               BlockValidationOptions(config)
-                                  .withCheckPoW(false)
-                                  .withCheckMerkleRoot(true))) {
+                               BlockValidationOptions(config).withCheckPoW(false).withCheckMerkleRoot(true))) {
             throw JSONRPCError(RPC_VERIFY_ERROR, "Invalid block: " + state.GetRejectReason());
         }
     }
     return true;
 }
 
-static UniValue estimatefee(const Config &config,
-                            const JSONRPCRequest &request) {
+static UniValue estimatefee(const Config &config, const JSONRPCRequest &request) {
     if (request.fHelp || request.params.size() > 0) {
         throw std::runtime_error(RPCHelpMan{
             "estimatefee",
             "\nEstimates the approximate fee per kilobyte needed for a transaction\n",
             {},
-            RPCResult{
-                "n              (numeric) estimated fee-per-kilobyte\n"},
+            RPCResult{"n              (numeric) estimated fee-per-kilobyte\n"},
             RPCExamples{HelpExampleCli("estimatefee", "")},
-        }.ToStringWithResultsAndExamples());
+        }
+                                     .ToStringWithResultsAndExamples());
     }
 
     return ValueFromAmount(g_mempool.estimateFee().GetFeePerK());
@@ -1227,8 +1215,7 @@ std::vector<uint256> MakeMerkleBranch(std::vector<uint256> hashes) {
            ?cb  0  tx  tx   tx  tx tx  tx   <-- input hashes (txids)
     */
     std::vector<uint256> steps;
-    if (hashes.empty())
-        return steps;
+    if (hashes.empty()) return steps;
     steps.reserve(size_t(std::ceil(std::log2(hashes.size() + 1)))); // results will be of size ~log2 input hashes
     while (hashes.size() > 1) {
         // put first element
@@ -1243,15 +1230,15 @@ std::vector<uint256> MakeMerkleBranch(std::vector<uint256> hashes) {
         for (size_t i = 0; i < reducedSize; ++i) {
             // Hash = Double SHA256.
             // The below SHA256D64 call is equivalent to this call, except it hashes in-place, so it's faster.
-            //hashes[i] = Hash(hashes[i * 2 + 1].begin(), hashes[i * 2 + 1].end(),
+            // hashes[i] = Hash(hashes[i * 2 + 1].begin(), hashes[i * 2 + 1].end(),
             //                 hashes[i * 2 + 2].begin(), hashes[i * 2 + 2].end());
             SHA256D64(hashes[i].begin(), hashes[i * 2 + 1].begin(), 1);
         }
         hashes.resize(reducedSize);
-  }
-  assert(hashes.size() == 1);
-  steps.push_back(hashes.front()); // put the last one
-  return steps;
+    }
+    assert(hashes.size() == 1);
+    steps.push_back(hashes.front()); // put the last one
+    return steps;
 }
 
 bool GetTxsFromCache(const JobId &jobId, CBlock &block) {
@@ -1259,7 +1246,7 @@ bool GetTxsFromCache(const JobId &jobId, CBlock &block) {
     const auto it = gJobIdTxCache.find(jobId);
     if (it != gJobIdTxCache.end()) {
         // found!  Add to block
-        const auto & vtx = it->second;
+        const auto &vtx = it->second;
         block.vtx.insert(block.vtx.end(), vtx.begin(), vtx.end());
         return true;
     }
@@ -1277,7 +1264,8 @@ void LoadTxsFromFile(const JobId &jobId, CBlock &block) {
         LogPrintf("WARNING: SubmitBlockLight cannot find file for job_id %s, searching trash dir\n", jobIdStr);
         filename = GetJobDataTrashDir() / jobIdStr;
         if (!fs::exists(filename)) {
-            LogPrintf("WARNING: SubmitBlockLight cannot find file for job_id %s in trash dir either, giving up\n", jobIdStr);
+            LogPrintf("WARNING: SubmitBlockLight cannot find file for job_id %s in trash dir either, giving up\n",
+                      jobIdStr);
             throw JSONRPCError(RPC_INVALID_PARAMETER, errNoData);
         }
     }
@@ -1286,7 +1274,7 @@ void LoadTxsFromFile(const JobId &jobId, CBlock &block) {
         const auto magicLen = kDataFileMagic.size(); // 3 for "GBT"
         std::vector<uint8_t> dataBuf;
         {
-            fs::ifstream file(filename, std::ios_base::binary|std::ios_base::in);
+            fs::ifstream file(filename, std::ios_base::binary | std::ios_base::in);
 
             if (!file.is_open()) {
                 LogPrintf("WARNING: SubmitBlockLight found file for job_id %s, but open failed\n", jobIdStr);
@@ -1300,14 +1288,14 @@ void LoadTxsFromFile(const JobId &jobId, CBlock &block) {
             }
             file.seekg(0, file.beg);
             dataBuf.resize(size_t(fileSize));
-            char * const charDataBuf = reinterpret_cast<char *>(dataBuf.data());
+            char *const charDataBuf = reinterpret_cast<char *>(dataBuf.data());
             file.read(charDataBuf, fileSize);
             // check read was good and that header and footer match
             if (file.fail()
-                    // header must match "GBT"
-                    || 0 != std::memcmp(charDataBuf, kDataFileMagic.data(), magicLen)
-                    // footer must match "GBT"
-                    || 0 != std::memcmp(charDataBuf + fileSize - magicLen, kDataFileMagic.data(), magicLen)) {
+                // header must match "GBT"
+                || 0 != std::memcmp(charDataBuf, kDataFileMagic.data(), magicLen)
+                // footer must match "GBT"
+                || 0 != std::memcmp(charDataBuf + fileSize - magicLen, kDataFileMagic.data(), magicLen)) {
                 LogPrintf("WARNING: SubmitBlockLight job_id %s appears to be corrupt\n", jobIdStr);
                 throw JSONRPCError(RPC_DESERIALIZATION_ERROR, errDataBad);
             }
@@ -1322,7 +1310,7 @@ void LoadTxsFromFile(const JobId &jobId, CBlock &block) {
             vr >> mutableTx;
             block.vtx.push_back(MakeTransactionRef(std::move(mutableTx)));
         }
-    } catch (const std::exception & e) {
+    } catch (const std::exception &e) {
         // Note: JSONRPCError() above throws a UniValue so it will not be caught here (but it will
         // propagate out anyway to the client). This clause is for low-level std::ios_base::failure
         // and potentially even std::bad_alloc.
@@ -1335,8 +1323,7 @@ void CacheAndSaveTxsToFile(const JobId &jobId, const std::vector<CTransactionRef
     std::vector<CTransactionRef> storeTxs;
     bool didSetupStoreTxs = false;
     const auto setupStoreTxs = [&storeTxs, &didSetupStoreTxs, pvtx] {
-        if (didSetupStoreTxs)
-            return;
+        if (didSetupStoreTxs) return;
         if (!pvtx->empty()) {
             // we store all but the first tx (all but coinbase)
             auto start = pvtx->front()->IsCoinBase() ? std::next(pvtx->begin()) : pvtx->begin();
@@ -1355,8 +1342,9 @@ void CacheAndSaveTxsToFile(const JobId &jobId, const std::vector<CTransactionRef
             setupStoreTxs();
             CDataStream datastream(SER_NETWORK, PROTOCOL_VERSION);
             const uint32_t nTx = uint32_t(storeTxs.size());
-            datastream.reserve(256 * nTx + sizeof(nTx)); // assume avg 256 byte tx size. This doesn't have to be exact, this is just to avoid redundant allocations as we serialize.
-            datastream << nTx; // first write the size
+            datastream.reserve(256 * nTx + sizeof(nTx)); // assume avg 256 byte tx size. This doesn't have to be exact,
+                                                         // this is just to avoid redundant allocations as we serialize.
+            datastream << nTx;                           // first write the size
             for (const auto &txRef : storeTxs)
                 datastream << *txRef;
 
@@ -1365,13 +1353,12 @@ void CacheAndSaveTxsToFile(const JobId &jobId, const std::vector<CTransactionRef
             tmpOut += gbtl::tmpExt; // += ".tmp"
             bool ok{};
             {
-                fs::ofstream ofile(tmpOut, std::ios_base::binary|std::ios_base::out|std::ios_base::trunc);
+                fs::ofstream ofile(tmpOut, std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
                 if ((ok = ofile.is_open())) {
                     // "GBT" magic bytes at front
                     using std::streamsize;
                     ofile.write(kDataFileMagic.data(), streamsize(kDataFileMagic.size()));
-                    if (ofile)
-                        ofile.write(datastream.data(), streamsize(datastream.size()));
+                    if (ofile) ofile.write(datastream.data(), streamsize(datastream.size()));
                     if (ofile)
                         // "GBT" magic bytes at end
                         ofile.write(kDataFileMagic.data(), streamsize(kDataFileMagic.size()));
@@ -1385,7 +1372,10 @@ void CacheAndSaveTxsToFile(const JobId &jobId, const std::vector<CTransactionRef
                          outputFile.string(), (GetTimeMicros() - t0) / 1e6);
             } else {
                 LogPrintf("getblocktemplatelight: cannot write tx data to %s\n", tmpOut.string());
-                try { fs::remove(tmpOut); } catch (...) {}
+                try {
+                    fs::remove(tmpOut);
+                } catch (...) {
+                }
                 // We must throw here. Clients should be alerted that there is a misconfiguration with bitcoind (even
                 // though we could theoretically continue and rely on in-memory cache, we are better off doing this).
                 throw JSONRPCError(RPC_INTERNAL_ERROR, "failed to save job tx data to disk");
@@ -1401,15 +1391,15 @@ void CacheAndSaveTxsToFile(const JobId &jobId, const std::vector<CTransactionRef
             // put in cache, but first check size to limit cache size
             if (gJobIdTxCache.size() >= GetJobCacheSize() && !gJobIdList.empty()) {
                 // remove the oldest jobId
-                const auto & oldJobId = gJobIdList.front();
+                const auto &oldJobId = gJobIdList.front();
                 LogPrint(BCLog::RPC, "getblocktemplatelight: in-memory cache full, old job_id %s removed\n",
                          oldJobId.GetHex());
                 gJobIdTxCache.erase(oldJobId);
                 gJobIdList.pop_front();
             }
             // we insert using emplace and forward_as_tuple for minimal overhead
-            gJobIdTxCache.emplace(std::piecewise_construct,
-                                  std::forward_as_tuple(jobId), std::forward_as_tuple(std::move(storeTxs)));
+            gJobIdTxCache.emplace(std::piecewise_construct, std::forward_as_tuple(jobId),
+                                  std::forward_as_tuple(std::move(storeTxs)));
             // NB: at this point storeTxs is empty (moved)
             gJobIdList.push_back(jobId);
         }

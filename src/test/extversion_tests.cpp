@@ -8,7 +8,7 @@
 
 #include <compat/endian.h>
 #include <extversion.h>
-#include <serialize.h>
+#include "serialize.h"
 #include <streams.h>
 #include <test/setup_common.h>
 #include <util/strencodings.h>

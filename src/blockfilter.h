@@ -7,7 +7,7 @@
 
 #include <primitives/block.h>
 #include <primitives/blockhash.h>
-#include <serialize.h>
+#include "serialize.h"
 #include <uint256.h>
 #include <undo.h>
 #include <util/saltedhashers.h>

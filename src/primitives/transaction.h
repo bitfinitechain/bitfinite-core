@@ -6,12 +6,12 @@
 
 #pragma once
 
-#include <amount.h>
-#include <feerate.h>
-#include <primitives/token.h> // Token & NFT support
-#include <primitives/txid.h>
-#include <script/script.h>
-#include <serialize.h>
+#include "../amount.h"
+#include "../feerate.h"
+#include "../script/script.h"
+#include "../serialize.h"
+#include "token.h" // Token & NFT support
+#include "txid.h"
 
 #include <algorithm>
 #include <utility> // for std::move
@@ -45,13 +45,9 @@ public:
         return cmp < 0 || (cmp == 0 && a.n < b.n);
     }
 
-    friend bool operator==(const COutPoint &a, const COutPoint &b) {
-        return (a.txid == b.txid && a.n == b.n);
-    }
+    friend bool operator==(const COutPoint &a, const COutPoint &b) { return (a.txid == b.txid && a.n == b.n); }
 
-    friend bool operator!=(const COutPoint &a, const COutPoint &b) {
-        return !(a == b);
-    }
+    friend bool operator!=(const COutPoint &a, const COutPoint &b) { return !(a == b); }
 
     std::string ToString(bool fVerbose = false) const;
 };
@@ -105,18 +101,15 @@ public:
 
     CTxIn() { nSequence = SEQUENCE_FINAL; }
 
-    explicit CTxIn(COutPoint prevoutIn, CScript scriptSigIn = CScript(),
-                   uint32_t nSequenceIn = SEQUENCE_FINAL)
+    explicit CTxIn(COutPoint prevoutIn, CScript scriptSigIn = CScript(), uint32_t nSequenceIn = SEQUENCE_FINAL)
         : prevout(prevoutIn), scriptSig(scriptSigIn), nSequence(nSequenceIn) {}
-    CTxIn(TxId prevTxId, uint32_t nOut, CScript scriptSigIn = CScript(),
-          uint32_t nSequenceIn = SEQUENCE_FINAL)
+    CTxIn(TxId prevTxId, uint32_t nOut, CScript scriptSigIn = CScript(), uint32_t nSequenceIn = SEQUENCE_FINAL)
         : CTxIn(COutPoint(prevTxId, nOut), scriptSigIn, nSequenceIn) {}
 
     SERIALIZE_METHODS(CTxIn, obj) { READWRITE(obj.prevout, obj.scriptSig, obj.nSequence); }
 
     friend bool operator==(const CTxIn &a, const CTxIn &b) {
-        return (a.prevout == b.prevout && a.scriptSig == b.scriptSig &&
-                a.nSequence == b.nSequence);
+        return (a.prevout == b.prevout && a.scriptSig == b.scriptSig && a.nSequence == b.nSequence);
     }
 
     friend bool operator!=(const CTxIn &a, const CTxIn &b) { return !(a == b); }
@@ -171,9 +164,7 @@ public:
         return a.nValue == b.nValue && a.scriptPubKey == b.scriptPubKey && a.tokenDataPtr == b.tokenDataPtr;
     }
 
-    friend bool operator!=(const CTxOut &a, const CTxOut &b) {
-        return !(a == b);
-    }
+    friend bool operator!=(const CTxOut &a, const CTxOut &b) { return !(a == b); }
 
     std::string ToString(bool fVerbose = false) const;
 };
@@ -272,7 +263,8 @@ public:
     CTransaction(const CTransaction &) = delete;
     CTransaction &operator=(const CTransaction &) = delete;
 
-    template <typename Stream> inline void Serialize(Stream &s) const {
+    template <typename Stream>
+    inline void Serialize(Stream &s) const {
         SerializeTransaction(*this, s);
     }
 
@@ -282,8 +274,7 @@ public:
      * const fields.
      */
     template <typename Stream>
-    CTransaction(deserialize_type, Stream &s)
-        : CTransaction(CMutableTransaction(deserialize, s)) {}
+    CTransaction(deserialize_type, Stream &s) : CTransaction(CMutableTransaction(deserialize, s)) {}
 
     bool IsNull() const { return vin.empty() && vout.empty(); }
 
@@ -301,13 +292,11 @@ public:
      */
     unsigned int GetTotalSize() const;
 
-    bool IsCoinBase() const {
-        return (vin.size() == 1 && vin[0].prevout.IsNull());
-    }
+    bool IsCoinBase() const { return (vin.size() == 1 && vin[0].prevout.IsNull()); }
 
     /// @return true if this transaction has any vouts with non-null token::OutputData
     bool HasTokenOutputs() const {
-        return std::any_of(vout.begin(), vout.end(), [](const CTxOut &out){ return bool(out.tokenDataPtr); });
+        return std::any_of(vout.begin(), vout.end(), [](const CTxOut &out) { return bool(out.tokenDataPtr); });
     }
 
     /// @return true if any vouts have scriptPubKey[0] == token::PREFIX_BYTE,
@@ -317,22 +306,17 @@ public:
     /// vouts, but after activation of native tokens such txns are rejected by
     /// consensus (see: CheckTxTokens() in consensus/tokens.cpp).
     bool HasOutputsWithUnparseableTokenData() const {
-        return std::any_of(vout.begin(), vout.end(), [](const CTxOut &out){ return out.HasUnparseableTokenData(); });
+        return std::any_of(vout.begin(), vout.end(), [](const CTxOut &out) { return out.HasUnparseableTokenData(); });
     }
 
-    friend bool operator==(const CTransaction &a, const CTransaction &b) {
-        return a.GetHash() == b.GetHash();
-    }
+    friend bool operator==(const CTransaction &a, const CTransaction &b) { return a.GetHash() == b.GetHash(); }
 
-    friend bool operator!=(const CTransaction &a, const CTransaction &b) {
-        return !(a == b);
-    }
+    friend bool operator!=(const CTransaction &a, const CTransaction &b) { return !(a == b); }
 
     std::string ToString(bool fVerbose = false) const;
 };
 #if defined(__x86_64__)
-static_assert(sizeof(CTransaction) == 88,
-              "sizeof CTransaction is expected to be 88 bytes");
+static_assert(sizeof(CTransaction) == 88, "sizeof CTransaction is expected to be 88 bytes");
 #endif
 
 /**
@@ -348,11 +332,13 @@ public:
     CMutableTransaction();
     explicit CMutableTransaction(const CTransaction &tx);
 
-    template <typename Stream> inline void Serialize(Stream &s) const {
+    template <typename Stream>
+    inline void Serialize(Stream &s) const {
         SerializeTransaction(*this, s);
     }
 
-    template <typename Stream> inline void Unserialize(Stream &s) {
+    template <typename Stream>
+    inline void Unserialize(Stream &s) {
         UnserializeTransaction(*this, s);
     }
 
@@ -369,8 +355,7 @@ public:
     TxId GetId() const;
     TxHash GetHash() const;
 
-    friend bool operator==(const CMutableTransaction &a,
-                           const CMutableTransaction &b) {
+    friend bool operator==(const CMutableTransaction &a, const CMutableTransaction &b) {
         return a.GetHash() == b.GetHash();
     }
 
@@ -379,14 +364,18 @@ public:
     /// Mutates this txn. Sorts the outputs according to BIP-69
     void SortOutputsBip69();
     /// Convenience: Calls the above two functions.
-    void SortBip69() { SortInputsBip69(); SortOutputsBip69(); }
+    void SortBip69() {
+        SortInputsBip69();
+        SortOutputsBip69();
+    }
 };
 #if defined(__x86_64__)
-static_assert(sizeof(CMutableTransaction) == 56,
-              "sizeof CMutableTransaction is expected to be 56 bytes");
+static_assert(sizeof(CMutableTransaction) == 56, "sizeof CMutableTransaction is expected to be 56 bytes");
 #endif
 
-static inline CTransactionRef MakeTransactionRef() { return CTransaction::sharedNull; }
+static inline CTransactionRef MakeTransactionRef() {
+    return CTransaction::sharedNull;
+}
 
 template <typename Tx>
 static inline CTransactionRef MakeTransactionRef(Tx &&txIn) {
@@ -406,6 +395,7 @@ static inline CTransactionRef MakeTransactionRef(Tx &&txIn) {
 class CTransactionView {
     const CTransaction *tx{};
     const CMutableTransaction *mtx{};
+
 public:
     CTransactionView(const CTransaction &txIn) noexcept : tx(&txIn) {}
     CTransactionView(const CMutableTransaction &mtxIn) noexcept : mtx(&mtxIn) {}

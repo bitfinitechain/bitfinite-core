@@ -1,10 +1,10 @@
 Test Networks
 =============
 
-This document describes the Bitcoin Cash test networks supported by the
-BCHN software.
+This document describes the BitFinite test networks supported by the
+BFXN software.
 
-There are currently three test networks that you can access with BCHN:
+There are currently three test networks that you can access with BFXN:
 
 - testnet3 (historical testnet)
 - testnet4
@@ -17,8 +17,8 @@ of protocol developers. They can be accessed by running the software
 `-chipnet` arguments, respectively.
 
 Other software clients may have additional test network definitions compiled
-into them but these are not currently supported by BCHN and could not be
-accessed without further modifications to the software. If you wish BCHN
+into them but these are not currently supported by BFXN and could not be
+accessed without further modifications to the software. If you wish BFXN
 to access a test network not listed above, please raise a support request.
 
 Below, we give a brief description and an overview table for these networks.
@@ -26,7 +26,7 @@ Below, we give a brief description and an overview table for these networks.
 Testnet3
 --------
 
-This is the historical testnet in Bitcoin Cash, maintained as a fork from
+This is the historical testnet in BitFinite, maintained as a fork from
 BTC's testnet3 since 2017. It has grown substantially in size
 (2023/Dec/11: 45GB), in part due to scaling tests that deposited a number
 of 32MB blocks, and due to the resulting time to sync a test node from
@@ -36,7 +36,7 @@ The historical role is as a test network where application builders can
 test their apps against the currently deployed consensus rules (as much
 as possible) and at minimal expense without disrupting the main network.
 
-After the upgrade to Adaptive Blocksize Limit Algorithm for Bitcoin Cash
+After the upgrade to Adaptive Blocksize Limit Algorithm for BitFinite
 in May 2024, the maximum blocksize of this network will remain capped to
 32MB.
 
@@ -57,7 +57,7 @@ CPU-mineable quickly after someone has used an ASIC on it.
 
 Scaling tests should use 'scalenet' instead (see next section).
 
-After the upgrade to Adaptive Blocksize Limit Algorithm for Bitcoin Cash
+After the upgrade to Adaptive Blocksize Limit Algorithm for BitFinite
 in May 2024, the maximum blocksize of this network will remain capped to
 2MB.
 
@@ -92,11 +92,11 @@ consensus upgrade.
 It therefore deploys these CHIPs (and updates to them) as much in advance as
 possible (optimally 6 months ahead of the main network upgrades).
 
-After the upgrade to Adaptive Blocksize Limit Algorithm for Bitcoin Cash
+After the upgrade to Adaptive Blocksize Limit Algorithm for BitFinite
 on this network in November 2023, the maximum blocksize of this network will
 vary dynamically with a floor capacity of 2MB.
 
-Overview Table for BCHN-supported Test Networks
+Overview Table for BFXN-supported Test Networks
 -----------------------------------------------
 
 | Attribute/Network            |  testnet3   |   testnet4   |  scalenet   |   chipnet   |
@@ -118,7 +118,7 @@ Overview Table for BCHN-supported Test Networks
 | BIP65 height                 |  581885     |  3           |  3          |  3          |
 | BIP66 height                 |  330776     |  4           |  4          |  4          |
 | CSV height                   |  770112     |  5           |  5          |  5          |
-| UAHF (BCH fork) height       |  1155875    |  6           |  6          |  6          |
+| UAHF (BFX fork) height       |  1155875    |  6           |  6          |  6          |
 | Nov 13 2017 HF height        |  1188697    |  3000        |  3000       |  3000       |
 | Nov 15 2018 HF height        |  1267996    |  4000        |  4000       |  4000       |
 | Nov 15 2019 HF height        |  1341711    |  5000        |  5000       |  5000       |
@@ -133,7 +133,7 @@ Overview Table for BCHN-supported Test Networks
 | Base58 p: ext. pubkey        |  0x043587cf |  0x043587cf  |  0x043587cf |  0x043587cf |
 | Base58 p: ext. seckey        |  0x04358394 |  0x04358394  |  0x04358394 |  0x04358394 |
 
-Note 1: set to 0 because historical sigop code has been removed from BCHN
+Note 1: set to 0 because historical sigop code has been removed from BFXN
         See chainparams.cpp for more detailed comments.
 
 Note 2: scalenet is intended to be periodically reorganized down to a
@@ -147,5 +147,5 @@ Note 3: Chipnet upgrades forked 6-months ahead of other networks, i.e. previous 
 Further references
 ------------------
 
-1. <https://bitcoincashresearch.org/t/testnet4-and-scalenet/148>
-2. <https://bitcoincashresearch.org/t/staging-chips-on-testnet/573>
+1. <https://bitfiniteresearch.org/t/testnet4-and-scalenet/148>
+2. <https://bitfiniteresearch.org/t/staging-chips-on-testnet/573>

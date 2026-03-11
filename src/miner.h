@@ -14,7 +14,7 @@
 
 #include <cstdint>
 #include <memory>
-#include <optional>
+#include "compat/optional.h"
 
 class CBlockIndex;
 class CChainParams;

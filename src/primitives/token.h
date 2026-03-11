@@ -4,37 +4,37 @@
 
 #pragma once
 
+#include "serialize.h"
 #include <prevector.h>
 #include <script/script.h>
-#include <serialize.h>
 #include <tinyformat.h>
 #include <uint256.h>
 #include <util/heapoptional.h>
 
+#include "compat/optional.h"
 #include <cstdint>
 #include <limits>
 #include <optional>
 #include <string>
 #include <tuple>
 
-/// This namespace captures the Token functionality for Bitcoin Cash.
-/// See: CHIP-2022-02-CashTokens: Token Primitives for Bitcoin Cash
+/// This namespace captures the Token functionality for BitFinite.
+/// See: CHIP-2022-02-CashTokens: Token Primitives for BitFinite
 ///      https://github.com/bitjson/cashtokens
 namespace token {
 
 // Declare serialization exceptions -- all of them inherit from std::ios_base::failure and are differentiated
 // solely for our unit test vectors to catch specific failure reasons.
-#define TOKEN_DECLARE_SER_EXC(name) \
-    struct name : std::ios_base::failure { \
-        using std::ios_base::failure::failure;  /* inherit c'tors */ \
-        ~name() override; /* d'tor implemented in token.cpp file to prevent linker warnings on some platforms */ \
+#define TOKEN_DECLARE_SER_EXC(name)                                                                                    \
+    struct name : std::ios_base::failure {                                                                             \
+        using std::ios_base::failure::failure; /* inherit c'tors */                                                    \
+        ~name() override; /* d'tor implemented in token.cpp file to prevent linker warnings on some platforms */       \
     }
 
 TOKEN_DECLARE_SER_EXC(AmountOutOfRangeError);
 TOKEN_DECLARE_SER_EXC(InvalidBitfieldError);
 TOKEN_DECLARE_SER_EXC(AmountMustNotBeZeroError);
 TOKEN_DECLARE_SER_EXC(CommitmentMustNotBeEmptyError);
-
 
 /// Used as the first byte of the "wrapped" scriptPubKey to determine whether the output has token data
 static constexpr uint8_t PREFIX_BYTE = opcodetype::SPECIAL_TOKEN_PREFIX;
@@ -99,7 +99,7 @@ struct SafeAmount : ScriptIntBase<SafeAmount> {
 
     SafeAmount() noexcept : SafeAmount(0) {}
     SafeAmount(const SafeAmount &) noexcept = default;
-    SafeAmount & operator=(const SafeAmount &) noexcept = default;
+    SafeAmount &operator=(const SafeAmount &) noexcept = default;
 
     SERIALIZE_METHODS(SafeAmount, obj) {
         uint64_t val;
@@ -130,7 +130,7 @@ class OutputData {
     Id id;
     /// Token bitfield byte. High order nibble is one of the Structure enum values and low order nibble is Capability.
     uint8_t bitfield = 0;
-    SafeAmount amount; ///< token amount (FT & NFT tokens). May not be negative.
+    SafeAmount amount;        ///< token amount (FT & NFT tokens). May not be negative.
     NFTCommitment commitment; ///< may be empty
 
 public:
@@ -171,9 +171,9 @@ public:
     }
 
     // Get Id, Amount & Commitment
-    const Id & GetId() const { return id; }
+    const Id &GetId() const { return id; }
     SafeAmount GetAmount() const { return amount; }
-    const NFTCommitment & GetCommitment() const { return commitment; }
+    const NFTCommitment &GetCommitment() const { return commitment; }
 
     // Setters: These should only be called when setting up CTxOuts for CMutableTransaction, and never on in-memory
     //          "Coin" instances e.g. from the coins cache.
@@ -211,7 +211,7 @@ public:
     SERIALIZE_METHODS(OutputData, obj) {
         READWRITE(obj.id); // 32-byte hash
         READWRITE(obj.bitfield);
-        if ( ! obj.IsValidBitfield()) {
+        if (!obj.IsValidBitfield()) {
             throw InvalidBitfieldError(strprintf("Invalid token bitfield: 0x%02x", obj.bitfield));
         }
 
@@ -238,8 +238,8 @@ public:
     bool operator!=(const OutputData &o) const { return !this->operator==(o); }
     bool operator<(const OutputData &o) const {
         // Note this ordering is used for BIP69 sorting. See: https://github.com/bitjson/cashtokens
-        return   std::tuple(  amount,   HasNFT(),   GetCapability(),   commitment,   id)
-               < std::tuple(o.amount, o.HasNFT(), o.GetCapability(), o.commitment, o.id);
+        return std::tuple(amount, HasNFT(), GetCapability(), commitment, id) <
+               std::tuple(o.amount, o.HasNFT(), o.GetCapability(), o.commitment, o.id);
     }
 
     /// If fVerbose is true, print the full token id hex and commitment hex, otherwise print only the first
@@ -249,7 +249,7 @@ public:
     /// This is a rough estimate and actual size may be smaller in the average case or larger in some cases.
     static constexpr size_t EstimatedSerialSize() {
         return Id::size() + 1 /* bitfield */ + sizeof(int64_t) /* Amount */
-                + 1 /* CompactSize */ + MAX_CONSENSUS_COMMITMENT_LENGTH;
+               + 1 /* CompactSize */ + MAX_CONSENSUS_COMMITMENT_LENGTH;
     }
 };
 

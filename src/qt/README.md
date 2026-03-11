@@ -52,7 +52,7 @@ Various dialogs, e.g. to open a URL. Inherit from [QDialog](http://doc.qt.io/qt-
 
 ### paymentserver.(h/cpp)
 
-Used to process BIP21 and BIP70 payment URI / requests. Also handles URI based application switching (e.g. when following a bitcoincash:... link from a browser).
+Used to process BIP21 and BIP70 payment URI / requests. Also handles URI based application switching (e.g. when following a bitfinite:... link from a browser).
 
 ### walletview.(h/cpp)
 
@@ -62,7 +62,7 @@ Represents the view to a single wallet.
 
 * UI elements like BitcoinAmountField, which inherit from QWidget.
 * `bitcoinstrings.cpp`: automatically generated
-* `bitcoinunits.(h/cpp)`: BCH / mBCH / etc handling
+* `bitcoinunits.(h/cpp)`: BFX / mBFX / etc handling
 * `callback.h`
 * `guiconstants.h`: UI colors, app name, etc
 * `guiutil.h`: several helper functions

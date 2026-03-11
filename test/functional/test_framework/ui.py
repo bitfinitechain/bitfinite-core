@@ -22,7 +22,7 @@ class MainWindow(QMainWindow):
         self.move(screenrect.left(), screenrect.top())
         self.setMinimumSize(QSize(300, 260))
         self.resize(QSize(300, 260))
-        self.setWindowTitle("Bitcoin Cash Node - UI Test Plan")
+        self.setWindowTitle("BitFinite Node - UI Test Plan")
         self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
 
 

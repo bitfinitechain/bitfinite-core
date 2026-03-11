@@ -260,7 +260,7 @@ class RawTransactionsTest(BitcoinTestFramework):
         assert_equal(utx['txid'], dec_tx['vin'][0]['txid'])
 
         assert_raises_rpc_error(
-            -5, "changeAddress must be a valid Bitcoin Cash address",
+            -5, "changeAddress must be a valid BitFinite address",
             self.nodes[2].fundrawtransaction, rawTx, {'changeAddress': 'foobar'})
 
         #
@@ -498,7 +498,7 @@ class RawTransactionsTest(BitcoinTestFramework):
         mSigObj = self.nodes[2].addmultisigaddress(
             2, [addr1Obj['pubkey'], addr2Obj['pubkey']])['address']
 
-        # send 1.2 BCH to msig addr
+        # send 1.2 BFX to msig addr
         txId = self.nodes[0].sendtoaddress(mSigObj, 1.2)
         self.sync_all()
         self.generate(self.nodes[1], 1)

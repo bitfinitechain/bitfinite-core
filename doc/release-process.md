@@ -54,7 +54,7 @@
 1. Create Gitian Builds (see [gitian-building.md](gitian-building.md))
 2. Verify matching Gitian Builds, gather signatures
 3. Verify IBD bith with and without `-checkpoints=0 -assumevalid=0`
-4. Upload Gitian Builds to [bitcoincashnode.org](https://bitcoincashnode.org/)
+4. Upload Gitian Builds to [bitfinitenode.org](https://bitfinitenode.org/)
 5. Create a [release](https://github.com/bitcoin-cash-node/bitcoin-cash-node)
    on our GitHub mirror: `contrib/release/github-release.sh -a <path to release binaries> -t <release tag> -o <file containing your Github OAuth token>`
 6. Create [Ubuntu PPA packages](https://launchpad.net/~bitcoin-cash-node/+archive/ubuntu/ppa):
@@ -65,9 +65,9 @@
 
 ## After Release
 
-1. Update version number on www.bitcoincashnode.org
+1. Update version number on www.bitfinitenode.org
 2. Publish signed checksums (various places, e.g. blog, reddit, etc. etc.)
 3. Announce Release:
-    - [Reddit](https://www.reddit.com/r/bitcoincashnode/)
-    - Twitter @bitcoincashnode
-    - Public slack channels friendly to Bitcoin Cash Node announcements
+    - [Reddit](https://www.reddit.com/r/bitfinitenode/)
+    - Twitter @bitfinitenode
+    - Public slack channels friendly to BitFinite Node announcements

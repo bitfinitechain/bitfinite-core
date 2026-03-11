@@ -35,7 +35,7 @@ For example, building the dependencies for Linux on ARM:
 make build-linux-arm
 ```
 
-To use the dependencies for building Bitcoin Cash Node, you need to set
+To use the dependencies for building BitFinite Node, you need to set
 the platform file to be used by `cmake`.
 The platform files are located under `cmake/platforms/`.
 For example, cross-building for Linux on ARM (run from the project root):

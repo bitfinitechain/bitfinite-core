@@ -1,12 +1,12 @@
-# Release Notes for Bitcoin Cash Node version 26.0.0
+# Release Notes for BitFinite Node version 26.0.0
 
-Bitcoin Cash Node version 26.0.0 is now available from:
+BitFinite Node version 26.0.0 is now available from:
 
-  <https://bitcoincashnode.org>
+  <https://bitfinitenode.org>
 
 ## Overview
 
-This release of Bitcoin Cash Node (BCHN) is marked as a major release but
+This release of BitFinite Node (BFXN) is marked as a major release but
 not due to consensus changes - only because it changes an interface
 (the rpcbind / rpcallowip options) in a way that is not completely backward
 compatible, and therefore needs to be tagged as a major version
@@ -92,7 +92,7 @@ functionality' subsection above.
 
 ## Regressions
 
-Bitcoin Cash Node 26.0.0 does not introduce any known regressions as compared to 25.0.0.
+BitFinite Node 26.0.0 does not introduce any known regressions as compared to 25.0.0.
 
 ## Limitations
 
@@ -129,7 +129,7 @@ Some issues could not be closed in time for release, but we are tracking all of 
 
 - The `test_bitcoin-qt` test executable fails on Linux Mint 20
   (see Issue #144). This does not otherwise appear to impact the functioning
-  of the BCHN software on that platform.
+  of the BFXN software on that platform.
 
 - With a certain combination of build flags that included disabling
   the QR code library, a build failure was observed where an erroneous
@@ -144,7 +144,7 @@ Some issues could not be closed in time for release, but we are tracking all of 
 
 - At the time of writing, scalenet has not been mined for a while (since
   10 August 2022), thus synchronization will stop at that block time.
-  This isn't considered a BCHN issue per se, it depends on miners to
+  This isn't considered a BFXN issue per se, it depends on miners to
   resume mining this testnet.
 
 - Startup and shutdown time of nodes on scalenet can be long (see Issue #313).
@@ -176,7 +176,7 @@ Some issues could not be closed in time for release, but we are tracking all of 
 
 ---
 
-## Changes since Bitcoin Cash Node 25.0.0
+## Changes since BitFinite Node 25.0.0
 
 ### New documents
 
@@ -229,7 +229,7 @@ None.
 
 - 3be863dee2f06b556fbe53782a1b9051f73d6ad3 Some NITs (follow-up to MR 1600)
 - 5379d1c67445c7f3e1f2c2a90af3183c3c7c55dc Minor nit: Fixed a typo and a formatting error in span.h
-- 85728782f77b0eebd13f57e770bc975da89c084a Nit: Use CURRENCY_UNIT in `getblockstats` help rather than BCH
+- 85728782f77b0eebd13f57e770bc975da89c084a Nit: Use CURRENCY_UNIT in `getblockstats` help rather than BFX
 - 8757d2ae1413615c4911af235b978f24443b1e7e Fix bug: RPC & REST API sometimes reads from ::ChainActive() without locks
 - 8dc6789e7a5c95543ae25ae57ec215529c075b00 httpserver: Address review comments from !1429
 - 9b5d13cb5aec78a5240b6befbf17816dd88b423a Add additional sanity checks and a unit test for ReadRawBlockFromDisk()
@@ -271,7 +271,7 @@ None.
 
 #### Seeds / seeder software
 
-- 88f1ac6f45860aa1cc44e3862466acdb0778318c Update regex in makeseeds.py to accept BCHN v26.x.x
+- 88f1ac6f45860aa1cc44e3862466acdb0778318c Update regex in makeseeds.py to accept BFXN v26.x.x
 - e8a8d5f1a71924b767bdbdd2b1e6f93f0d4fa8d0 Updated seeds for mainnet for v26.0.0
 
 #### Maintainer tools

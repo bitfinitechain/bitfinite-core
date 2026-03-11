@@ -1,6 +1,6 @@
 # Gitian building
 
-*Setup instructions for a Gitian build of Bitcoin Cash Node using a VM or
+*Setup instructions for a Gitian build of BitFinite Node using a VM or
 physical system.*
 
 Gitian is the deterministic build process that is used to build the Bitcoin
@@ -11,7 +11,7 @@ that the same, tested dependencies are used and statically built into the execut
 Multiple developers build the source code by following a specific descriptor
 ("recipe"), cryptographically sign the result, and upload the resulting signature.
 These results are compared and only if they match, the build is accepted and
-uploaded to bitcoincashnode.org.
+uploaded to bitfinitenode.org.
 
 More independent Gitian builders are needed, which is why this guide exists.
 It is preferred you follow these steps yourself instead of using someone else's

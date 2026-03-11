@@ -7,8 +7,10 @@
 
 #include <span.h>
 
+#include "compat/optional.h"
 #include <cstdint>
 #include <functional>
+#include <map>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -52,17 +54,14 @@ void StopHTTPServer();
 bool UpdateHTTPServerLogging(bool enable);
 
 /** Handler for requests to a certain HTTP path */
-typedef std::function<bool(Config &config, HTTPRequest *req,
-                           const std::string &)>
-    HTTPRequestHandler;
+typedef std::function<bool(Config &config, HTTPRequest *req, const std::string &)> HTTPRequestHandler;
 
 /**
  * Register handler for prefix.
  * If multiple handlers match a prefix, the first-registered one will
  * be invoked.
  */
-void RegisterHTTPHandler(const std::string &prefix, bool exactMatch,
-                         const HTTPRequestHandler &handler);
+void RegisterHTTPHandler(const std::string &prefix, bool exactMatch, const HTTPRequestHandler &handler);
 
 /** Unregister handler for prefix */
 void UnregisterHTTPHandler(const std::string &prefix, bool exactMatch);
@@ -172,8 +171,7 @@ public:
      * triggered (and the handler called)
      * handler is the handler to call when the event is triggered.
      */
-    HTTPEvent(struct event_base *base, bool deleteWhenTriggered,
-              const std::function<void()> &handler);
+    HTTPEvent(struct event_base *base, bool deleteWhenTriggered, const std::function<void()> &handler);
     ~HTTPEvent();
 
     /**

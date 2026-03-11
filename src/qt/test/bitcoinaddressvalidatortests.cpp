@@ -39,7 +39,7 @@ void BitcoinAddressValidatorTests::inputTests() {
     QVERIFY(v.validate(in, unused) == QValidator::Acceptable);
 
     // invalid base58, valid cashaddr, lower case
-    in = "bitcoincash:qp";
+    in = "bitfinite:qp";
     QVERIFY(v.validate(in, unused) == QValidator::Acceptable);
 
     // invalid base58, valid cashaddr, mixed case

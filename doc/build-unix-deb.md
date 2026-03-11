@@ -35,7 +35,7 @@ on the cmake command line.
 ## Building
 
 Once you have installed the required dependencies (see sections above), you can
-build Bitcoin Cash Node as such:
+build BitFinite Node as such:
 
 First fetch the code (if you haven't done so already).
 

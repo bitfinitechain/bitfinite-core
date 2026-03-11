@@ -1,4 +1,4 @@
-# BCHN UniValue
+# BFXN UniValue
 
 ## Summary
 
@@ -11,28 +11,28 @@ This class is aligned with the JSON standard, [RFC
 
 UniValue was originally created by [Jeff Garzik](https://github.com/jgarzik/univalue/)
 and is used in node software for many bitcoin-based cryptocurrencies.
-**BCHN UniValue** is a fork of UniValue designed and maintained for use in [Bitcoin Cash Node (BCHN)](https://bitcoincashnode.org/).
+**BFXN UniValue** is a fork of UniValue designed and maintained for use in [BitFinite Node (BFXN)](https://bitfinitenode.org/).
 Unlike the [Bitcoin Core fork](https://github.com/bitcoin-core/univalue/),
-BCHN UniValue contains large changes that improve *code quality* and *performance*.
-The BCHN UniValue API deviates from the original UniValue API where necessary.
+BFXN UniValue contains large changes that improve *code quality* and *performance*.
+The BFXN UniValue API deviates from the original UniValue API where necessary.
 
-Development of BCHN UniValue is fully integrated with development of Bitcoin Cash Node.
-The BCHN UniValue library and call sites can be changed simultaneously, allowing rapid iterations.
+Development of BFXN UniValue is fully integrated with development of BitFinite Node.
+The BFXN UniValue library and call sites can be changed simultaneously, allowing rapid iterations.
 
 ## License
 
-Like BCHN, BCHN UniValue is released under the terms of the MIT license. See
+Like BFXN, BFXN UniValue is released under the terms of the MIT license. See
 [COPYING](COPYING) for more information or see
 <https://opensource.org/licenses/MIT>.
 
 ## Build instructions
 
-### Bitcoin Cash Node build
+### BitFinite Node build
 
-BCHN UniValue is fully integrated in the Bitcoin Cash Node build system.
+BFXN UniValue is fully integrated in the BitFinite Node build system.
 The library is built automatically while building the node.
 
-Command to build and run tests in the BCHN build system:
+Command to build and run tests in the BFXN build system:
 
 ```
 ninja check-univalue
@@ -53,4 +53,4 @@ Commands to build the library stand-alone:
 make
 ```
 
-BCHN UniValue requires C++17 or later.
+BFXN UniValue requires C++17 or later.

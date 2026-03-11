@@ -4,5 +4,5 @@
 
 #pragma once
 
-#include <algorithm/contains.h>
-#include <algorithm/erase_if.h>
+#include "contains.h"
+#include "erase_if.h"

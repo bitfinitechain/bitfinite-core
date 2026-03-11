@@ -43,7 +43,7 @@ private:
 };
 
 /**
- * Model for list of recently generated payment requests / bitcoincash: URIs.
+ * Model for list of recently generated payment requests / bitfinite: URIs.
  * Part of wallet model.
  */
 class RecentRequestsTableModel : public QAbstractTableModel {

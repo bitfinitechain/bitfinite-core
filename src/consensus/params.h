@@ -6,12 +6,12 @@
 
 #pragma once
 
-#include <consensus/abla.h>
-#include <primitives/blockhash.h>
-#include <uint256.h>
+#include "../primitives/blockhash.h"
+#include "../uint256.h"
+#include "abla.h"
 
+#include <boost/optional.hpp>
 #include <limits>
-#include <optional>
 
 namespace Consensus {
 
@@ -78,9 +78,7 @@ struct Params {
     int64_t nPowTargetSpacing;
     int64_t nASERTHalfLife;
     int64_t nPowTargetTimespan;
-    int64_t DifficultyAdjustmentInterval() const {
-        return nPowTargetTimespan / nPowTargetSpacing;
-    }
+    int64_t DifficultyAdjustmentInterval() const { return nPowTargetTimespan / nPowTargetSpacing; }
     uint256 nMinimumChainWork;
     BlockHash defaultAssumeValid;
 
@@ -92,7 +90,7 @@ struct Params {
     };
 
     /** For chains with a checkpoint after the ASERT anchor block, this is always defined */
-    std::optional<ASERTAnchor> asertAnchorParams;
+    boost::optional<ASERTAnchor> asertAnchorParams;
 
     /** For upgrade10 -- the ABLA config (adjustable block limit algorithm) */
     abla::Config ablaConfig;

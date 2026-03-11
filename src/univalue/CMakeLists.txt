@@ -21,6 +21,7 @@ target_include_directories(univalue
 		include
 	PRIVATE
 		lib
+		..
 )
 
 if(UNIVALUE_BUILD_TESTS)

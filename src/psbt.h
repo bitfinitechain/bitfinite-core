@@ -11,7 +11,7 @@
 #include <script/script_execution_context.h>
 #include <script/sign.h>
 
-#include <optional>
+#include "compat/optional.h"
 
 // Magic bytes
 static constexpr uint8_t PSBT_MAGIC_BYTES[5] = {'p', 's', 'b', 't', 0xff};

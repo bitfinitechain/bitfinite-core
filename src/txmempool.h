@@ -24,7 +24,7 @@
 
 #include <map>
 #include <memory>
-#include <optional>
+#include "compat/optional.h"
 #include <set>
 #include <stdexcept>
 #include <string>

@@ -1338,7 +1338,7 @@
         <translation>Ruli fone kiel demono kaj akcepti komandojn</translation>
     </message>
     <message>
-        <source>Bitcoin Cash Node</source>
+        <source>BitFinite Node</source>
         <translation>Cash Node Bitmono</translation>
     </message>
     <message>

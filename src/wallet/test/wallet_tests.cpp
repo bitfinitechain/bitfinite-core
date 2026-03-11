@@ -991,7 +991,7 @@ BOOST_FIXTURE_TEST_CASE(wallet_tokens, Upgrade9ActivatedTestingSetup) {
 
     const auto balanceAfter = wallet->GetAvailableBalance();
     BOOST_CHECK_MESSAGE(balanceBefore != balanceAfter && balanceAfter == 50 * COIN,
-                        "Our ending balance should be just 50 BCH (newly matured coinbase from mining).");
+                        "Our ending balance should be just 50 BFX (newly matured coinbase from mining).");
     BOOST_CHECK_MESSAGE(GetTokenCoins().size() == 1, "Ensure that after sending all, we still have the token coin");
     const auto balancePlusTokens = wallet->GetAvailableBalance(&allIncludingTokens);
     BOOST_CHECK_MESSAGE(balancePlusTokens == balanceAfter + tokenCoins.front().GetInputCoin().txout.nValue,

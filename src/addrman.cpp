@@ -8,7 +8,7 @@
 
 #include <hash.h>
 #include <logging.h>
-#include <serialize.h>
+#include "serialize.h"
 #include <streams.h>
 
 #include <cmath>

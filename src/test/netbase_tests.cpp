@@ -7,7 +7,7 @@
 
 #include <net_permissions.h>
 #include <protocol.h>
-#include <serialize.h>
+#include "serialize.h"
 #include <streams.h>
 #include <util/bit_cast.h>
 #include <util/strencodings.h>

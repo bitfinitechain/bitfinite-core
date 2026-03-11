@@ -6,7 +6,7 @@ Subject: xcb: drop Xinerama support
 See: https://bugreports.qt.io/browse/QTBUG-89364
 Original qtbase patch: https://codereview.qt-project.org/c/qt/qtbase/+/311432
 
-Added to BCHN repository by Calin Culianu <calin.culianu@gmail.com>
+Added to BFXN repository by Calin Culianu <calin.culianu@gmail.com>
 diff -urN a/qtbase/src/gui/configure.json b/qtbase/src/gui/configure.json
 --- a/qtbase/src/gui/configure.json	2021-03-18 17:29:29.000000000 +0200
 +++ b/qtbase/src/gui/configure.json	2022-03-31 01:34:04.854406448 +0300

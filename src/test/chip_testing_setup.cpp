@@ -69,7 +69,7 @@ void ChipTestingSetup::LoadChipsVectors() {
                                     }
                                 } else {
                                     throw std::runtime_error(
-                                        strprintf("Bad expected BCHN failure 'reason' JSON for test \"%s\", expected "
+                                        strprintf("Bad expected BFXN failure 'reason' JSON for test \"%s\", expected "
                                                   "array of strings.", ident));
                                 }
                             }

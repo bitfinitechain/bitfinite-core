@@ -324,7 +324,7 @@ class P2SH32Test(BitcoinTestFramework):
                 reject_reason = reject_reason_false_stack_top
             else:
                 # The longer segwit scripts don't leave "false" on the stack top, but they leave more than 1 item
-                # which violates the BCH "clean stack" rule
+                # which violates the BFX "clean stack" rule
                 reject_reason = 'non-mandatory-script-verify-flag (Extra items left on stack after execution)'
             self.send_txs([txn_segwit], success=False, reject_reason=reject_reason)
 

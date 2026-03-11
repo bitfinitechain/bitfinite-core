@@ -24,7 +24,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
-#include <optional>
+#include "compat/optional.h"
 #include <set>
 #include <string>
 #include <string_view>

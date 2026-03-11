@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # Copyright (c) 2014-2019 The Bitcoin Core developers
 # Copyright (c) 2017-2022 The Bitcoin developers
-# Copyright (c) 2023 The Bitcoin Cash Node developers
+# Copyright (c) 2023 The BitFinite Node developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Run regression test suite.
@@ -193,7 +193,7 @@ def main():
         help='stop execution after the first test failure')
     parser.add_argument('--junitoutput', '-J', default='junit_results.xml',
                         help="File that will store JUnit formatted test results. If no absolute path is given it is treated as relative to the temporary directory.")
-    parser.add_argument('--testsuitename', '-n', default='Bitcoin Cash Node functional tests',
+    parser.add_argument('--testsuitename', '-n', default='BitFinite Node functional tests',
                         help="Name of the test suite, as it will appear in the logs and in the JUnit report.")
     args, unknown_args = parser.parse_known_args()
 

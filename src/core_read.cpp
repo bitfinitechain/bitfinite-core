@@ -10,7 +10,7 @@
 #include <psbt.h>
 #include <script/script.h>
 #include <script/sign.h>
-#include <serialize.h>
+#include "serialize.h"
 #include <streams.h>
 #include <util/strencodings.h>
 #include <util/string.h>

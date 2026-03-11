@@ -9,21 +9,21 @@
 #include <config/bitcoin-config.h>
 #endif
 
-#include <compat.h>
-#include <prevector.h>
-#include <serialize.h>
-#include <span.h>
+#include "compat.h"
+#include "prevector.h"
+#include "serialize.h"
+#include "span.h"
 #include <tinyformat.h>
 #include <util/saltedhashers.h>
 #include <util/strencodings.h>
 #include <util/string.h>
 
+#include "compat/optional.h"
 #include <array>
 #include <cstdint>
 #include <cstring>
 #include <functional>
 #include <ios>
-#include <optional>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -74,17 +74,14 @@ enum Network {
 
 /// Prefix of an IPv6 address when it contains an embedded IPv4 address.
 /// Used when (un)serializing addresses in ADDRv1 format (pre-BIP155).
-inline constexpr std::array<uint8_t, 12> IPV4_IN_IPV6_PREFIX{{
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF
-}};
+inline constexpr std::array<uint8_t, 12> IPV4_IN_IPV6_PREFIX{
+    {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF}};
 
 /// Prefix of an IPv6 address when it contains an embedded TORv2 address.
 /// Used when (un)serializing addresses in ADDRv1 format (pre-BIP155).
 /// Such dummy IPv6 addresses are guaranteed to not be publicly routable as they
 /// fall under RFC4193's fc00::/7 subnet allocated to unique-local addresses.
-inline constexpr std::array<uint8_t, 6> TORV2_IN_IPV6_PREFIX{{
-    0xFD, 0x87, 0xD8, 0x7E, 0xEB, 0x43
-}};
+inline constexpr std::array<uint8_t, 6> TORV2_IN_IPV6_PREFIX{{0xFD, 0x87, 0xD8, 0x7E, 0xEB, 0x43}};
 
 /// Prefix of an IPv6 address when it contains an embedded "internal" address.
 /// Used when (un)serializing addresses in ADDRv1 format (pre-BIP155).
@@ -230,9 +227,7 @@ public:
     bool GetIn6Addr(struct in6_addr *pipv6Addr) const;
 
     friend bool operator==(const CNetAddr &a, const CNetAddr &b);
-    friend bool operator!=(const CNetAddr &a, const CNetAddr &b) {
-        return !(a == b);
-    }
+    friend bool operator!=(const CNetAddr &a, const CNetAddr &b) { return !(a == b); }
     friend bool operator<(const CNetAddr &a, const CNetAddr &b);
 
     /**
@@ -488,12 +483,10 @@ public:
     // returns true if this is a single ip subnet (<ipv4>/32 or <ipv6>/128)
     bool IsSingleIP() const;
 
-    constexpr const CNetAddr & Network() const { return network; }
+    constexpr const CNetAddr &Network() const { return network; }
 
     friend bool operator==(const CSubNet &a, const CSubNet &b);
-    friend bool operator!=(const CSubNet &a, const CSubNet &b) {
-        return !(a == b);
-    }
+    friend bool operator!=(const CSubNet &a, const CSubNet &b) { return !(a == b); }
     friend bool operator<(const CSubNet &a, const CSubNet &b);
 
     /// Return the (prefix as CNetAddr, mask length)
@@ -507,8 +500,7 @@ public:
             // serialized form.
             uint8_t dummy[12] = {0};
             READWRITE(dummy);
-            READWRITE(MakeUInt8Span(obj.netmask).first(4));
-            // TODO: replace the above with READWRITE(Span{obj.netmask}.first(4)); MakeUInt8Span is currently only needed due to a Clang bug: https://bugs.llvm.org/show_bug.cgi?id=39663 / https://stackoverflow.com/a/53619324/1678468
+            READWRITE(Span{obj.netmask}.first(4));
         } else {
             READWRITE(obj.netmask);
         }
@@ -526,12 +518,9 @@ protected:
 
 public:
     CService() noexcept = default;
-    CService(const CNetAddr &cip, unsigned short portIn)
-        : CNetAddr(cip), port(portIn) {}
-    CService(const struct in_addr &ipv4Addr, unsigned short portIn)
-        : CNetAddr(ipv4Addr), port(portIn) {}
-    CService(const struct in6_addr &ipv6Addr, unsigned short portIn)
-        : CNetAddr(ipv6Addr), port(portIn) {}
+    CService(const CNetAddr &cip, unsigned short portIn) : CNetAddr(cip), port(portIn) {}
+    CService(const struct in_addr &ipv4Addr, unsigned short portIn) : CNetAddr(ipv4Addr), port(portIn) {}
+    CService(const struct in6_addr &ipv6Addr, unsigned short portIn) : CNetAddr(ipv6Addr), port(portIn) {}
     explicit CService(const struct sockaddr_in6 &addr);
     explicit CService(const struct sockaddr_in &addr);
 
@@ -539,9 +528,7 @@ public:
     std::optional<std::pair<sockaddr_storage, socklen_t>> GetSockAddr() const;
     bool SetSockAddr(const sockaddr_storage &addr);
     friend bool operator==(const CService &a, const CService &b);
-    friend bool operator!=(const CService &a, const CService &b) {
-        return !(a == b);
-    }
+    friend bool operator!=(const CService &a, const CService &b) { return !(a == b); }
     friend bool operator<(const CService &a, const CService &b);
     std::vector<uint8_t> GetKey() const;
     std::string ToString() const;
@@ -561,7 +548,7 @@ struct SaltedNetAddrHasher : SaltedHasherBase {
 };
 struct SaltedSubNetHasher : SaltedHasherBase {
     SaltedSubNetHasher() noexcept {} // circumvent some libstdc++-11 bugs on Debian unstable
-    size_t operator()(const CSubNet  &) const;
+    size_t operator()(const CSubNet &) const;
 };
 
 bool SanityCheckASMap(const std::vector<bool> &asmap);

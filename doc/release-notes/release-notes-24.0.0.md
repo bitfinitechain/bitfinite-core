@@ -1,13 +1,13 @@
-# Release Notes for Bitcoin Cash Node version 24.0.0
+# Release Notes for BitFinite Node version 24.0.0
 
-Bitcoin Cash Node version 24.0.0 is now available from:
+BitFinite Node version 24.0.0 is now available from:
 
-  <https://bitcoincashnode.org>
+  <https://bitfinitenode.org>
 
 ## Overview
 
-This is a major release of Bitcoin Cash Node (BCHN) that implements the
-[May 15, 2022 Network Upgrade](https://upgradespecs.bitcoincashnode.org/2022-05-15-upgrade/).
+This is a major release of BitFinite Node (BFXN) that implements the
+[May 15, 2022 Network Upgrade](https://upgradespecs.bitfinitenode.org/2022-05-15-upgrade/).
 This release implements the following two consensus CHIPs:
 
 - [CHIP-2021-03: Bigger Script Integers](https://gitlab.com/GeneralProtocols/research/chips/-/blob/master/CHIP-2021-02-Bigger-Script-Integers.md)
@@ -30,8 +30,8 @@ to upgrade to v24.0.0 ahead of May 2022.
 
 ## Usage recommendations
 
-The update to Bitcoin Cash Node 24.0.0 is required for the May 15, 2022
-Bitcoin Cash network upgrade.
+The update to BitFinite Node 24.0.0 is required for the May 15, 2022
+BitFinite network upgrade.
 
 
 ## Network changes
@@ -67,7 +67,7 @@ The pre-BIP69 behavior can be obtained by passing `-usebip69=0` on startup.
   from the wallet.  Note that the resulting transaction may become invalid
   if one of the "unsafe" inputs disappears due to a double-spend.
   This is a very unlikely scenario, however, on account of the strong
-  zero-conf properties of the BCH network.  However, if that happens,
+  zero-conf properties of the BFX network.  However, if that happens,
   the transaction must be funded with different inputs and republished.
 
 - Two new options have been added to make legacy address handling safer in
@@ -97,7 +97,7 @@ The pre-BIP69 behavior can be obtained by passing `-usebip69=0` on startup.
 
 ### autotools build system
 
-The autotools build system is no longer supported by BCHN and has been removed.
+The autotools build system is no longer supported by BFXN and has been removed.
 Please use the CMake / ninja build system.
 
 ### Mempool acceptance 'height' field in RPC calls
@@ -141,14 +141,14 @@ of these legacy address types is allowed. These settings are:
 
 ## Regressions
 
-Bitcoin Cash Node 24.0.0 does not introduce any known regressions as compared to 23.1.0.
+BitFinite Node 24.0.0 does not introduce any known regressions as compared to 23.1.0.
 
 ## Known Issues
 
 Some issues could not be closed in time for release, but we are tracking all of them on our GitLab repository.
 
 - MacOS versions earlier than 10.12 are no longer supported. Additionally,
-  Bitcoin Cash Node does not yet change appearance when macOS "dark mode"
+  BitFinite Node does not yet change appearance when macOS "dark mode"
   is activated.
 
 - Windows users are recommended not to run multiple instances of bitcoin-qt
@@ -179,7 +179,7 @@ Some issues could not be closed in time for release, but we are tracking all of 
 
 - The `test_bitcoin-qt` test executable fails on Linux Mint 20
   (see Issue #144). This does not otherwise appear to impact the functioning
-  of the BCHN software on that platform.
+  of the BFXN software on that platform.
 
 - With a certain combination of build flags that included disabling
   the QR code library, a build failure was observed where an erroneous
@@ -208,11 +208,11 @@ Some issues could not be closed in time for release, but we are tracking all of 
 
 ---
 
-## Changes since Bitcoin Cash Node 23.1.0
+## Changes since BitFinite Node 23.1.0
 
 ### New documents
 
-The following are new documents in the BCHN software repository:
+The following are new documents in the BFXN software repository:
 
 - [doc/gitian-building/gitian-building-docker.md](../gitian-building/gitian-building-docker.md): Adds a new streamlined Gitian setup guide tailored for Ubuntu/Debian users with Docker
 - [doc/release-notes/release-notes-23.1.0.md](release-notes-23.1.0.md): The previous Release Notes
@@ -260,7 +260,7 @@ None.
 #### Documentation updates
 
 - b9edb72b06a1223f1761989be6ad649467f6ac5c [build][doc] Add Gitian on Docker guide & tidy related build process and docs
-- a26e540d6ab30f3c5bfe4f5cf465831cfea50a00 [doc] Update BIPs and BCH upgrades (CHIPs etc) manifests for v24.0.0
+- a26e540d6ab30f3c5bfe4f5cf465831cfea50a00 [doc] Update BIPs and BFX upgrades (CHIPs etc) manifests for v24.0.0
 - db9c8a7da77eee1da71fda1647f4bbe54de8253b [doc] Update the release process document
 
 #### Build / general

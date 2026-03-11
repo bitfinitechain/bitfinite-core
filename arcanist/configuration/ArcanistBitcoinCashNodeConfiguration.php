@@ -1,6 +1,6 @@
 <?php
 
-class ArcanistBitcoinCashNodeConfiguration extends ArcanistConfiguration {
+class ArcanistBitFiniteNodeConfiguration extends ArcanistConfiguration {
   public function getCustomArgumentsForCommand($command) {
     if ($command === 'land') {
       return array(

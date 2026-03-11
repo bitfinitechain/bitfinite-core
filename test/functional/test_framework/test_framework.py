@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Copyright (c) 2014-2019 The Bitcoin Core developers
-# Copyright (c) 2022 The Bitcoin Cash Node developers
+# Copyright (c) 2022 The BitFinite Node developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Base class for RPC testing."""
@@ -159,7 +159,7 @@ class BitcoinTestFramework(metaclass=BitcoinTestMetaClass):
             "BITCOIND", default=config["environment"]["BUILDDIR"] + '/src/bitcoind' + config["environment"]["EXEEXT"])
         if sys.platform == "darwin":
             self.options.bitcoinqt = os.getenv(
-                "BITCOINQT", default=config["environment"]["BUILDDIR"] + '/src/qt/BitcoinCashNode-Qt.app/Contents/MacOS/BitcoinCashNode-Qt' + config["environment"]["EXEEXT"])
+                "BITCOINQT", default=config["environment"]["BUILDDIR"] + '/src/qt/BitFiniteNode-Qt.app/Contents/MacOS/BitFiniteNode-Qt' + config["environment"]["EXEEXT"])
         else:
             self.options.bitcoinqt = os.getenv(
                 "BITCOINQT", default=config["environment"]["BUILDDIR"] + '/src/qt/bitcoin-qt' + config["environment"]["EXEEXT"])

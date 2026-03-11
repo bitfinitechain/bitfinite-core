@@ -10,7 +10,7 @@
 #include <core_memusage.h>
 #include <memusage.h>
 #include <primitives/blockhash.h>
-#include <serialize.h>
+#include "serialize.h"
 #include <util/saltedhashers.h>
 
 #include <cassert>

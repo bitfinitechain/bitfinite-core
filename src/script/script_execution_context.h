@@ -7,6 +7,7 @@
 #include <coins.h>
 #include <primitives/transaction.h>
 
+#include "compat/optional.h"
 #include <memory>
 #include <optional>
 #include <utility>
@@ -21,9 +22,10 @@ struct PSBTInput;
 /// NOTE: In all cases below, the referenced transaction, `tx`, must remain valid throughout this
 /// object's lifetime!
 #if defined(__GNUG__) && !defined(__clang__)
-  // silence this warning for g++ only - known compiler bug, see https://gcc.gnu.org/bugzilla/show_bug.cgi?id=102801 and https://gcc.gnu.org/bugzilla/show_bug.cgi?id=80635
-  #pragma GCC diagnostic push
-  #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+// silence this warning for g++ only - known compiler bug, see https://gcc.gnu.org/bugzilla/show_bug.cgi?id=102801 and
+// https://gcc.gnu.org/bugzilla/show_bug.cgi?id=80635
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 #endif // defined(__GNUG__) && !defined(__clang__)
 class ScriptExecutionContext {
     unsigned nIn{}; ///< the input number being evaluated. This is an index into shared->tx.vin
@@ -38,8 +40,7 @@ class ScriptExecutionContext {
         CTransactionView tx;
 
         // For std::make_shared to work correctly.
-        Shared(std::vector<Coin> && coins, CTransactionView tx_)
-            : inputCoins(std::move(coins)), tx(tx_) {}
+        Shared(std::vector<Coin> &&coins, CTransactionView tx_) : inputCoins(std::move(coins)), tx(tx_) {}
     };
 
     using SharedPtr = std::shared_ptr<const Shared>;
@@ -63,12 +64,12 @@ class ScriptExecutionContext {
 
 public:
     /// Factory method to create a context for all inputs in a tx.
-    static
-    std::vector<ScriptExecutionContext> createForAllInputs(CTransactionView tx, const CCoinsViewCache &coinsCache);
+    static std::vector<ScriptExecutionContext> createForAllInputs(CTransactionView tx,
+                                                                  const CCoinsViewCache &coinsCache);
 
     /// Like the above, but takes a partially-signed bitcoin transacton's inputs as its coin source.
-    static
-    std::vector<ScriptExecutionContext> createForAllInputs(CTransactionView tx, const std::vector<PSBTInput> &inputs);
+    static std::vector<ScriptExecutionContext> createForAllInputs(CTransactionView tx,
+                                                                  const std::vector<PSBTInput> &inputs);
 
     /// Construct a *limited* context that cannot see all coins (utxos). It only has the coin for this input.
     /// All other sibling input coins will appear as coin.IsSpent() (null data).  this->isLimited() will return
@@ -98,7 +99,7 @@ public:
     ///
     /// Returned coin may be be IsSpent() if coin is missing (such as in a *limited* context
     /// where all sibling coin info is unavailable).
-    const Coin & coin(std::optional<unsigned> inputIdx = {}) const {
+    const Coin &coin(std::optional<unsigned> inputIdx = {}) const {
         // Defensive programming: A class invariant is that the number of coins equals the number of
         // inputs in tx().vin().  However, we use .at() here in case the underlying tx is mutable and
         // is being misused.. and it mutates such that there are now more inputs in the tx than there
@@ -109,7 +110,7 @@ public:
     /// Get the coin (utxo) scriptPubKey for this input or any input.
     ///
     /// Note that if `isLimited()`, this method only returns a valid value for this input.
-    const CScript & coinScriptPubKey(std::optional<unsigned> inputIdx = {}) const {
+    const CScript &coinScriptPubKey(std::optional<unsigned> inputIdx = {}) const {
         return coin(inputIdx).GetTxOut().scriptPubKey;
     }
 
@@ -117,27 +118,25 @@ public:
     /// may be nullptr if input has no token data.
     ///
     /// Note that if `isLimited()`, this method only returns a valid value for this input.
-    const token::OutputDataPtr & coinTokenData(std::optional<unsigned> inputIdx = {}) const {
+    const token::OutputDataPtr &coinTokenData(std::optional<unsigned> inputIdx = {}) const {
         return coin(inputIdx).GetTxOut().tokenDataPtr;
     }
 
     /// Get the amount for this input or any input.
     ///
     /// Note that if `isLimited()`, this method only returns a valid value for this input.
-    const Amount & coinAmount(std::optional<unsigned> inputIdx = {}) const {
-        return coin(inputIdx).GetTxOut().nValue;
-    }
+    const Amount &coinAmount(std::optional<unsigned> inputIdx = {}) const { return coin(inputIdx).GetTxOut().nValue; }
 
     /// Get the scriptSig for this input or any input (tx().vin[i].scriptSig)
-    const CScript & scriptSig(std::optional<unsigned> inputIdx = {}) const {
-         return tx().vin().at(inputIdx.value_or(nIn)).scriptSig;
+    const CScript &scriptSig(std::optional<unsigned> inputIdx = {}) const {
+        return tx().vin().at(inputIdx.value_or(nIn)).scriptSig;
     }
 
     /// The transaction associated with this script evaluation context.
-    const CTransactionView & tx() const { return shared->tx; }
+    const CTransactionView &tx() const { return shared->tx; }
 };
 #if defined(__GNUG__) && !defined(__clang__)
-  #pragma GCC diagnostic pop
+#pragma GCC diagnostic pop
 #endif // defined(__GNUG__) && !defined(__clang__)
 
 using ScriptExecutionContextOpt = std::optional<ScriptExecutionContext>;

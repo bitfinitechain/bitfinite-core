@@ -1,12 +1,12 @@
-# Release Notes for Bitcoin Cash Node version 26.1.0
+# Release Notes for BitFinite Node version 26.1.0
 
-Bitcoin Cash Node version 26.1.0 is now available from:
+BitFinite Node version 26.1.0 is now available from:
 
-  <https://bitcoincashnode.org>
+  <https://bitfinitenode.org>
 
 ## Overview
 
-This release of Bitcoin Cash Node (BCHN) is a minor release.
+This release of BitFinite Node (BFXN) is a minor release.
 
 It includes mostly bug fixes and performance enhancements,
 but there are some new features too, such as new fields in
@@ -86,13 +86,13 @@ None.
 ## User interface changes
 
 - A bug in the fee rate override in the Send dialog of the GUI has been fixed.
-- The `dumpwallet` file header comment now refers to "Bitcoin Cash Node",
+- The `dumpwallet` file header comment now refers to "BitFinite Node",
 - The `importwallet` progress bar behaves more sanely.
 - Importing very large wallets has been made significantly faster.
 
 ## Regressions
 
-Bitcoin Cash Node 26.1.0 does not introduce any known regressions as compared
+BitFinite Node 26.1.0 does not introduce any known regressions as compared
 to 26.0.0.
 
 ## Limitations
@@ -152,7 +152,7 @@ of them on our GitLab repository.
 
 - The `test_bitcoin-qt` test executable fails on Linux Mint 20
   (see Issue #144). This does not otherwise appear to impact the functioning
-  of the BCHN software on that platform.
+  of the BFXN software on that platform.
 
 - With a certain combination of build flags that included disabling
   the QR code library, a build failure was observed where an erroneous
@@ -202,7 +202,7 @@ of them on our GitLab repository.
 
 ---
 
-## Changes since Bitcoin Cash Node 26.0.0
+## Changes since BitFinite Node 26.0.0
 
 ### New documents
 
@@ -223,7 +223,7 @@ None.
 #### Interfaces / RPC
 
 - 39f8dfc4b24d38370776afa3da415fc674d4faa6 wallet: Replace %w by wallet name in -walletnotify script
-- 53e7d8055ab9c977adc7094585cefd2f1c8d40cc RPC: Fix `dumpwallet` comment/header to say "Bitcoin Cash Node"
+- 53e7d8055ab9c977adc7094585cefd2f1c8d40cc RPC: Fix `dumpwallet` comment/header to say "BitFinite Node"
 - b8df87882b24a6905915d7129841ea134c6bda65 Remove limit of 16 from -par
 
 #### Features in internal development: support for UTXO commitments
