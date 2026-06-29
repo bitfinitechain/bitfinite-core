@@ -5,18 +5,19 @@ BitFinite Core is the full node software for the BitFinite (BFX) protocol.
 ## Specification
 
 - **Symbol:** BFX
-- **Total Supply:** 100,000 BFX
+- **Total Supply:** 21,000,000 BFX
 - **Block Time:** 5 Minutes
-- **Mining Algorithm:** SHA-256 (ASERT DAA)
-- **Halving Interval:** 50,000 Blocks (~5.7 Months)
-- **Base Reward:** 1 BFX
-- **Premine:** None (0 BFX)
+- **Mining Algorithm:** SHA-256 (ASERT DAA, 2-day half-life)
+- **Halving Interval:** 210,000 Blocks (~2 Years)
+- **Base Reward:** 50 BFX
+- **Coinbase Maturity:** 100 Blocks
 
 ## Network
 
 - **P2P Port:** 19768
 - **RPC Port:** 19769
-- **Magic Bytes:** 0xe3e1f3e8
+- **Network Magic:** `0x42466e6e` ("BFin")
+- **CashAddr Prefix:** `bfx:`
 
 ## License
 
