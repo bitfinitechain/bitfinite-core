@@ -56,7 +56,7 @@ Launch: April 1, 2026 (Official Mainnet Launch)
 ```
 server=1
 daemon=1
-rpcuser=bfxrpc
-rpcpassword=CHANGE_ME_TO_A_STRONG_PASSWORD
+# Generate rpcauth with: python3 share/rpcauth/rpcauth.py <username>
+# rpcauth=yourusername:salt$hash
 rpcport=19769
 ```

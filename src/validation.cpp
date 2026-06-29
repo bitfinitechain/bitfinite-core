@@ -882,8 +882,10 @@ Amount GetBlockSubsidy(int nHeight, const Consensus::Params &consensusParams) {
         return Amount::zero();
     }
 
-    Amount nSubsidy = 1 * COIN;
-    // Subsidy is cut in half every 4,200 blocks
+    Amount nSubsidy = 50 * COIN;
+    // Subsidy is cut in half every 210,000 blocks which will occur
+    // approximately every 2 years (5-minute blocks). 50 BFX initial reward
+    // with this schedule yields a ~21,000,000 BFX maximum supply.
     return ((nSubsidy / SATOSHI) >> halvings) * SATOSHI;
 }
 

@@ -148,8 +148,14 @@ nbproject/
 # Release binaries & temp data (never commit these)
 BitFinite-release_*/
 release_v*/
+release/*/bin/
 temp_datadir/
 test_output.txt
 update_branding.py
 check_full_charset.py
 verify_charset.py
+
+# Security: never commit actual config files with credentials
+bitfinite.conf
+*.conf
+!bitfinite.conf.example

@@ -1,0 +1,77 @@
+# BitFinite Configuration File (bitfinite.conf)
+# Copy this file to ~/.bitfinite/bitfinite.conf and edit before running.
+#
+# SECURITY: Never commit your actual credentials to version control.
+#           Use 'rpcauth' instead of plaintext rpcuser/rpcpassword when possible.
+#
+# Generate rpcauth credentials with:
+#   python3 share/rpcauth/rpcauth.py <username>
+
+# ------------------------------------------------------------------------------
+# RPC Server Configuration
+# ------------------------------------------------------------------------------
+
+# Accept JSON-RPC commands.
+server=1
+
+# OPTION 1 (Recommended): Use rpcauth for HMAC-based authentication.
+# Generate with: python3 share/rpcauth/rpcauth.py yourusername
+# rpcauth=yourusername:salt$hash
+#
+# OPTION 2: Plaintext credentials (less secure, avoid in production).
+# rpcuser=CHANGE_ME
+# rpcpassword=CHANGE_ME_TO_A_STRONG_RANDOM_PASSWORD
+
+# RPC port (default: 19769)
+# This MUST match the port in ckpool.conf if used with a mining pool.
+rpcport=19769
+
+# Allow JSON-RPC connections from these IP addresses.
+# Only allow localhost by default for security.
+rpcallowip=127.0.0.1
+# rpcallowip=192.168.1.0/24  # Uncomment to allow LAN access
+
+# ------------------------------------------------------------------------------
+# Network Configuration
+# ------------------------------------------------------------------------------
+
+# P2P port (default: 19768)
+port=19768
+
+# Connect to known peers
+# Add multiple peers across different providers for resilience.
+# addnode=seed-1.bitfinitechain.org:19768
+# addnode=seed-2.bitfinitechain.org:19768
+# addnode=seed-3.bitfinitechain.org:19768
+
+# Run as a background daemon.
+daemon=1
+
+# Maintain a full transaction index (required for block explorers).
+txindex=1
+
+# ------------------------------------------------------------------------------
+# Performance & Resources
+# ------------------------------------------------------------------------------
+
+# Database cache size in megabytes (default: 300).
+# Increase if you have plenty of RAM (e.g., 4096 for 4GB).
+dbcache=450
+
+# Maximum number of inbound/outbound connections.
+# maxconnections=125
+
+# ------------------------------------------------------------------------------
+# Mining & Relay
+# ------------------------------------------------------------------------------
+
+# Zero-MQ notification for block and transaction events.
+# Required for ckpool blocknotify if configured.
+zmqpubhashblock=tcp://127.0.0.1:28332
+zmqpubhashtx=tcp://127.0.0.1:28332
+zmqpubrawblock=tcp://127.0.0.1:28332
+zmqpubrawtx=tcp://127.0.0.1:28332
+
+# DEVELOPMENT ONLY: Allow mining when not connected to peers.
+# Remove this line in production!
+# allowunconnectedmining=1
