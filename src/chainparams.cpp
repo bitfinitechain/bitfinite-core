@@ -51,7 +51,7 @@ static CBlock CreateGenesisBlock(const char *pszTimestamp, const CScript &genesi
  */
 CBlock CreateGenesisBlock(uint32_t nTime, uint32_t nNonce, uint32_t nBits, int32_t nVersion,
                           const Amount genesisReward) {
-    const char *pszTimestamp = "BFX 2026-03-11: BitFinite v3 - A new beginning";
+    const char *pszTimestamp = "BFX 2026-06-26: BitFinite - sound money, freely mined";
     const CScript genesisOutputScript = CScript() << ParseHex("04678afdb0fe5548271967f1a67130b7105cd6a828e03909"
                                                               "a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112"
                                                               "de5c384df7ba0b8d578a4c702b6bf11d5f")
@@ -87,19 +87,32 @@ public:
         consensus.upgrade10ActivationTime = 1715774400;
         consensus.upgrade11ActivationTime = 1747310400;
 
-        // --- GRADUAL DIFFICULTY RAMP-UP ---
-        // Phase 1 (Blocks 0-10,000): Easy CPU mining for bootstrap
-        // Phase 2 (Block 10,001+): BitAxe-optimized difficulty via ASERT
-        // powLimit allows easy blocks; ASERT manages transition to BitAxe difficulty
+        // --- DIFFICULTY: ASERT FROM GENESIS ---
+        // ASERT is anchored at the genesis block (see asertAnchorParams below), so
+        // Axion/ASERT governs difficulty from block 1 onward. The anchor target is
+        // powLimit (difficulty-1), the easiest valid mainnet difficulty, so early
+        // blocks are cheap to mine and ASERT raises difficulty smoothly as hashrate
+        // joins. There is NO pre-ASERT DAA/EDA phase (the old "easy until 10,000"
+        // design crashed at block 1: with daaHeight=0 and the anchor at height 10001,
+        // GetNextCashWorkRequired asserted nHeight >= DifficultyAdjustmentInterval()).
         consensus.powLimit = uint256S("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
 
         consensus.nPowTargetTimespan = 14 * 24 * 60 * 60; // 2 weeks
         consensus.nPowTargetSpacing = 5 * 60;             // 5 minutes
-        consensus.fPowAllowMinDifficultyBlocks = true;    // Allow min difficulty blocks
+        // SECURITY: Must be false on mainnet. Setting to true allows trivially
+        // easy blocks, enabling chain takeover with minimal hashrate.
+        // Was true during bootstrap phase — now hardened for production.
+        consensus.fPowAllowMinDifficultyBlocks = false;
         consensus.fPowNoRetargeting = false;
 
         // ASERT DAA Half Life (2 Days)
         consensus.nASERTHalfLife = 2 * 24 * 60 * 60;
+        // TODO(security): Update nMinimumChainWork and defaultAssumeValid
+        // once the chain has a significant number of blocks (e.g., >1000).
+        // Current 0x00 means new nodes accept any chain fork as valid.
+        // Run: bitfinite-cli getblockchaininfo | grep chainwork
+        // then set: consensus.nMinimumChainWork = uint256S("<chainwork_hex>");
+        //           consensus.defaultAssumeValid = BlockHash::fromHex("<blockhash>");
         consensus.nMinimumChainWork = uint256S("0x00");
         consensus.defaultAssumeValid = BlockHash();
 
@@ -111,14 +124,16 @@ public:
                consensus.nDefaultGeneratedBlockSizePercent <= 100.0);
         assert(consensus.GetDefaultGeneratedBlockSizeBytes() <= consensus.nDefaultConsensusBlockSize);
 
-        // --- BFX ASERT ANCHOR ---
-        // ASERT activates from block 10,001 with BitAxe-targeted difficulty
-        // Anchor time = genesis_time + 10,001 blocks * 5min (300s)
-        // 1741651203 + (10001 * 300) = 1744651503
+        // --- BFX ASERT ANCHOR (genesis) ---
+        // Anchor ASERT at the genesis block so Axion/ASERT is active from block 1.
+        // Anchor height MUST be 0 so IsAxionEnabled() (height check) is true from the
+        // first block; the genesis-parent case in GetNextASERTWorkRequired() returns
+        // powLimit for block 1, and ASERT computes every subsequent block relative to
+        // this anchor. nPrevBlockTime is the genesis time (anchor == genesis).
         consensus.asertAnchorParams = Consensus::Params::ASERTAnchor{
-            10001,      // Anchor Height
-            0x1d01a000, // Anchor Bits (BitAxe difficulty ~100)
-            1744651503, // Anchor Time
+            0,          // Anchor Height (genesis)
+            0x1d00ffff, // Anchor Bits (difficulty-1 == powLimit)
+            1782432000, // Anchor Time (genesis nTime)
         };
 
         consensus.ablaConfig = abla::Config::MakeDefault(consensus.nDefaultConsensusBlockSize, /* fixedSize = */ false);
@@ -139,20 +154,20 @@ public:
         m_assumed_blockchain_size = 1;
         m_assumed_chain_state_size = 0;
 
-        // BFX GENESIS - 2026-03-11 v3 Launch
+        // BFX GENESIS - 2026-06-26 mainnet launch (00:00:00 UTC)
         // 50 BFX reward, 210,000 block halving (~2 years), 21M max supply
         // nBits = 0x1d00ffff (standard difficulty 1)
-        // Mined: nTime=1741651203, nNonce=1382553910
-        genesis = CreateGenesisBlock(1741651203, 1382553910, 0x1d00ffff, 1, 50 * COIN);
+        // Mined: nTime=1782432000, nNonce=1870395023
+        genesis = CreateGenesisBlock(1782432000, 1870395023, 0x1d00ffff, 1, 50 * COIN);
 
         consensus.hashGenesisBlock = genesis.GetHash();
 
         // Verify Genesis Hash
         assert(consensus.hashGenesisBlock ==
-               uint256S("0x00000000c3c7c4eefbb569b5062edbbabe76a66793b5558cadde2a47ec111ae2"));
+               uint256S("0x000000006f35956504ca93e1dc95d59a7989cdc2bc8094fd64ecabe43b238664"));
         // Verify Merkle Root
         assert(genesis.hashMerkleRoot ==
-               uint256S("0x2ea53962360d6d74ec7250aa67b95f052b4935e11a32c8cc0b504ddd091ff221"));
+               uint256S("0x8b091b56222f40fb242b3811b07cf9b75e48024501058e66c0c1c5e653bd8a1d"));
 
         // Clear old seeds
         vSeeds.clear();
@@ -179,7 +194,7 @@ public:
         }};
 
         chainTxData = ChainTxData{
-            1738224000, // Genesis Time (2026-01-30)
+            1782432000, // Genesis Time (2026-06-26)
             0,          // 0 Txs
             0.0         // 0 tx/sec
         };
@@ -247,13 +262,14 @@ public:
         m_assumed_blockchain_size = 60;
         m_assumed_chain_state_size = 2;
 
-        genesis = CreateGenesisBlock(1296688602, 414098458, 0x1d00ffff, 1, 50 * COIN);
+        // BFX testnet genesis: re-mined for the v3 timestamp (nBits 0x1d00ffff).
+        genesis = CreateGenesisBlock(1296688604, 1168812312, 0x1d00ffff, 1, 50 * COIN);
         consensus.hashGenesisBlock = genesis.GetHash();
 
-        // ASSERTIONS DISABLED FOR BFX FORK
-        // assert(consensus.hashGenesisBlock ==
-        // uint256S("000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943")); assert(genesis.hashMerkleRoot
-        // == uint256S("4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"));
+        assert(consensus.hashGenesisBlock ==
+               uint256S("0x000000004b6e4759b93dbe0f3df9fa909d65830e75e88117aadffe8e9779ea4f"));
+        assert(genesis.hashMerkleRoot ==
+               uint256S("0x8b091b56222f40fb242b3811b07cf9b75e48024501058e66c0c1c5e653bd8a1d"));
 
         vFixedSeeds.clear();
         vSeeds.clear();
@@ -331,12 +347,14 @@ public:
         m_assumed_blockchain_size = 1;
         m_assumed_chain_state_size = 1;
 
-        genesis = CreateGenesisBlock(1597811185, 114152193, 0x1d00ffff, 1, 50 * COIN);
+        // BFX testnet4/chipnet genesis: re-mined for the v3 timestamp (nBits 0x1d00ffff).
+        genesis = CreateGenesisBlock(1597811185, 1633225309, 0x1d00ffff, 1, 50 * COIN);
         consensus.hashGenesisBlock = genesis.GetHash();
 
-        // ASSERTIONS DISABLED FOR BFX FORK
-        // assert(consensus.hashGenesisBlock ==
-        // BlockHash::fromHex("000000001dd410c49a788668ce26751718cc797474d3152a5fc073dd44fd9f7b"));
+        assert(consensus.hashGenesisBlock ==
+               uint256S("0x000000008501486885bd552b802438f68dc5a219f60212e6ec47b9cec077e173"));
+        assert(genesis.hashMerkleRoot ==
+               uint256S("0x8b091b56222f40fb242b3811b07cf9b75e48024501058e66c0c1c5e653bd8a1d"));
 
         vFixedSeeds.clear();
         vSeeds.clear();
@@ -409,13 +427,14 @@ public:
         m_assumed_blockchain_size = 250;
         m_assumed_chain_state_size = 50;
 
-        genesis = CreateGenesisBlock(1598282438, -1567304284, 0x1d00ffff, 1, 50 * COIN);
+        // BFX scalenet genesis: re-mined for the v3 timestamp (nBits 0x1d00ffff).
+        genesis = CreateGenesisBlock(1598282438, 3022631194, 0x1d00ffff, 1, 50 * COIN);
         consensus.hashGenesisBlock = genesis.GetHash();
 
-        // ASSERTIONS DISABLED FOR BFX FORK
-        // assert(consensus.hashGenesisBlock ==
-        // uint256S("00000000e6453dc2dfe1ffa19023f86002eb11dbb8e87d0291a4599f0430be52")); assert(genesis.hashMerkleRoot
-        // == uint256S("4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"));
+        assert(consensus.hashGenesisBlock ==
+               uint256S("0x00000000096af1e07b1f4cf1c22aa42b8d1dca0bf8a3860a5f0951fd1ad08853"));
+        assert(genesis.hashMerkleRoot ==
+               uint256S("0x8b091b56222f40fb242b3811b07cf9b75e48024501058e66c0c1c5e653bd8a1d"));
 
         vFixedSeeds.clear();
         vSeeds.clear();
@@ -479,25 +498,29 @@ public:
         assert(abla::State(consensus.ablaConfig, 0).GetBlockSizeLimit() == consensus.nDefaultConsensusBlockSize);
         assert(!consensus.ablaConfig.IsFixedSize());
 
+        // SECURITY: Chipnet uses unique magic bytes to avoid collision
+        // with Testnet4 (which was previously identical: 0xe2b7daaf).
         diskMagic[0] = 0xcd;
         diskMagic[1] = 0x22;
         diskMagic[2] = 0xa7;
         diskMagic[3] = 0x92;
-        netMagic[0] = 0xe2;
-        netMagic[1] = 0xb7;
-        netMagic[2] = 0xda;
-        netMagic[3] = 0xaf;
+        netMagic[0] = 0xc4;
+        netMagic[1] = 0xb8;
+        netMagic[2] = 0xdb;
+        netMagic[3] = 0xb0;
         nDefaultPort = 48333;
         nPruneAfterHeight = 1000;
         m_assumed_blockchain_size = 1;
         m_assumed_chain_state_size = 1;
 
-        genesis = CreateGenesisBlock(1597811185, 114152193, 0x1d00ffff, 1, 50 * COIN);
+        // BFX testnet4/chipnet genesis: re-mined for the v3 timestamp (nBits 0x1d00ffff).
+        genesis = CreateGenesisBlock(1597811185, 1633225309, 0x1d00ffff, 1, 50 * COIN);
         consensus.hashGenesisBlock = genesis.GetHash();
 
-        // ASSERTIONS DISABLED FOR BFX FORK
-        // assert(consensus.hashGenesisBlock ==
-        // BlockHash::fromHex("000000001dd410c49a788668ce26751718cc797474d3152a5fc073dd44fd9f7b"));
+        assert(consensus.hashGenesisBlock ==
+               uint256S("0x000000008501486885bd552b802438f68dc5a219f60212e6ec47b9cec077e173"));
+        assert(genesis.hashMerkleRoot ==
+               uint256S("0x8b091b56222f40fb242b3811b07cf9b75e48024501058e66c0c1c5e653bd8a1d"));
 
         vFixedSeeds.clear();
         vSeeds.clear();
@@ -569,14 +592,14 @@ public:
         m_assumed_blockchain_size = 0;
         m_assumed_chain_state_size = 0;
 
-        genesis = CreateGenesisBlock(1296688602, 2, 0x207fffff, 1, 50 * COIN);
+        // BFX regtest genesis: re-mined for the v3 timestamp (nBits 0x207fffff).
+        genesis = CreateGenesisBlock(1296688602, 3, 0x207fffff, 1, 50 * COIN);
         consensus.hashGenesisBlock = genesis.GetHash();
 
-        // ASSERTIONS DISABLED FOR BFX FORK
-        // assert(consensus.hashGenesisBlock ==
-        // uint256S("0x0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206"));
-        // assert(genesis.hashMerkleRoot ==
-        // uint256S("0x4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"));
+        assert(consensus.hashGenesisBlock ==
+               uint256S("0x1af18d35c21aa6e032692ef5f63b015a36f72d8719c7f765b2309a50f9975428"));
+        assert(genesis.hashMerkleRoot ==
+               uint256S("0x8b091b56222f40fb242b3811b07cf9b75e48024501058e66c0c1c5e653bd8a1d"));
 
         vFixedSeeds.clear();
         vSeeds.clear();

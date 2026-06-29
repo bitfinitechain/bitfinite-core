@@ -1132,7 +1132,7 @@ void SetupServerArgs() {
 }
 
 std::string LicenseInfo() {
-    constexpr auto URL_SOURCE_CODE = "<https://github.com/bitfinite-chain/bitfinite>";
+    constexpr auto URL_SOURCE_CODE = "<https://github.com/bitfinitechain/bitfinite-core>";
     constexpr auto URL_WEBSITE = "<https://bitfinitechain.org>";
 
     return CopyrightHolders(strprintf(_("Copyright (C) %i-%i"), 2009, COPYRIGHT_YEAR) + " ") + "\n\n" +

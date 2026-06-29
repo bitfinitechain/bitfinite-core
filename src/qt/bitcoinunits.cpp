@@ -53,11 +53,11 @@ QString BitcoinUnits::description(int unit) {
     constexpr auto thinUtf8 = BitcoinSpaces::thinUtf8;
     switch (unit) {
         case BFX:
-            return QObject::tr("bitcoins");
+            return QObject::tr("BitFinite");
         case mBFX:
-            return QObject::tr("millibitcoins") + " (1 / 1" + thinUtf8 + "000)";
+            return QObject::tr("milliBitFinite") + " (1 / 1" + thinUtf8 + "000)";
         case uBFX:
-            return QObject::tr("microbitcoins/bits") + " (1 / 1" + thinUtf8 + "000" + thinUtf8 + "000)";
+            return QObject::tr("microBitFinite/bits") + " (1 / 1" + thinUtf8 + "000" + thinUtf8 + "000)";
         case SAT:
             return QObject::tr("satoshis") + " (1 / 100" + thinUtf8 + "000" + thinUtf8 + "000)";
         default:
