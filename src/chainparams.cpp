@@ -50,8 +50,7 @@ static CBlock CreateGenesisBlock(const char *pszTimestamp, const CScript &genesi
  * Build the genesis block.
  */
 CBlock CreateGenesisBlock(uint32_t nTime, uint32_t nNonce, uint32_t nBits, int32_t nVersion,
-                          const Amount genesisReward) {
-    const char *pszTimestamp = "BFX 2026-06-26: BitFinite - sound money, freely mined";
+                          const Amount genesisReward, const char *pszTimestamp) {
     const CScript genesisOutputScript = CScript() << ParseHex("04678afdb0fe5548271967f1a67130b7105cd6a828e03909"
                                                               "a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112"
                                                               "de5c384df7ba0b8d578a4c702b6bf11d5f")
@@ -87,14 +86,15 @@ public:
         consensus.upgrade10ActivationTime = 1715774400;
         consensus.upgrade11ActivationTime = 1747310400;
 
-        // --- DIFFICULTY: ASERT FROM GENESIS ---
-        // ASERT is anchored at the genesis block (see asertAnchorParams below), so
-        // Axion/ASERT governs difficulty from block 1 onward. The anchor target is
-        // powLimit (difficulty-1), the easiest valid mainnet difficulty, so early
-        // blocks are cheap to mine and ASERT raises difficulty smoothly as hashrate
-        // joins. There is NO pre-ASERT DAA/EDA phase (the old "easy until 10,000"
-        // design crashed at block 1: with daaHeight=0 and the anchor at height 10001,
-        // GetNextCashWorkRequired asserted nHeight >= DifficultyAdjustmentInterval()).
+        // --- DIFFICULTY: ASERT FROM GENESIS, RE-ANCHORED AT ~70,000 ---
+        // Genesis re-anchor (2026-06-29, fair launch): the chain OPERATES at ~70,000
+        // difficulty from block 2 onward via the ASERT anchor below (anchor bits =
+        // 0x1b00efab). powLimit stays at diff-1 because the genesis block is diff-1
+        // (CPU-mined) and IS PoW-checked on read-back (ReadBlockFromDisk), so it must
+        // satisfy powLimit. Block 1 == powLimit (diff-1) is one trivial block; block 2+
+        // target ~70k (5-min blocks at ~1 TH/s). The short 6h half-life keeps any
+        // hashrate burst bounded; with continuous mining, difficulty stays at ~70k and
+        // never eases back toward the diff-1 floor.
         consensus.powLimit = uint256S("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
 
         consensus.nPowTargetTimespan = 14 * 24 * 60 * 60; // 2 weeks
@@ -105,8 +105,9 @@ public:
         consensus.fPowAllowMinDifficultyBlocks = false;
         consensus.fPowNoRetargeting = false;
 
-        // ASERT DAA Half Life (2 Days)
-        consensus.nASERTHalfLife = 2 * 24 * 60 * 60;
+        // ASERT DAA Half Life (6 hours) — fast adaptation so a hashrate burst is
+        // absorbed in hours, not days, sharply limiting any excess minting.
+        consensus.nASERTHalfLife = 6 * 60 * 60;
         // TODO(security): Update nMinimumChainWork and defaultAssumeValid
         // once the chain has a significant number of blocks (e.g., >1000).
         // Current 0x00 means new nodes accept any chain fork as valid.
@@ -124,16 +125,15 @@ public:
                consensus.nDefaultGeneratedBlockSizePercent <= 100.0);
         assert(consensus.GetDefaultGeneratedBlockSizeBytes() <= consensus.nDefaultConsensusBlockSize);
 
-        // --- BFX ASERT ANCHOR (genesis) ---
-        // Anchor ASERT at the genesis block so Axion/ASERT is active from block 1.
-        // Anchor height MUST be 0 so IsAxionEnabled() (height check) is true from the
-        // first block; the genesis-parent case in GetNextASERTWorkRequired() returns
-        // powLimit for block 1, and ASERT computes every subsequent block relative to
-        // this anchor. nPrevBlockTime is the genesis time (anchor == genesis).
+        // --- BFX ASERT ANCHOR (genesis, ~70,000 difficulty) ---
+        // Anchored at genesis (height 0) so Axion/ASERT is active from block 1.
+        // Anchor Bits = 0x1b00efab (~diff 70,000) is the ASERT reference target, so
+        // block 2+ target ~70k (~5-min blocks at ~1 TH/s). Block 1 == powLimit (~70k).
+        // nPrevBlockTime MUST equal the genesis nTime (anchor == genesis).
         consensus.asertAnchorParams = Consensus::Params::ASERTAnchor{
             0,          // Anchor Height (genesis)
-            0x1d00ffff, // Anchor Bits (difficulty-1 == powLimit)
-            1782432000, // Anchor Time (genesis nTime)
+            0x1b00efab, // Anchor Bits (~difficulty 70,000)
+            1782691200, // Anchor Time (== genesis nTime)
         };
 
         consensus.ablaConfig = abla::Config::MakeDefault(consensus.nDefaultConsensusBlockSize, /* fixedSize = */ false);
@@ -154,20 +154,22 @@ public:
         m_assumed_blockchain_size = 1;
         m_assumed_chain_state_size = 0;
 
-        // BFX GENESIS - 2026-06-26 mainnet launch (00:00:00 UTC)
-        // 50 BFX reward, 210,000 block halving (~2 years), 21M max supply
-        // nBits = 0x1d00ffff (standard difficulty 1)
-        // Mined: nTime=1782432000, nNonce=1870395023
-        genesis = CreateGenesisBlock(1782432000, 1870395023, 0x1d00ffff, 1, 50 * COIN);
+        // BFX GENESIS - 2026-06-29 fair-launch re-anchor (00:00:00 UTC)
+        // 50 BFX reward, 210,000 block halving (~2 years), 21M max supply.
+        // Genesis is diff-1 (0x1d00ffff) and trusted/unchecked; the ~70k difficulty
+        // FLOOR comes from powLimit + the ASERT anchor above (block 1 == powLimit ~70k).
+        // Mined: nTime=1782691200, nNonce=3406937121
+        genesis = CreateGenesisBlock(1782691200, 3406937121, 0x1d00ffff, 1, 50 * COIN,
+                                     "BFX 2026-06-29: BitFinite fair launch - sound money, freely mined");
 
         consensus.hashGenesisBlock = genesis.GetHash();
 
         // Verify Genesis Hash
         assert(consensus.hashGenesisBlock ==
-               uint256S("0x000000006f35956504ca93e1dc95d59a7989cdc2bc8094fd64ecabe43b238664"));
+               uint256S("0x000000000900096d5b0f4a3489f919362f12fce06524e15074c3cd3c19aeabea"));
         // Verify Merkle Root
         assert(genesis.hashMerkleRoot ==
-               uint256S("0x8b091b56222f40fb242b3811b07cf9b75e48024501058e66c0c1c5e653bd8a1d"));
+               uint256S("0xb256645de4317fcb50bf170bdae579dbf667c47d579a19d2a049e3ed41608609"));
 
         // Clear old seeds
         vSeeds.clear();
