@@ -146,7 +146,8 @@ protected:
 std::unique_ptr<CChainParams> CreateChainParams(const std::string &chain);
 
 CBlock CreateGenesisBlock(uint32_t nTime, uint32_t nNonce, uint32_t nBits, int32_t nVersion,
-                          const Amount genesisReward);
+                          const Amount genesisReward,
+                          const char *pszTimestamp = "BFX 2026-06-26: BitFinite - sound money, freely mined");
 
 /**
  * Return the currently selected parameters. This won't change after app
