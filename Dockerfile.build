@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       # depends + cmake build essentials
       build-essential autoconf automake cmake curl git libtool ninja-build \
       patch pkg-config python3 bison bsdmainutils ca-certificates wget \
-      xz-utils zip unzip gettext file \
+      xz-utils zip unzip gettext file gperf \
       # host dev libs needed by the "native" helper-tools sub-build
       libssl-dev libevent-dev libboost-all-dev \
       # Windows cross toolchain + installer builder
