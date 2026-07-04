@@ -353,7 +353,7 @@ endif()
 # The executable
 add_executable(bitfinite-qt WIN32 main.cpp)
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-	target_sources(bitcoin-qt PRIVATE res/bitcoin-qt-res.rc)
+	target_sources(bitfinite-qt PRIVATE res/bitcoin-qt-res.rc)
 endif()
 target_link_libraries(bitfinite-qt bitfinite-qt-base)
 
@@ -381,7 +381,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	set(EMPTY_LPROJ_FILE "${CMAKE_CURRENT_BINARY_DIR}/empty.lproj")
 	file(TOUCH "${EMPTY_LPROJ_FILE}")
 
-	target_sources(bitcoin-qt PRIVATE
+	target_sources(bitfinite-qt PRIVATE
 		"${BITCOINQT_BUNDLE_ICON}"
 		"${INFO_PLIST_STRINGS_PATH}"
 		"${EMPTY_LPROJ_FILE}"
@@ -392,7 +392,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 		"${EMPTY_LPROJ_FILE}"
 	)
 
-	set_target_properties(bitcoin-qt PROPERTIES
+	set_target_properties(bitfinite-qt PROPERTIES
 		MACOSX_BUNDLE ON
 		OUTPUT_NAME "${BITCOIN_QT_OSX_BUNDLE_NAME}"
 		MACOSX_BUNDLE_INFO_PLIST "${CMAKE_SOURCE_DIR}/share/qt/Info.plist.cmake.in"
@@ -431,11 +431,11 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 		OUTPUT
 			"${STRIPPED_BUNDLE}"
 		COMMAND
-			${CMAKE_COMMAND} -E copy_directory "$<TARGET_BUNDLE_DIR:bitcoin-qt>" "${STRIPPED_BUNDLE}"
+			${CMAKE_COMMAND} -E copy_directory "$<TARGET_BUNDLE_DIR:bitfinite-qt>" "${STRIPPED_BUNDLE}"
 		COMMAND
 			${CMAKE_STRIP} -u -r "${STRIPPED_BUNDLE}/Contents/MacOS/${BITCOIN_QT_OSX_BUNDLE_NAME}"
 		DEPENDS
-			bitcoin-qt
+			bitfinite-qt
 	)
 
 	include(DoOrFail)
