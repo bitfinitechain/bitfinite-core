@@ -16,7 +16,7 @@ BitFinite Core is the full node software for the BitFinite (BFX) protocol.
 
 - **P2P Port:** 19768
 - **RPC Port:** 19769
-- **Network Magic:** `0x42466e6e` ("BFin")
+- **Network Magic:** `0x4246696e` ("BFin")
 - **CashAddr Prefix:** `bfx:`
 
 ## License
