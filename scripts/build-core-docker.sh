@@ -38,21 +38,29 @@ for target in "${TARGETS[@]}"; do
   esac
   echo ">> [$target] depends + cmake + ninja  (HOST=$HOST, NO_QT=${NO_QT:-0})"
 
-  QT_TARGET="bitfinite-qt"; QT_CMAKE=""
+  # Pass BUILD_BITCOIN_QT explicitly (ON/OFF) — relying on the default lets a
+  # cached OFF from a prior NO_QT configure of the same build dir silently win.
+  QT_TARGET="bitfinite-qt"; QT_CMAKE="-DBUILD_BITCOIN_QT=ON"
   [ -n "$NO_QT" ] && { QT_TARGET=""; QT_CMAKE="-DBUILD_BITCOIN_QT=OFF"; }
-  GLIBC_FLAG=""; [ "$target" = linux ] && GLIBC_FLAG="-DENABLE_GLIBC_BACK_COMPAT=ON"
+  # DNS seeder is a Linux-only target (not built for the mingw/Windows host).
+  GLIBC_FLAG=""; SEEDER_CMAKE="-DBUILD_BITCOIN_SEEDER=OFF"; SEEDER_TARGET=""
+  if [ "$target" = linux ]; then
+    GLIBC_FLAG="-DENABLE_GLIBC_BACK_COMPAT=ON"
+    SEEDER_CMAKE="-DBUILD_BITCOIN_SEEDER=ON"; SEEDER_TARGET="bitcoin-seeder"
+  fi
 
   docker run --rm -v "$REPO":/work -w /work \
     -e HOST_UID="$(id -u)" -e HOST_GID="$(id -g)" \
     -e HOST="$HOST" -e PLAT="$PLAT" -e TARGET="$target" \
     -e NO_QT="$NO_QT" -e QT_TARGET="$QT_TARGET" -e QT_CMAKE="$QT_CMAKE" -e GLIBC_FLAG="$GLIBC_FLAG" \
+    -e SEEDER_CMAKE="$SEEDER_CMAKE" -e SEEDER_TARGET="$SEEDER_TARGET" \
     "$IMAGE" bash -euxo pipefail -c '
       git config --global --add safe.directory /work
       make -C depends -j"$(nproc)" HOST="$HOST" ${NO_QT:+NO_QT=1}
       cmake -GNinja -B "build-$TARGET" -S . \
         -DCMAKE_TOOLCHAIN_FILE="cmake/platforms/$PLAT.cmake" \
-        -DENABLE_MAN=OFF -DBUILD_BITCOIN_SEEDER=OFF $GLIBC_FLAG $QT_CMAKE
-      ninja -C "build-$TARGET" bitfinited bitfinite-cli bitfinite-tx bitfinite-wallet $QT_TARGET
+        -DENABLE_MAN=OFF $SEEDER_CMAKE $GLIBC_FLAG $QT_CMAKE
+      ninja -C "build-$TARGET" bitfinited bitfinite-cli bitfinite-tx bitfinite-wallet $QT_TARGET $SEEDER_TARGET
       chown -R "$HOST_UID:$HOST_GID" "build-$TARGET" depends 2>/dev/null || true
     '
 
@@ -65,6 +73,7 @@ for target in "${TARGETS[@]}"; do
     cp "build-$target/src/$b$EXT" "$OUT/bin/"
   done
   [ -z "$NO_QT" ] && cp "build-$target/src/qt/bitfinite-qt$EXT" "$OUT/bin/"
+  [ -n "$SEEDER_TARGET" ] && cp "build-$target/src/seeder/bitcoin-seeder$EXT" "$OUT/bin/"
   # strip (mingw needs the cross strip)
   if [ "$target" = win ]; then STRIP=x86_64-w64-mingw32-strip; else STRIP=strip; fi
   $STRIP "$OUT"/bin/* 2>/dev/null || true
