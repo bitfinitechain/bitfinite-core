@@ -1,0 +1,28 @@
+# BitFinite Core cross-compile toolchain image.
+# Builds Linux (x86_64) and Windows (x86_64, via mingw-w64) release binaries
+# using the inherited BCHN `depends` system — no host dependencies required.
+#
+# Ubuntu 22.04 base; Linux builds use -DENABLE_GLIBC_BACK_COMPAT=ON so the
+# resulting binaries run on older glibc too.
+FROM ubuntu:22.04
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    TZ=Etc/UTC \
+    LANG=C.UTF-8
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      # depends + cmake build essentials
+      build-essential autoconf automake cmake curl git libtool ninja-build \
+      patch pkg-config python3 bison bsdmainutils ca-certificates wget \
+      xz-utils zip unzip gettext file \
+      # host dev libs needed by the "native" helper-tools sub-build
+      libssl-dev libevent-dev libboost-all-dev \
+      # Windows cross toolchain + installer builder
+      g++-mingw-w64-x86-64 mingw-w64-tools nsis \
+ && rm -rf /var/lib/apt/lists/*
+
+# BCHN requires the POSIX threading variant of the mingw toolchain.
+RUN update-alternatives --set x86_64-w64-mingw32-gcc /usr/bin/x86_64-w64-mingw32-gcc-posix \
+ && update-alternatives --set x86_64-w64-mingw32-g++ /usr/bin/x86_64-w64-mingw32-g++-posix
+
+WORKDIR /work

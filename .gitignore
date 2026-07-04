@@ -159,3 +159,9 @@ verify_charset.py
 bitfinite.conf
 *.conf
 !bitfinite.conf.example
+dist/
+build-linux/
+build-win/
+depends/x86_64-*/
+depends/work/
+depends/sources/
