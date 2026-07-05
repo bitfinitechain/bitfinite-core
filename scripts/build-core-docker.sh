@@ -53,7 +53,7 @@ for target in "${TARGETS[@]}"; do
     -e HOST_UID="$(id -u)" -e HOST_GID="$(id -g)" \
     -e HOST="$HOST" -e PLAT="$PLAT" -e TARGET="$target" \
     -e NO_QT="$NO_QT" -e QT_TARGET="$QT_TARGET" -e QT_CMAKE="$QT_CMAKE" -e GLIBC_FLAG="$GLIBC_FLAG" \
-    -e SEEDER_CMAKE="$SEEDER_CMAKE" -e SEEDER_TARGET="$SEEDER_TARGET" \
+    -e SEEDER_CMAKE="$SEEDER_CMAKE" -e SEEDER_TARGET="$SEEDER_TARGET" -e EXT="$EXT" \
     "$IMAGE" bash -euxo pipefail -c '
       git config --global --add safe.directory /work
       make -C depends -j"$(nproc)" HOST="$HOST" ${NO_QT:+NO_QT=1}
@@ -61,6 +61,14 @@ for target in "${TARGETS[@]}"; do
         -DCMAKE_TOOLCHAIN_FILE="cmake/platforms/$PLAT.cmake" \
         -DENABLE_MAN=OFF $SEEDER_CMAKE $GLIBC_FLAG $QT_CMAKE
       ninja -C "build-$TARGET" bitfinited bitfinite-cli bitfinite-tx bitfinite-wallet $QT_TARGET $SEEDER_TARGET
+      # Strip INSIDE the container: the mingw strip only exists here, not on a
+      # CI host, so a host-side strip silently no-ops and ships huge unstripped
+      # Windows binaries.
+      STRIP=strip; [ "$TARGET" = win ] && STRIP=x86_64-w64-mingw32-strip
+      for f in bitfinited bitfinite-cli bitfinite-tx bitfinite-wallet \
+               ${QT_TARGET:+qt/bitfinite-qt} ${SEEDER_TARGET:+seeder/bitcoin-seeder}; do
+        "$STRIP" "build-$TARGET/src/$f$EXT" || true
+      done
       chown -R "$HOST_UID:$HOST_GID" "build-$TARGET" depends 2>/dev/null || true
     '
 
@@ -74,9 +82,7 @@ for target in "${TARGETS[@]}"; do
   done
   [ -z "$NO_QT" ] && cp "build-$target/src/qt/bitfinite-qt$EXT" "$OUT/bin/"
   [ -n "$SEEDER_TARGET" ] && cp "build-$target/src/seeder/bitcoin-seeder$EXT" "$OUT/bin/"
-  # strip (mingw needs the cross strip)
-  if [ "$target" = win ]; then STRIP=x86_64-w64-mingw32-strip; else STRIP=strip; fi
-  $STRIP "$OUT"/bin/* 2>/dev/null || true
+  # (binaries were already stripped inside the container, where the mingw strip lives)
   ( cd "$OUT/bin" && sha256sum * ) > "$OUT/SHA256SUMS"
   ( cd dist && case "$PKGEXT" in
         tar.gz) tar czf "$NAME.tar.gz" "$NAME" ;;
