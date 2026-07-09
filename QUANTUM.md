@@ -137,4 +137,4 @@ plan an orderly migration to post-quantum signatures. We publish this rather tha
 a "quantum-proof" claim, because that honesty is the point.
 
 *Cryptographic primitive inventory with full `file:line` evidence is maintained
-alongside [SECURITY.md](SECURITY.md). Report concerns to security@bitfinitechain.org.*
+alongside [SECURITY.md](SECURITY.md). Report concerns to bitfinitechain@proton.me.*

@@ -11,7 +11,7 @@ network, P2P, RPC, seeding and configuration surface.
 > genesis block was *independently recomputed* (double-SHA256 + PoW check), not taken
 > on faith. This is an internal audit, not a paid third-party engagement — we publish
 > it so the community can reproduce our findings and so independent reviewers have a
-> concrete starting point. Responsible-disclosure contact: **security@bitfinitechain.org**.
+> concrete starting point. Responsible-disclosure contact: **bitfinitechain@proton.me**.
 
 ---
 
@@ -138,7 +138,7 @@ checkpoint items above are the mitigations as the chain matures.
 
 ## Reporting a vulnerability
 
-Please report security issues privately to **security@bitfinitechain.org** before
+Please report security issues privately to **bitfinitechain@proton.me** before
 public disclosure. We will acknowledge, investigate, and credit reporters who
 follow responsible disclosure.
 
