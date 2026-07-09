@@ -108,14 +108,15 @@ public:
         // ASERT DAA Half Life (6 hours) — fast adaptation so a hashrate burst is
         // absorbed in hours, not days, sharply limiting any excess minting.
         consensus.nASERTHalfLife = 6 * 60 * 60;
-        // TODO(security): Update nMinimumChainWork and defaultAssumeValid
-        // once the chain has a significant number of blocks (e.g., >1000).
-        // Current 0x00 means new nodes accept any chain fork as valid.
-        // Run: bitfinite-cli getblockchaininfo | grep chainwork
-        // then set: consensus.nMinimumChainWork = uint256S("<chainwork_hex>");
-        //           consensus.defaultAssumeValid = BlockHash::fromHex("<blockhash>");
-        consensus.nMinimumChainWork = uint256S("0x00");
-        consensus.defaultAssumeValid = BlockHash();
+        // Anti-fake-chain / IBD trust anchor. Set to a well-buried block
+        // (height 2639, ~200 deep at the time of this release) so a syncing node
+        // rejects any presented chain with less accumulated work, and can skip
+        // signature verification below the assume-valid block. Bump these on
+        // future releases as the chain grows (chainwork from getblockheader).
+        consensus.nMinimumChainWork = uint256S(
+            "0x0000000000000000000000000000000000000000000000001932d1a31b9f30fd");
+        consensus.defaultAssumeValid = BlockHash::fromHex(
+            "00000000000018aa22cb9a4c2a84df7bfa3c4146c8acddad02610143529d5b70");
 
         // Default limit for block size (in bytes)
         consensus.nDefaultConsensusBlockSize = DEFAULT_CONSENSUS_BLOCK_SIZE;
