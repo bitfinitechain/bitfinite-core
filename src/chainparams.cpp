@@ -174,6 +174,10 @@ public:
 
         // Clear old seeds
         vSeeds.clear();
+        // Dynamic DNS seed (bitcoin-seeder crawler on seed-3) — returns many live
+        // peers; primary discovery source.
+        vSeeds.emplace_back("seed.bitfinitechain.org");
+        // Static per-node hostnames (one A record each) — fallbacks.
         vSeeds.emplace_back("seed-1.bitfinitechain.org");
         vSeeds.emplace_back("seed-2.bitfinitechain.org");
         vSeeds.emplace_back("seed-3.bitfinitechain.org");
