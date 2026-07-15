@@ -67,4 +67,4 @@ Drag `bitcoin-cash-node` to your applications folder, and then run `bitcoin-cash
 
 ## Help
 
-- Ask for help on the [BitFinite Node Subreddit](https://www.reddit.com/r/bchnode/), [BitFinite Node Slack](https://join.slack.com/t/bitfinitenode/shared_invite/zt-egg3c36d-2cglIrKcbnGpIQFaKFzCWA) or [BitFinite Node Telegram](https://t.me/bitfinitenode).
+- Ask for help on the [BitFinite Discord](https://discord.gg/bitfinitechain) or [X](https://x.com/bitfinitechain), or open an issue on [GitHub](https://github.com/bitfinitechain/bitfinite-core/issues).
