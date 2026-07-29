@@ -9,7 +9,8 @@ echo "=================================="
 echo ""
 
 # Configuration
-BFX_DIR="."
+# Repo root — derived from this script's location (override with BFX_DIR=... if needed)
+BFX_DIR="${BFX_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
 TESTNET_DIR="$HOME/.bitfinite-testnet"
 CONFIG_FILE="$TESTNET_DIR/bitfinite.conf"
 

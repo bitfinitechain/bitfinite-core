@@ -4,7 +4,8 @@
 
 set -e
 
-BFX_DIR="."
+# Repo root — derived from this script's location (override with BFX_DIR=... if needed)
+BFX_DIR="${BFX_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
 DATA_DIR="$HOME/.bitfinite-regtest"
 CLI="$BFX_DIR/build/src/bitfinite-cli -regtest -datadir=$DATA_DIR"
 DAEMON="$BFX_DIR/build/src/bitfinited -regtest -datadir=$DATA_DIR"
