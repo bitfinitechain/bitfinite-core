@@ -165,3 +165,6 @@ build-win/
 depends/x86_64-*/
 depends/work/
 depends/sources/
+
+# compiled build output — never commit binaries
+deploy-build/
