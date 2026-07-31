@@ -8,9 +8,19 @@ include(CheckSymbolExists)
 include(CheckCXXSourceCompiles)
 
 # Version
-set(CLIENT_VERSION_MAJOR ${bitcoin-cash-node_VERSION_MAJOR})
-set(CLIENT_VERSION_MINOR ${bitcoin-cash-node_VERSION_MINOR})
-set(CLIENT_VERSION_REVISION ${bitcoin-cash-node_VERSION_PATCH})
+# MUST be the ROOT project's namespaced vars. Two traps here:
+#  1. The project was renamed bitcoin-cash-node -> bitfinite-node, so the original
+#     ${bitcoin-cash-node_VERSION_*} silently expanded to EMPTY. That produced a
+#     version.h with blank version numbers — which is why someone then hardcoded
+#     the version into src/clientversion.h, pinning every build to "v3.0.0".
+#  2. Plain PROJECT_VERSION_* does NOT work either: src/CMakeLists.txt calls
+#     project(bitcoind) with no VERSION, which resets PROJECT_VERSION_* to empty for
+#     everything under src/ (including this file).
+# <root-project>_VERSION_* survives nested project() calls, so it is the only correct
+# source. Keep this in sync if the project is ever renamed again.
+set(CLIENT_VERSION_MAJOR ${bitfinite-node_VERSION_MAJOR})
+set(CLIENT_VERSION_MINOR ${bitfinite-node_VERSION_MINOR})
+set(CLIENT_VERSION_REVISION ${bitfinite-node_VERSION_PATCH})
 
 option(CLIENT_VERSION_IS_RELEASE "Build a release version" OFF)
 

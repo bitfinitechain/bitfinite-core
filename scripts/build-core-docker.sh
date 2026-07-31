@@ -59,7 +59,8 @@ for target in "${TARGETS[@]}"; do
       make -C depends -j"$(nproc)" HOST="$HOST" ${NO_QT:+NO_QT=1}
       cmake -GNinja -B "build-$TARGET" -S . \
         -DCMAKE_TOOLCHAIN_FILE="cmake/platforms/$PLAT.cmake" \
-        -DENABLE_MAN=OFF $SEEDER_CMAKE $GLIBC_FLAG $QT_CMAKE
+        -DENABLE_MAN=OFF -DCLIENT_VERSION_IS_RELEASE=ON \
+        $SEEDER_CMAKE $GLIBC_FLAG $QT_CMAKE
       ninja -C "build-$TARGET" bitfinited bitfinite-cli bitfinite-tx bitfinite-wallet $QT_TARGET $SEEDER_TARGET
       # Strip INSIDE the container: the mingw strip only exists here, not on a
       # CI host, so a host-side strip silently no-ops and ships huge unstripped

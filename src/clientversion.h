@@ -8,24 +8,23 @@
 #if defined(HAVE_CONFIG_H)
 #include <config/bitcoin-config.h>
 #endif // HAVE_CONFIG_H
-// #include <config/version.h>
+#include <config/version.h>
 
-// --- BITFINITE FIX START ---
-#undef CLIENT_VERSION_MAJOR
-#undef CLIENT_VERSION_MINOR
-#undef CLIENT_VERSION_REVISION
-#undef CLIENT_VERSION_BUILD
-
-// CHANGE THESE TO YOUR PREFERRED VERSION (e.g., 1.0.0)
-#define CLIENT_VERSION_MAJOR 3
-#define CLIENT_VERSION_MINOR 0
-#define CLIENT_VERSION_REVISION 0
-#define CLIENT_VERSION_BUILD 1
-#define CLIENT_VERSION_IS_RELEASE 1
+// --- BITFINITE ---
+// The version numbers come from config/version.h, which CMake generates from the
+// root project(bitfinite-node VERSION ...) declaration. They must NOT be hardcoded
+// here: a previous hardcode is why v3.0.1 shipped a binary that reported "v3.0.0".
+// Bump the version in the top-level CMakeLists.txt and nowhere else.
+//
+// Only the two things config can't give us correctly are set here:
+//  * CLIENT_VERSION_BUILD — not emitted by version.h, but bitcoind-res.rc needs it.
+//  * COPYRIGHT_YEAR — bitcoin-config.h defines it as a *quoted* string, which would
+//    turn STRINGIZE(COPYRIGHT_YEAR) into "\"2026\"" in COPYRIGHT_STR. Re-define it
+//    bare so the .rc copyright line comes out as 2009-2026.
+#define CLIENT_VERSION_BUILD 0
 #undef COPYRIGHT_YEAR
 #define COPYRIGHT_YEAR 2026
-#define COPYRIGHT_HOLDERS_FINAL "The Bitcoin and BitFinite developers"
-// --- BITFINITE FIX END ---
+// --- BITFINITE END ---
 
 // Check that required client information is defined
 #if !defined(CLIENT_VERSION_MAJOR) || !defined(CLIENT_VERSION_MINOR) || !defined(CLIENT_VERSION_REVISION) ||           \

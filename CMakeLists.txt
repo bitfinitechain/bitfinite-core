@@ -9,7 +9,7 @@ set(CMAKE_USER_MAKE_RULES_OVERRIDE
 )
 
 project(bitfinite-node
-	VERSION 3.0.1.0
+	VERSION 3.0.1
 	DESCRIPTION "BitFinite Node is a full node implementation of the BitFinite protocol."
 	HOMEPAGE_URL "https://www.bitfinitenode.org"
 )
