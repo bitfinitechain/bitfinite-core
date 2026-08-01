@@ -27,6 +27,14 @@ echo ">> Building toolchain image ($IMAGE)…"
 docker build -f Dockerfile.build -t "$IMAGE" "$REPO"
 
 mkdir -p dist
+
+# Start a FRESH checksum file for this run. It used to be appended to across runs,
+# so dist/SHA256SUMS accumulated entries from every previous build and kept stale
+# ones forever. That shipped: the v3.0.2 release carried a SHA256SUMS listing only
+# v3.0.0.1 files, so `sha256sum -c SHA256SUMS` verified nothing a user had just
+# downloaded — silently, which is worse than failing.
+: > dist/SHA256SUMS
+
 grep -q "^dist/" .gitignore 2>/dev/null || echo "dist/" >> .gitignore
 grep -q "^build-linux/" .gitignore 2>/dev/null || printf "build-linux/\nbuild-win/\ndepends/x86_64-*/\ndepends/work/\ndepends/sources/\n" >> .gitignore
 
@@ -95,3 +103,19 @@ done
 
 echo ">> Done. Artifacts in dist/:"
 ls -lh dist/*.tar.gz dist/*.zip dist/SHA256SUMS 2>/dev/null | awk '{print $5, $9}'
+
+# Fail loudly rather than ship a checksum file that does not describe this build.
+echo ">> SHA256SUMS for this run:"
+sed 's/^/     /' dist/SHA256SUMS
+if [ "$(wc -l < dist/SHA256SUMS)" -ne "${#TARGETS[@]}" ]; then
+  echo "ERROR: SHA256SUMS has $(wc -l < dist/SHA256SUMS) entries for ${#TARGETS[@]} target(s)" >&2
+  exit 1
+fi
+if grep -qv "v${VERSION}-" dist/SHA256SUMS; then
+  echo "ERROR: SHA256SUMS references something other than v${VERSION} — refusing to ship it" >&2
+  grep -v "v${VERSION}-" dist/SHA256SUMS | sed 's/^/     /' >&2
+  exit 1
+fi
+( cd dist && sha256sum -c SHA256SUMS >/dev/null ) \
+  && echo ">> checksums verified against the built artifacts" \
+  || { echo "ERROR: SHA256SUMS does not match the files in dist/" >&2; exit 1; }
