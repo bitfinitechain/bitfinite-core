@@ -1,0 +1,19 @@
+ARCHIVE — historical build, kept for reference only. Do not run this.
+
+These binaries are bitfinite-v3.0.0.1 and report "v3.0.0". They predate two
+changes that matter:
+
+  * seed.bitfinitechain.org is NOT baked in (verified: `strings bitfinited`),
+    so peer discovery falls back to the three static seed-N hostnames only.
+  * nMinimumChainWork and defaultAssumeValid are still 0x00, so a syncing node
+    will accept any chain it is handed.
+
+To actually run BitFinite, use the current release:
+
+    dist/bitfinite-v3.0.2-x86_64-linux/bin/bitfinite-qt        (GUI)
+    dist/bitfinite-v3.0.2-x86_64-linux/bin/bitfinited          (daemon)
+
+Always confirm what you launched:  <binary> -version
+
+Launching this archive by mistake on 2026-07-31 is what produced an About box
+reading "v3.0.0" long after v3.0.2 had been built and published.
