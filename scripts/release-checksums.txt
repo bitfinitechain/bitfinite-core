@@ -1,0 +1,17 @@
+# BitFinite Core release checksums.
+#
+# Pinned here so provenance is reviewed in git rather than trusted at download
+# time: scripts/upgrade-node.sh refuses to install a version that is not listed
+# (override with BFX_SHA256 for an unreleased build).
+#
+# These are the sha256 of the RELEASE ARCHIVES. Each archive also contains its
+# own SHA256SUMS covering the individual binaries, which the upgrade script
+# checks separately after extracting.
+#
+# To add a version, verify against the release page's SHA256SUMS first:
+#   sha256sum -c SHA256SUMS
+#
+# sha256                                                            file
+
+e209634baf2acb3eb5395b2954be5ae7e06075b3cac24a48d463ff9407b20eeb  bitfinite-v3.0.2-x86_64-linux.tar.gz
+18b10a2b0dccc804a6064f6b8a396dc154f7a130c0ded4c325e050d6954b0071  bitfinite-v3.0.2-x86_64-windows.zip
