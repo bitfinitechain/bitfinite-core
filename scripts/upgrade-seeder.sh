@@ -95,18 +95,29 @@ echo "  stop timeout: $TMO (worst-case bootstrap outage if it ignores SIGTERM)"
 
 # ── Fetch and verify ────────────────────────────────────────────────────────
 say "Fetching and verifying $PKG"
+mkdir -p "$WORK"; cd "$WORK"
+[ -f "$PKG.tar.gz" ] || curl -fsSL -o "$PKG.tar.gz" "$URL"
+
+# Archive hash is advisory — a re-tar of identical binaries changes it, which
+# CI does on tag push. The binary pin below is the gate.
 SHA="${BFX_SHA256:-}"
 if [ -z "$SHA" ] && [ -r "$CHECKSUMS" ]; then
     SHA=$(awk -v f="$PKG.tar.gz" '$2==f {print $1}' "$CHECKSUMS" | head -1 || true)
 fi
-[ -n "$SHA" ] || { echo "no pinned sha256 for $PKG.tar.gz — add it to $CHECKSUMS or set BFX_SHA256" >&2; exit 1; }
+GOT=$(sha256sum "$PKG.tar.gz" | awk '{print $1}')
+if [ -n "$SHA" ] && [ "$SHA" = "$GOT" ]; then echo "  archive  : matches the pinned hash"
+else echo "  archive  : differs from / has no pin — binary decides"; fi
 
-mkdir -p "$WORK"; cd "$WORK"
-[ -f "$PKG.tar.gz" ] || curl -fsSL -o "$PKG.tar.gz" "$URL"
-echo "$SHA  $PKG.tar.gz" | sha256sum -c -
 rm -rf "$PKG"; tar xzf "$PKG.tar.gz"
-( cd "$PKG" && grep " bitcoin-seeder$" SHA256SUMS | sed 's#^#&#' > /tmp/.bfxseed.$$ \
-  && ( cd bin && sha256sum -c /tmp/.bfxseed.$$ ); rm -f /tmp/.bfxseed.$$ )
+
+# Authoritative: verify the seeder against the hash pinned in git, not against
+# the manifest inside the archive.
+[ -r "$CHECKSUMS" ] || { echo "no checksum file at $CHECKSUMS" >&2; exit 1; }
+WANT=$(awk -v k="$VERSION/bitcoin-seeder" '$2==k {print $1}' "$CHECKSUMS" | head -1 || true)
+[ -n "$WANT" ] || { echo "NO PINNED HASH for $VERSION/bitcoin-seeder — refusing" >&2; exit 1; }
+HAVE=$(sha256sum "$PKG/bin/bitcoin-seeder" | awk '{print $1}')
+[ "$WANT" = "$HAVE" ] || { echo "bitcoin-seeder HASH MISMATCH" >&2; echo "  pinned $WANT" >&2; echo "  got    $HAVE" >&2; exit 1; }
+echo "  bitcoin-seeder: OK (matches the pin in git)"
 NEWVER=$("./$PKG/bin/bitcoin-seeder" --help 2>&1 | head -1)
 echo "  new binary reports: $NEWVER"
 grep -q "${VERSION#v}" <<<"$NEWVER" || { echo "binary does not report $VERSION" >&2; exit 1; }

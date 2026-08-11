@@ -147,21 +147,39 @@ done
 
 # ── Fetch and verify ────────────────────────────────────────────────────────
 say "Fetching and verifying $PKG"
+mkdir -p "$WORK"; cd "$WORK"
+[ -f "$PKG.tar.gz" ] || curl -fsSL -o "$PKG.tar.gz" "$URL"
+
+# The archive hash is ADVISORY. A rebuild that only re-tars the same binaries
+# changes it — CI does exactly that on tag push — so failing here would reject
+# a good artifact. Report the difference and let the binary pins decide.
 SHA="${BFX_SHA256:-}"
 if [ -z "$SHA" ] && [ -r "$CHECKSUMS" ]; then
     SHA=$(awk -v f="$PKG.tar.gz" '$2==f {print $1}' "$CHECKSUMS" | head -1 || true)
 fi
-[ -n "$SHA" ] || { echo "no pinned sha256 for $PKG.tar.gz — add it to $CHECKSUMS or set BFX_SHA256" >&2; exit 1; }
+GOT=$(sha256sum "$PKG.tar.gz" | awk '{print $1}')
+if [ -n "$SHA" ] && [ "$SHA" = "$GOT" ]; then
+    echo "  archive  : matches the pinned hash"
+elif [ -n "$SHA" ]; then
+    echo "  archive  : differs from the pin (re-packaged upstream?) — binaries decide"
+else
+    echo "  archive  : no pin recorded — binaries decide"
+fi
 
-mkdir -p "$WORK"; cd "$WORK"
-[ -f "$PKG.tar.gz" ] || curl -fsSL -o "$PKG.tar.gz" "$URL"
-echo "$SHA  $PKG.tar.gz" | sha256sum -c -
 rm -rf "$PKG"; tar xzf "$PKG.tar.gz"
 
-# The package ships its own per-binary SHA256SUMS; check the files we install
-# against it so a correct tarball with a swapped member cannot slip through.
-( cd "$PKG" && for b in "${BINS[@]}"; do grep -E "  ($b|bin/$b)$" SHA256SUMS | sed "s#bin/##" > /tmp/.bfxsum.$$ || true
-    [ -s /tmp/.bfxsum.$$ ] && ( cd bin && sha256sum -c /tmp/.bfxsum.$$ ); rm -f /tmp/.bfxsum.$$; done )
+# The binaries are the AUTHORITATIVE gate: this is what gets executed. Verify
+# against hashes pinned in git, NOT against the SHA256SUMS inside the archive —
+# that one travels with the artifact and only attests to itself.
+say "Verifying binaries against the pinned hashes"
+[ -r "$CHECKSUMS" ] || { echo "no checksum file at $CHECKSUMS" >&2; exit 1; }
+for b in "${BINS[@]}"; do
+    want=$(awk -v k="$VERSION/$b" '$2==k {print $1}' "$CHECKSUMS" | head -1 || true)
+    [ -n "$want" ] || { echo "  $b: NO PINNED HASH for $VERSION — refusing" >&2; exit 1; }
+    have=$(sha256sum "$PKG/bin/$b" | awk '{print $1}')
+    [ "$want" = "$have" ] || { echo "  $b: HASH MISMATCH" >&2; echo "    pinned $want" >&2; echo "    got    $have" >&2; exit 1; }
+    echo "  $b: OK"
+done
 
 NEWVER=$("./$PKG/bin/bitfinited" -version | head -1)
 echo "  new binary reports: $NEWVER"

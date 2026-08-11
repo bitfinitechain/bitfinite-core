@@ -1,20 +1,48 @@
-# BitFinite Core release checksums.
+# BitFinite Core release checksums — the pin the upgrade scripts verify against.
 #
-# Pinned here so provenance is reviewed in git rather than trusted at download
-# time: scripts/upgrade-node.sh refuses to install a version that is not listed
-# (override with BFX_SHA256 for an unreleased build).
+# TWO KINDS OF ENTRY, and the distinction matters:
 #
-# These are the sha256 of the RELEASE ARCHIVES. Each archive also contains its
-# own SHA256SUMS covering the individual binaries, which the upgrade script
-# checks separately after extracting.
+#   ARCHIVE lines (…tar.gz / …zip) are ADVISORY. An archive hash changes if the
+#   artifact is merely re-tarred — different member order, different mtimes —
+#   even when every binary inside is identical. That is not hypothetical: the
+#   v3.1.0 tag triggered .github/workflows/build-core.yaml, CI rebuilt and
+#   replaced the assets, and the archive hash changed while all six Linux
+#   binaries stayed byte-for-byte the same. A hard gate on the archive rejected
+#   a perfectly good artifact.
 #
-# To add a version, verify against the release page's SHA256SUMS first:
-#   sha256sum -c SHA256SUMS
+#   BINARY lines (vX.Y.Z/<name>) are AUTHORITATIVE. This is what actually gets
+#   installed and executed, so this is what must not change silently. Note the
+#   archive also ships its own SHA256SUMS, but that travels inside the artifact
+#   and therefore only attests to itself — it cannot detect a substituted
+#   archive. These lines are reviewed in git, which is the point.
 #
-# sha256                                                            file
+# Adding a release: publish it, download the PUBLISHED assets, and take the
+# hashes from those — not from your local dist/, which may differ from what CI
+# uploaded.
+#
+# Linux binaries are reproducible across machines (local Docker and GitHub
+# runners produce identical bytes). Windows ones are NOT — PE headers carry a
+# build timestamp — so the Windows pins describe the published CI build
+# specifically.
 
+# ── archives (advisory) ─────────────────────────────────────────────────────
 e209634baf2acb3eb5395b2954be5ae7e06075b3cac24a48d463ff9407b20eeb  bitfinite-v3.0.2-x86_64-linux.tar.gz
 18b10a2b0dccc804a6064f6b8a396dc154f7a130c0ded4c325e050d6954b0071  bitfinite-v3.0.2-x86_64-windows.zip
+16aed0716ba7dc6e9a94d5e6648cc25694d1eab77710d4755605edc7ccfa8ead  bitfinite-v3.1.0-x86_64-linux.tar.gz
+e3a7e962692ae16eda09c92ca5475acf692dbf9fc9551d5c35bac7f740b5955c  bitfinite-v3.1.0-x86_64-windows.zip
 
-b618aa2c49e1353b92eb8ed70298109d6eb20e7ed1788a7c5609603ba32d5b0e  bitfinite-v3.1.0-x86_64-linux.tar.gz
-012e10e6319ce6705e7cad17fce3320675353d7e9d0e3101134e5b8f83ab77a1  bitfinite-v3.1.0-x86_64-windows.zip
+# ── binaries (authoritative) ────────────────────────────────────────────────
+# v3.1.0 — linux
+9330640edf2fa79c7154a8de785f0456ba36d3650ec4998bf5d66a7124df35e1  v3.1.0/bitfinited
+b0a5b3351449bf8e6c389dc472392d244f8d731d8914f04148e20f126923e366  v3.1.0/bitfinite-cli
+68cd3be811cc18e0e0743591156f0d03c1d64963267a4a0e1d31e6f2ce3ecc30  v3.1.0/bitfinite-tx
+c7b4cec1a710f4f407d3acff166bbb31f58b13ee88c99226a5306176b8ec8280  v3.1.0/bitcoin-seeder
+7c07fb5cbff9f1aaac57cf206fb54bef9cdb7d938fa3b0c00d4d84544d62a4a4  v3.1.0/bitfinite-qt
+e022f43023b3943a459f87bf8b8a58c968787defe32ed4d467507a5153112bdb  v3.1.0/bitfinite-wallet
+
+# v3.1.0 — windows (CI build; PE timestamps make these non-reproducible)
+eb0bb3e34162e3c790f1963d11e5ddd8a43bdb5c0a549723bf2b7337565410ed  v3.1.0/bitfinited.exe
+8678d59790ade576ea329424fd74d18cbf61a356c8fc04be2cb98a62c1d7e92b  v3.1.0/bitfinite-cli.exe
+b0fa33f9de4441d96a8d2c3f401200c03e7537982bda5254720f2dda2090302c  v3.1.0/bitfinite-tx.exe
+5fb5f5a869d5e62256fc36e067b17069cb8fb3d956c0f8e7b59e2a608a960c17  v3.1.0/bitfinite-qt.exe
+17708213ae963c906c7d57a4a69a2d9e25988b7619007ae3e94bce6bee012f44  v3.1.0/bitfinite-wallet.exe
