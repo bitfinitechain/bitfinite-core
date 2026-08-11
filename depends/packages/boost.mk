@@ -23,7 +23,14 @@ $(package)_toolset_$(host_os)=clang
 else
 $(package)_toolset_$(host_os)=gcc
 endif
-$(package)_config_libraries=date_time,chrono,filesystem,system,test
+# Upstream's list is date_time,chrono,filesystem,system,test -- they have since
+# dropped boost::thread from their code. Our tree is still on the v27 sources and
+# src/CMakeLists.txt asks for `chrono filesystem thread`, so thread (and atomic,
+# which it needs) have to stay until that usage is ported out. Dropping them
+# fails at configure, not link: BoostConfig looks for a boost_thread-1.77.0
+# component config, does not find one in depends, and falls through to the
+# host's 1.74.
+$(package)_config_libraries=atomic,date_time,chrono,filesystem,system,thread,test
 $(package)_cxxflags+=-std=c++17 -fvisibility=hidden
 $(package)_cxxflags_linux=-fPIC
 endef
