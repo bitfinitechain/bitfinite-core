@@ -58,7 +58,34 @@ Self-contained, high value, and each maps to a failure we can actually hit.
 | 8 | `log: Add rate limiting to LogPrintf` (+ its unit tests) | 2025-12-06/07 | 1 MiB/hour quota per message. **seed-2 is at 90% disk**; log flooding is a live risk, not a theoretical one |
 | 9 | ~~`Added per-peer traffic limit rules, -peerratelimit`~~ | 2025-12-22 | **MOVED TO TIER 5 — see below.** Not self-contained. |
 
-### Correction: `-peerratelimit` is not a Tier 1 commit
+### Correction 2 (measured): `-peerratelimit` needs a SEQUENCED PORT, not one prerequisite
+
+The section below was still too optimistic. It said `ea755aa648` needs
+`6d94eabf6e` first, as if that were a single prerequisite. Attempting it showed
+otherwise.
+
+`6d94eabf6e` does not sit on v27.0.0. Between them are **30 commits touching
+the net layer** — cumulatively **+837 / −992 lines** across `net.cpp`, `net.h`
+and `net_processing.cpp`. Cherry-picking the refactor alone produces conflicts
+whose "upstream" side is *other commits' code*: `AddConnection()`, the
+`msghand` sleep-interval rewrite (Tier 4), and
+`IsBlockRequested` / `GetNodeBlockRequestStatus` from parallel compact block
+downloads (Tier 5). Resolving them means either importing that work unreviewed
+or hand-merging a shared-pointer refactor into older surrounding code.
+
+So the real shape of this task is: **port the net-layer stack in order**
+(msghand CPU fix, sendcmpct tidy-up, parallel compact blocks, `AddConnection`,
+then the lifetime refactor, then `-peerratelimit`). That is a project with its
+own build/soak cycle on the layer that carries the live pool — not a line item
+in a security release.
+
+**Lesson for the rest of this backlog:** scoping by "which files does it touch"
+and "does our fork modify them" has now under-estimated three times — first
+`NodeRef`, then the C++20/`std::source_location` dependency, now this. Before
+committing to any remaining item, run `git log v27.0.0..<commit> -- <its files>`
+and look at how deep the stack beneath it is.
+
+### Correction 1: `-peerratelimit` is not a Tier 1 commit
 
 Scoping this by file-level conflict surface was not enough. `ea755aa648` is
 written against `NodeRef` (`std::shared_ptr<CNode>`), which does not exist in
@@ -86,6 +113,14 @@ are likely prerequisites. Take the whole `src/seeder/` series from
 2024-03-19 rather than picking individual hunks.
 
 ## Tier 2 — unsafe behaviour on attacker-reachable paths
+
+**Status: SHIPPED in v3.1.1**, except as noted. `#15` (`SysErrorString`) went out
+in v3.1.0. `#16` is deferred — the commit is 13 lines, but upstream had already
+rewritten `DisconnectedBlockTransactions::addForBlock`'s algorithm underneath it,
+and its new test needs `Get_block877227` fixture data we do not carry. Softening
+one assert on a reorg path does not justify porting an algorithm rewrite plus
+test fixtures.
+
 
 | # | commit | date | note |
 |---|---|---|---|
