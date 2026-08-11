@@ -1,0 +1,34 @@
+diff -urN a/boost/config/stdlib/libcpp.hpp b/boost/config/stdlib/libcpp.hpp
+--- a/boost/config/stdlib/libcpp.hpp	2021-08-05 12:41:19
++++ b/boost/config/stdlib/libcpp.hpp	2025-10-05 10:53:56
+@@ -211,4 +211,11 @@
+ #  define BOOST_NO_CXX14_HDR_SHARED_MUTEX
+ #endif
+ 
++//
++// Unary function is now deprecated in C++17 and later:
++//
++#if __cplusplus >= 201703L
++#define BOOST_NO_CXX98_FUNCTION_BASE
++#endif
++
+ //  --- end ---
+diff -urN a/boost/config/stdlib/libstdcpp3.hpp b/boost/config/stdlib/libstdcpp3.hpp
+--- a/boost/config/stdlib/libstdcpp3.hpp	2021-08-05 12:41:19
++++ b/boost/config/stdlib/libstdcpp3.hpp	2025-10-05 10:52:07
+@@ -385,6 +385,15 @@
+ #define BOOST_NO_CXX20_HDR_BIT
+ #endif
+ 
++#if BOOST_LIBSTDCXX_VERSION >= 120000
++//
++// Unary function is now deprecated in C++17 and later:
++//
++#if __cplusplus >= 201703L
++#define BOOST_NO_CXX98_FUNCTION_BASE
++#endif
++#endif
++
+ #ifndef __cpp_impl_coroutine
+ #  define BOOST_NO_CXX20_HDR_COROUTINE
+ #endif
