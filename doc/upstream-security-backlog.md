@@ -56,7 +56,30 @@ Self-contained, high value, and each maps to a failure we can actually hit.
 | 6 | `Fix socket leaks leading to process running out of file descriptors` | 2024-04-22 | real resource exhaustion on long-uptime nodes; ours run for weeks |
 | 7 | `Fixed a rare crash bug when process runs out of file descriptors` | 2024-04-22 | the crash that (6) leads to — `SaveAllToDisk()` on a null `FILE *` |
 | 8 | `log: Add rate limiting to LogPrintf` (+ its unit tests) | 2025-12-06/07 | 1 MiB/hour quota per message. **seed-2 is at 90% disk**; log flooding is a live risk, not a theoretical one |
-| 9 | `Added per-peer traffic limit rules, -peerratelimit` | 2025-12-22 | three public seeds on 3.9 GB / 2 vCPU boxes with no per-peer bandwidth cap |
+| 9 | ~~`Added per-peer traffic limit rules, -peerratelimit`~~ | 2025-12-22 | **MOVED TO TIER 5 — see below.** Not self-contained. |
+
+### Correction: `-peerratelimit` is not a Tier 1 commit
+
+Scoping this by file-level conflict surface was not enough. `ea755aa648` is
+written against `NodeRef` (`std::shared_ptr<CNode>`), which does not exist in
+our tree — it is introduced by `6d94eabf6e`, *"net: Refactor lifetime
+management of CNode, use smart_ptr; put in map"*, the Tier 5 commit deferred
+as invasive. The conflict is not textual; the whole `CNetMsgMaker` interface
+changes signature from `CNode *` to `NodeRef`.
+
+`6d94eabf6e` is 10 files, +305/-352, entirely in the network layer including
+`denialofservice_tests.cpp` and `net_tests.cpp`. Two ways forward, both for a
+later release:
+
+1. Port `6d94eabf6e` first, then `ea755aa648` applies as written. Preferred —
+   it keeps us on code upstream actually tests, and the refactor closes a
+   use-after-free class on its own.
+2. Rewrite `ea755aa648` against raw `CNode *`. Cheaper, but ships network-layer
+   code in a form upstream has never run.
+
+Do not attempt either in a release that also carries unrelated fixes. Note
+this leaves us with **no per-peer bandwidth cap** until then, which is worth
+weighing against the fact that the Bitcointalk announcement named it.
 
 The seeder commits (1–5) come with several refactors from the same day that
 are likely prerequisites. Take the whole `src/seeder/` series from
