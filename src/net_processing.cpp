@@ -46,6 +46,7 @@
 #include <chrono>
 #include <cmath>
 #include <deque>
+#include <limits>
 #include <memory>
 #include <stdexcept>
 #include <type_traits>
@@ -987,9 +988,8 @@ bool GetNodeStateStats(NodeId nodeid, CNodeStateStats &stats) {
 
 static void AddToCompactExtraTransactions(const CTransactionRef &tx)
     EXCLUSIVE_LOCKS_REQUIRED(internal::g_cs_orphans) {
-    size_t max_extra_txn = gArgs.GetArg("-blockreconstructionextratxn",
-                                        DEFAULT_BLOCK_RECONSTRUCTION_EXTRA_TXN);
-    if (max_extra_txn <= 0) {
+    const int64_t max_extra_txn = gArgs.GetArg("-blockreconstructionextratxn", DEFAULT_BLOCK_RECONSTRUCTION_EXTRA_TXN);
+    if (max_extra_txn <= 0 || uint64_t(max_extra_txn) > uint64_t(std::numeric_limits<size_t>::max())) {
         return;
     }
 
@@ -997,9 +997,8 @@ static void AddToCompactExtraTransactions(const CTransactionRef &tx)
         vExtraTxnForCompact.resize(max_extra_txn);
     }
 
-    vExtraTxnForCompact[vExtraTxnForCompactIt] =
-        std::make_pair(tx->GetHash(), tx);
-    vExtraTxnForCompactIt = (vExtraTxnForCompactIt + 1) % max_extra_txn;
+    vExtraTxnForCompact[vExtraTxnForCompactIt] = std::make_pair(tx->GetHash(), tx);
+    vExtraTxnForCompactIt = (vExtraTxnForCompactIt + 1) % vExtraTxnForCompact.size();
 }
 
 bool internal::AddOrphanTx(const CTransactionRef &tx, NodeId peer)
@@ -1629,14 +1628,21 @@ static void ProcessGetBlockData(const Config &config, CNode *pfrom,
                 return *pblock;
             };
             if (inv.type == MSG_FILTERED_BLOCK) {
-                ensure_pblock();  // read into pblock now with pfrom->cs_filter not held
                 bool sendMerkleBlock = false;
                 CMerkleBlock merkleBlock;
                 {
-                    LOCK(pfrom->cs_filter);
+                    WAIT_LOCK(pfrom->cs_filter, lock);
                     if (pfrom->pfilter) {
-                        sendMerkleBlock = true;
-                        merkleBlock = CMerkleBlock(*pblock, *pfrom->pfilter);
+                        if (!pblock) {
+                            // read into pblock now with pfrom->cs_filter not held
+                            REVERSE_LOCK(lock);
+                            ensure_pblock();
+                        }
+                        // relocked; check again (in case in future code another thread clears pfilter)
+                        if (pfrom->pfilter) {
+                            sendMerkleBlock = true;
+                            merkleBlock = CMerkleBlock(*pblock, *pfrom->pfilter);
+                        }
                     }
                 }
                 if (sendMerkleBlock) {
@@ -3844,7 +3850,6 @@ static bool ProcessMessage(const Config &config, CNode *pfrom,
         } else {
             LOCK(pfrom->cs_filter);
             pfrom->pfilter.reset(new CBloomFilter(filter));
-            pfrom->pfilter->UpdateEmptyFull();
             pfrom->fRelayTxes = true;
         }
         return true;
