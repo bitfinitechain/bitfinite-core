@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2016 The Bitcoin Core developers
-// Copyright (c) 2017-2023 The Bitcoin developers
+// Copyright (c) 2017-2025 The Bitcoin developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -39,7 +39,7 @@ static int FileWriteStr(const std::string &str, FILE *fp) {
 }
 
 bool BCLog::Logger::OpenDebugLog() {
-    std::lock_guard<std::mutex> scoped_lock(m_file_mutex);
+    std::lock_guard scoped_lock(m_cs);
 
     assert(m_fileout == nullptr);
     assert(!m_file_path.empty());
@@ -172,10 +172,40 @@ void BCLog::Logger::PrependTimestampStr(std::string &str) {
     str = std::move(tmpStr);  // move line buffer back onto out value
 }
 
-void BCLog::Logger::LogPrintStr(std::string &&str)
+void BCLog::Logger::LogPrintStr(std::string &&str, std::source_location &&sloc, const bool should_rate_limit)
 {
     if (!m_print_to_console && !m_print_to_file)
         return; // Nothing to do!
+
+    LogEscapeMessageInPlace(str);
+
+    bool rateLimit = false;
+    bool suppressionActive = false;
+    {
+        std::unique_lock g(m_cs);
+
+        if (m_limiter && should_rate_limit) {
+            const auto status = m_limiter->Consume(sloc, str);
+            if (status == LogRateLimiter::Status::NEWLY_SUPPRESSED) {
+                str.insert(0, strprintf("Excessive logging detected from %s:%d (%s): >%d bytes logged during "
+                                        "the last time window of %is. Suppressing logging to disk from this "
+                                        "source location until time window resets. Console logging "
+                                        "unaffected. Last log entry: ", sloc.file_name(), sloc.line(),
+                                        sloc.function_name(), m_limiter->m_max_bytes,
+                                        std::chrono::seconds(m_limiter->m_reset_window).count()));
+            } else if (status == LogRateLimiter::Status::STILL_SUPPRESSED) {
+                rateLimit = true;
+            }
+        }
+
+        suppressionActive = m_limiter && m_limiter->SuppressionsActive();
+    }
+
+    // To avoid confusion caused by dropped log messages when debugging an issue,
+    // we prefix log message contents with "[*] " when there are any suppressions active.
+    if (suppressionActive && m_started_new_line) {
+        str.insert(0, "[*] ");
+    }
 
     if (m_log_threadnames && m_started_new_line) {
         // below does: str = "[" + threadName + "] " + str; (but with less copying)
@@ -200,8 +230,9 @@ void BCLog::Logger::LogPrintStr(std::string &&str)
         FileWriteStr(str, stdout);
         fflush(stdout);
     }
-    if (m_print_to_file) {
-        std::lock_guard<std::mutex> scoped_lock(m_file_mutex);
+
+    if (m_print_to_file && !rateLimit) {
+        std::lock_guard scoped_lock(m_cs);
 
         // Buffer if we haven't opened the log yet.
         if (m_fileout == nullptr) {
@@ -302,4 +333,80 @@ bool BCLog::Logger::WillLogCategory(LogFlags category) const {
 
 bool BCLog::Logger::DefaultShrinkDebugFile() const {
     return m_categories != BCLog::NONE;
+}
+
+bool BCLog::LogEscapeMessageInPlace(std::string &str) {
+    // Returns true if the character is "mundane" or acceptable to print to log as-is, false otherwise.
+    auto IsMundaneChar = [](const char ch_in) {
+        const uint8_t ch = static_cast<uint8_t>(ch_in);
+        return ch != 0x7fu && (ch >= 32u || ch_in == '\n'); // Note that we accept UTF-8 control chars >= 0x80, etc
+    };
+    // Returns the input character as a 4-char string of the form: "\xNN" where NN is the hex code for the character.
+    auto EscapeChar = [](const uint8_t ch) { return strprintf("\\x%02x", ch); };
+    // First, loop through all chars and find the first non-acceptable char, if any.
+    const size_t strsz = str.size();
+    size_t i;
+    for (i = 0; i != strsz && IsMundaneChar(str[i]); ++i) { /**/ }
+    // If all chars are acceptable, return early, doing no work, no allocations, etc
+    if (i == strsz) [[likely]] {
+        return false; // indicate str was unmodified
+    }
+    // If we get here, at least one character needs to be replaced
+    std::string tmp;
+    tmp.reserve(strsz + 3u); // reserve space for known string size plus at least 1 replacement char
+    // Copy the chars we accepted already above
+    tmp.append(str.data(), i);
+    // Escape the first known bad char
+    tmp.append(EscapeChar(str[i++]));
+    // ... and process the rest
+    for ( ; i != strsz; ++i) {
+        const char ch = str[i];
+        if (IsMundaneChar(ch)) {
+            tmp.push_back(ch);
+        } else {
+            tmp.append(EscapeChar(ch));
+        }
+    }
+    str = std::move(tmp);
+    return true; // indicate str was modified
+}
+
+bool BCLog::LogRateLimiter::Stats::Consume(uint64_t bytes) {
+    if (bytes > m_available_bytes) {
+        m_dropped_bytes += bytes;
+        m_available_bytes = 0;
+        return false;
+    }
+
+    m_available_bytes -= bytes;
+    return true;
+}
+
+auto BCLog::LogRateLimiter::Consume(const std::source_location& source_loc, const std::string& str) -> Status {
+    std::unique_lock g(m_mutex);
+    auto& stats = m_source_locations.try_emplace(source_loc, m_max_bytes).first->second;
+    Status status = stats.m_dropped_bytes > 0 ? Status::STILL_SUPPRESSED : Status::UNSUPPRESSED;
+
+    if (!stats.Consume(str.size()) && status == Status::UNSUPPRESSED) {
+        status = Status::NEWLY_SUPPRESSED;
+        m_suppression_active = true;
+    }
+
+    return status;
+}
+
+void BCLog::LogRateLimiter::Reset() {
+    SourceLocationsMap source_locations;
+    {
+        std::unique_lock g(m_mutex);
+        source_locations.swap(m_source_locations);
+        m_suppression_active = false;
+    }
+    for (const auto & [sloc, stats] : source_locations) {
+        if (stats.m_dropped_bytes == 0) continue;
+        // Unconditionally announce to log that we reset the stats for this source location
+        LogPrintfNoRateLimit("Restarting logging from %s:%u (%s): %u bytes were dropped during the last %is.\n",
+                             sloc.file_name(), sloc.line(), sloc.file_name(), stats.m_dropped_bytes,
+                             std::chrono::seconds{m_reset_window}.count());
+    }
 }

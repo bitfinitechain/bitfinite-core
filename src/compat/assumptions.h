@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2019 The Bitcoin Core developers
-// Copyright (c) 2019-2021 The Bitcoin developers
+// Copyright (c) 2019-2025 The Bitcoin developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -20,17 +20,16 @@
 #error "Bitcoin cannot be compiled without assertions."
 #endif
 
-// Assumption: We assume a C++17 (ISO/IEC 14882:2017) compiler (minimum
+// Assumption: We assume a C++20 (ISO/IEC 14882:2020) compiler (minimum
 //             requirement).
-// Example(s): We may use use C++17 only constructs such as if constexpr,
-//             structured binding, std::is_same_v, etc.
+// Example(s): We may use use C++20 only constructs such as if constexpr,
+//             structured binding, std::span, std::endian, etc.
 // Note:       MSVC does not report the expected __cplusplus value due to
 //             legacy reasons.
 #if !defined(_MSC_VER)
-// N4713 §19.8/p1  [cpp.predefined]/p1::
-// "The name __cplusplus is defined to the value 201703L when compiling a C++
-//  translation unit."
-static_assert(__cplusplus >= 201703L, "C++17 standard assumed");
+// N4860 §15.11/p1  [cpp.predefined]/p1::
+// "The following macro names shall be defined by the implementation: __cplusplus -> The integer literal 202002L."
+static_assert(__cplusplus >= 202002L, "C++20 standard assumed");
 #endif
 
 // Assumption: We assume the floating-point types to fulfill the requirements of

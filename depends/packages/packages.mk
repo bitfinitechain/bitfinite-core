@@ -20,6 +20,11 @@ upnp_packages=miniupnpc
 
 darwin_native_packages = native_biplist native_ds_store native_mac_alias
 
+# Boost 1.77 builds with its own b2 rather than the in-tree bootstrap. Needed
+# because C++20 removed std::allocator<T>::pointer, which Boost 1.70's
+# signals2 still used.
+$(host_arch)_$(host_os)_native_packages += native_b2
+
 ifneq ($(build_os),darwin)
 darwin_native_packages += native_cctools native_cdrkit native_libdmg-hfsplus
 endif

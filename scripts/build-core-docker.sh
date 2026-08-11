@@ -18,13 +18,23 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 REPO="$(pwd)"
-IMAGE="${BFX_CORE_IMAGE:-bitfinite-core-build}"
-VERSION="${VERSION:-3.0.0.1}"
+# Image name is completed per target below (…-linux / …-win): the two targets
+# need different base distros and must not share one image.
+IMAGE_BASE="${BFX_CORE_IMAGE:-bitfinite-core-build}"
+# Derive the package version from the one the binaries actually compile in, so
+# the tin cannot disagree with its contents. A hardcoded default here is how you
+# ship bitfinite-v3.1.0-*.tar.gz containing a binary that reports v3.0.2 --
+# which is the exact defect v3.0.2 was released to fix.
+CMAKE_VERSION_STR="$(sed -n 's/^[[:space:]]*VERSION[[:space:]]\{1,\}\([0-9][0-9.]*\).*/\1/p' CMakeLists.txt | head -1)"
+[ -n "$CMAKE_VERSION_STR" ] || { echo "cannot read project VERSION from CMakeLists.txt" >&2; exit 1; }
+VERSION="${VERSION:-$CMAKE_VERSION_STR}"
+if [ "$VERSION" != "$CMAKE_VERSION_STR" ]; then
+  echo "ERROR: VERSION=$VERSION but CMakeLists.txt declares $CMAKE_VERSION_STR." >&2
+  echo "       The binaries would report $CMAKE_VERSION_STR. Bump the project() version instead." >&2
+  exit 1
+fi
 NO_QT="${NO_QT:-}"
 TARGETS=("$@"); [ ${#TARGETS[@]} -eq 0 ] && TARGETS=(linux win)
-
-echo ">> Building toolchain image ($IMAGE)…"
-docker build -f Dockerfile.build -t "$IMAGE" "$REPO"
 
 mkdir -p dist
 
@@ -40,10 +50,17 @@ grep -q "^build-linux/" .gitignore 2>/dev/null || printf "build-linux/\nbuild-wi
 
 for target in "${TARGETS[@]}"; do
   case "$target" in
-    linux) HOST=x86_64-linux-gnu;    PLAT=Linux64; EXT="";     OS=linux;   PKGEXT=tar.gz ;;
-    win)   HOST=x86_64-w64-mingw32;  PLAT=Win64;   EXT=".exe"; OS=windows; PKGEXT=zip ;;
+    # BASE differs per target on purpose — see the comment block in
+    # Dockerfile.build. 22.04 pins the glibc floor for the Linux binaries our
+    # own seeds must run; 24.04 supplies a mingw new enough to have
+    # <source_location>, which 22.04's GCC 10 lacks.
+    linux) HOST=x86_64-linux-gnu;    PLAT=Linux64; EXT="";     OS=linux;   PKGEXT=tar.gz; BASE=ubuntu:22.04 ;;
+    win)   HOST=x86_64-w64-mingw32;  PLAT=Win64;   EXT=".exe"; OS=windows; PKGEXT=zip;    BASE=ubuntu:24.04 ;;
     *) echo "unknown target: $target (use linux|win)"; exit 1 ;;
   esac
+  IMAGE="${IMAGE_BASE}-${target}"
+  echo ">> Building toolchain image ($IMAGE, base $BASE)…"
+  docker build -f Dockerfile.build --build-arg BASE="$BASE" -t "$IMAGE" "$REPO"
   echo ">> [$target] depends + cmake + ninja  (HOST=$HOST, NO_QT=${NO_QT:-0})"
 
   # Pass BUILD_BITCOIN_QT explicitly (ON/OFF) — relying on the default lets a
@@ -64,6 +81,22 @@ for target in "${TARGETS[@]}"; do
     -e SEEDER_CMAKE="$SEEDER_CMAKE" -e SEEDER_TARGET="$SEEDER_TARGET" -e EXT="$EXT" \
     "$IMAGE" bash -euxo pipefail -c '
       git config --global --add safe.directory /work
+      # Reconfigure from scratch when a configuration input is newer than the
+      # cache. CMake will not re-run find_package for something already in
+      # CMakeCache.txt, so editing a toolchain file or CMAKE_CXX_STANDARD is
+      # otherwise silently ignored and you get a green build of stale config.
+      # This has to happen in the container: the build dir is root-owned here,
+      # so `rm -rf build-<target>` from the host fails with EPERM.
+      if [ -f "build-$TARGET/CMakeCache.txt" ]; then
+        for f in CMakeLists.txt src/CMakeLists.txt "cmake/platforms/$PLAT.cmake" \
+                 depends/packages/boost.mk depends/packages/packages.mk; do
+          if [ -e "$f" ] && [ "$f" -nt "build-$TARGET/CMakeCache.txt" ]; then
+            echo ">> $f is newer than the cmake cache - reconfiguring from scratch"
+            rm -rf "build-$TARGET"
+            break
+          fi
+        done
+      fi
       make -C depends -j"$(nproc)" HOST="$HOST" ${NO_QT:+NO_QT=1}
       cmake -GNinja -B "build-$TARGET" -S . \
         -DCMAKE_TOOLCHAIN_FILE="cmake/platforms/$PLAT.cmake" \

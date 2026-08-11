@@ -22,7 +22,18 @@ set(CMAKE_CXX_COMPILER_TARGET ${TOOLCHAIN_PREFIX})
 set(CMAKE_FIND_ROOT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/depends/${TOOLCHAIN_PREFIX}")
 
 # We also may have built dependencies for the native platform.
-set(CMAKE_PREFIX_PATH "${CMAKE_CURRENT_SOURCE_DIR}/depends/${TOOLCHAIN_PREFIX}/native")
+#
+# The depends prefix itself must come FIRST. Headers are taken from depends only
+# (INCLUDE ONLY below) while libraries may also come from the host (LIBRARY BOTH,
+# needed for the compiler-supplied ones). Without depends on this path, a
+# config-mode find_package finds the HOST's package config and we link host
+# libraries against depends headers. That silently worked while depends carried
+# boost 1.70 and the host 1.74 -- the symbols in use happened to agree -- and
+# broke the moment depends moved to 1.77, whose boost::filesystem::path emits
+# *_v3 symbols the host library does not export.
+set(CMAKE_PREFIX_PATH
+    "${CMAKE_CURRENT_SOURCE_DIR}/depends/${TOOLCHAIN_PREFIX}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/depends/${TOOLCHAIN_PREFIX}/native")
 
 # Modify default behavior of FIND_XXX() commands to:
 #  - search for headers in the target environment,
