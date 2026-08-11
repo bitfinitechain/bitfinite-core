@@ -27,9 +27,22 @@ the failure looked like tampering while it was diagnosed.
 2. **Write `doc/release-notes.md`.** State what is *not* in the release as
    plainly as what is, especially anything previously announced.
 
+   Also **keep listing components that were once called out, even when nothing
+   about them changed.** `bitfinite-qt` was a headline in the 3.0.2 notes and
+   then went unmentioned in 3.1.0 and 3.1.1 — it shipped in both, but silence
+   after a previous mention reads as removal, and someone did read it that way.
+   Absence of news is not neutral once you have made news of something.
+
 3. **Build locally and test.** `scripts/build-core-docker.sh` produces artifacts
    in `dist/` for validation only — **`dist/` is never what gets published.**
    Run the binaries, sync a real datadir, exercise whatever behaviour changed.
+
+   **Delete a partial build when you are done with it.** `NO_QT=1` is the fast
+   validation path and it produces a package that looks like a release and is
+   not one: after 3.1.1 there was a `bitfinite-v3.1.1-x86_64-linux.tar.gz` in
+   `dist/` at 12.9 MB against the published 31 MB, with no GUI in it, plus a
+   `dist/SHA256SUMS` naming a hash that matched nothing published. Nobody
+   shipped it, but nothing stopped them either.
 
 4. **Merge and tag.** Pushing the tag is what triggers the release. Nothing else
    is required, and nothing else should be done.

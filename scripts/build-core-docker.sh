@@ -122,7 +122,11 @@ for target in "${TARGETS[@]}"; do
 
   # ---- package on host ----
   ARCH=x86_64
-  NAME="bitfinite-v${VERSION}-${ARCH}-${OS}"
+  # A NO_QT build is NOT a release: it has no GUI. Name it so it can never be
+  # mistaken for one, uploaded by hand, or matched by release-checksums.txt.
+  # After 3.1.1 a 12.9 MB NO_QT tarball sat in dist/ next to a 31 MB published
+  # release of the same name, with a SHA256SUMS matching neither.
+  NAME="bitfinite-v${VERSION}-${ARCH}-${OS}${NO_QT:+-noqt}"
   OUT="dist/$NAME"
   rm -rf "$OUT" && mkdir -p "$OUT/bin"
   for b in bitfinited bitfinite-cli bitfinite-tx bitfinite-wallet; do
