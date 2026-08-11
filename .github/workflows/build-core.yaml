@@ -47,6 +47,9 @@ jobs:
     permissions:
       contents: write
     steps:
+      # Needed for doc/release-notes.md below — without a checkout the release
+      # publishes with an empty body, which is how v3.1.1 went out bare.
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           path: artifacts
@@ -56,7 +59,16 @@ jobs:
           find artifacts -type f \( -name '*.tar.gz' -o -name '*.zip' \) -exec cp {} out/ \;
           ( cd out && sha256sum * > SHA256SUMS )
           ls -lh out
+      # The release notes come from the repo, so writing doc/release-notes.md is
+      # what populates the release page. Nothing is authored in the GitHub UI.
+      - name: Require release notes for this tag
+        run: |
+          test -s doc/release-notes.md
+          grep -q "${GITHUB_REF_NAME#v}" doc/release-notes.md \
+            || { echo "doc/release-notes.md does not mention ${GITHUB_REF_NAME#v}" >&2; exit 1; }
       - uses: softprops/action-gh-release@v2
         with:
+          name: BitFinite Core ${{ github.ref_name }}
+          body_path: doc/release-notes.md
           files: out/*
           fail_on_unmatched_files: true
