@@ -14,6 +14,12 @@
 #
 # First run per target is SLOW (depends cross-builds Qt/Boost/etc.); the
 # depends/ output is cached for subsequent runs.
+#
+# THIS SCRIPT DOES NOT PUBLISH, AND ITS OUTPUT MUST NOT BE PUBLISHED.
+# dist/ is for local validation. Releases are built and attached by CI on a v*
+# tag push (.github/workflows/build-core.yaml). Uploading dist/ by hand races
+# CI for the same assets and the loser's checksums end up pinned — which is how
+# the whole fleet became unupgradeable during v3.1.0. See doc/releasing.md.
 
 set -euo pipefail
 cd "$(dirname "$0")/.."

@@ -34,6 +34,12 @@ jobs:
   # berkeley-db libevent ... + native cmake) if we want it automated later.
 
   # ---- On a tag: collect everything, checksum, attach to the release ----
+  #
+  # This job is the SOLE publisher of release assets. Do not also create or
+  # upload a release by hand: this action overwrites assets of the same name,
+  # so whichever producer finishes last wins and any checksums recorded from
+  # the other one describe an artifact that no longer exists. That happened on
+  # v3.1.0 and left every node refusing to upgrade. See doc/releasing.md.
   release:
     needs: [linux-windows]
     if: startsWith(github.ref, 'refs/tags/')
