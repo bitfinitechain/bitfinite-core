@@ -2,9 +2,23 @@
 # Builds Linux (x86_64) and Windows (x86_64, via mingw-w64) release binaries
 # using the inherited BCHN `depends` system — no host dependencies required.
 #
-# Ubuntu 22.04 base; Linux builds use -DENABLE_GLIBC_BACK_COMPAT=ON so the
-# resulting binaries run on older glibc too.
-FROM ubuntu:22.04
+# The base is a build ARG because the two targets have opposite constraints:
+#
+#   linux -> ubuntu:22.04. The base's glibc becomes the FLOOR for the binaries
+#            we ship, and our own seed nodes run 22.04 (glibc 2.35). Building on
+#            24.04 would emit binaries needing 2.39, which our own fleet could
+#            not run. Do not "upgrade" this.
+#
+#   win   -> ubuntu:24.04. Windows output is PE, so the builder's glibc is
+#            irrelevant. What matters is the mingw compiler: 22.04 caps
+#            mingw-w64 at GCC 10, which has no <source_location>, and
+#            src/logging.h needs it for the log rate limiter. 24.04 ships
+#            mingw GCC 13.
+#
+# scripts/build-core-docker.sh picks the right base per target; it does not
+# build one image for both.
+ARG BASE=ubuntu:22.04
+FROM ${BASE}
 
 ENV DEBIAN_FRONTEND=noninteractive \
     TZ=Etc/UTC \
@@ -21,8 +35,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       g++-mingw-w64-x86-64 mingw-w64-tools nsis \
  && rm -rf /var/lib/apt/lists/*
 
-# BCHN requires the POSIX threading variant of the mingw toolchain.
+# BCHN requires the POSIX threading variant of the mingw toolchain. On 24.04 the
+# posix variant is already the default and the alternative may not be
+# registered, so this must not be fatal there.
 RUN update-alternatives --set x86_64-w64-mingw32-gcc /usr/bin/x86_64-w64-mingw32-gcc-posix \
- && update-alternatives --set x86_64-w64-mingw32-g++ /usr/bin/x86_64-w64-mingw32-g++-posix
+ && update-alternatives --set x86_64-w64-mingw32-g++ /usr/bin/x86_64-w64-mingw32-g++-posix \
+ || echo "posix mingw alternatives not registered; assuming posix is the default"
 
 WORKDIR /work
