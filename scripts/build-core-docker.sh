@@ -19,7 +19,18 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 REPO="$(pwd)"
 IMAGE="${BFX_CORE_IMAGE:-bitfinite-core-build}"
-VERSION="${VERSION:-3.0.0.1}"
+# Derive the package version from the one the binaries actually compile in, so
+# the tin cannot disagree with its contents. A hardcoded default here is how you
+# ship bitfinite-v3.1.0-*.tar.gz containing a binary that reports v3.0.2 --
+# which is the exact defect v3.0.2 was released to fix.
+CMAKE_VERSION_STR="$(sed -n 's/^[[:space:]]*VERSION[[:space:]]\{1,\}\([0-9][0-9.]*\).*/\1/p' CMakeLists.txt | head -1)"
+[ -n "$CMAKE_VERSION_STR" ] || { echo "cannot read project VERSION from CMakeLists.txt" >&2; exit 1; }
+VERSION="${VERSION:-$CMAKE_VERSION_STR}"
+if [ "$VERSION" != "$CMAKE_VERSION_STR" ]; then
+  echo "ERROR: VERSION=$VERSION but CMakeLists.txt declares $CMAKE_VERSION_STR." >&2
+  echo "       The binaries would report $CMAKE_VERSION_STR. Bump the project() version instead." >&2
+  exit 1
+fi
 NO_QT="${NO_QT:-}"
 TARGETS=("$@"); [ ${#TARGETS[@]} -eq 0 ] && TARGETS=(linux win)
 
@@ -64,6 +75,22 @@ for target in "${TARGETS[@]}"; do
     -e SEEDER_CMAKE="$SEEDER_CMAKE" -e SEEDER_TARGET="$SEEDER_TARGET" -e EXT="$EXT" \
     "$IMAGE" bash -euxo pipefail -c '
       git config --global --add safe.directory /work
+      # Reconfigure from scratch when a configuration input is newer than the
+      # cache. CMake will not re-run find_package for something already in
+      # CMakeCache.txt, so editing a toolchain file or CMAKE_CXX_STANDARD is
+      # otherwise silently ignored and you get a green build of stale config.
+      # This has to happen in the container: the build dir is root-owned here,
+      # so `rm -rf build-<target>` from the host fails with EPERM.
+      if [ -f "build-$TARGET/CMakeCache.txt" ]; then
+        for f in CMakeLists.txt src/CMakeLists.txt "cmake/platforms/$PLAT.cmake" \
+                 depends/packages/boost.mk depends/packages/packages.mk; do
+          if [ -e "$f" ] && [ "$f" -nt "build-$TARGET/CMakeCache.txt" ]; then
+            echo ">> $f is newer than the cmake cache - reconfiguring from scratch"
+            rm -rf "build-$TARGET"
+            break
+          fi
+        done
+      fi
       make -C depends -j"$(nproc)" HOST="$HOST" ${NO_QT:+NO_QT=1}
       cmake -GNinja -B "build-$TARGET" -S . \
         -DCMAKE_TOOLCHAIN_FILE="cmake/platforms/$PLAT.cmake" \
