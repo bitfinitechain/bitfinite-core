@@ -44,6 +44,20 @@ undefined behaviour on paths a remote peer can reach.
 - **The four May-2026 consensus CHIPs** remain out of scope: adopting them is a
   hard fork requiring coordinated miner activation.
 
+## What is in the packages
+
+Unchanged from 3.0.2 — listed because we stopped saying so after 3.0.2 and
+silence read as removal:
+
+| | |
+|---|---|
+| `bitfinited` | the node daemon |
+| `bitfinite-cli` | RPC client |
+| `bitfinite-qt` | **the GUI wallet** — in both the Linux tarball and the Windows zip |
+| `bitfinite-tx` | transaction utility |
+| `bitfinite-wallet` | offline wallet tool |
+| `bitcoin-seeder` | DNS seeder (Linux only) |
+
 ## Verify
 
 ```
