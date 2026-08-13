@@ -27,7 +27,7 @@ Qt desktop wallet (`bitfinite-qt`).
 | RPC port | **19769** |
 | Network magic | `0x4246696e` (ASCII **"BFin"**) |
 | Genesis block | `000000000900096d5b0f4a3489f919362f12fce06524e15074c3cd3c19aeabea` |
-| DNS seeds | `seed-1.bitfinitechain.org`, `seed-3.bitfinitechain.org` |
+| DNS seeds | `seed.bitfinitechain.org`, `seed-1.bitfinitechain.org`, `seed-2.bitfinitechain.org`, `seed-3.bitfinitechain.org` |
 
 ## Downloads (binaries)
 
@@ -62,9 +62,8 @@ The node discovers peers via the DNS seeds above. To add peers manually, use
 
 ## Building from source
 
-> The BitFinite Core source is currently maintained privately; the released
-> binaries above are the supported distribution. The build is Dockerized — no
-> host toolchain required:
+The full source is in this repository. The build is Dockerized — no host
+toolchain required:
 
 ```bash
 scripts/build-core-docker.sh          # → build-linux/src/{bitfinited,bitfinite-cli,bitfinite-qt}
