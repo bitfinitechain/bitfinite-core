@@ -201,7 +201,16 @@ arith_uint256 CalculateASERT(const arith_uint256 &refTarget,
 
     // We need some leading zero bits in powLimit in order to have room to handle
     // overflows easily. 32 leading zero bits is more than enough.
-    // assert((powLimit >> 224) == 0);
+    //
+    // BitFinite note: this was commented out during the genesis/anchor work and
+    // the disable was never needed. Our mainnet/testnet/scalenet powLimit is
+    // 00000000ffff… — exactly 32 leading zero bits, so the condition holds. The
+    // only powLimit that would trip it is regtest's 7fffffff…, which is
+    // inherited unchanged from upstream and never reaches this function because
+    // fPowNoRetargeting short-circuits GetNextWorkRequired first. Upstream BCHN
+    // ships this assert enabled with the identical regtest value. Restored,
+    // because an overflow guard on consensus arithmetic is worth keeping.
+    assert((powLimit >> 224) == 0);
 
     // Height diff should NOT be negative.
     assert(nHeightDiff >= 0);
