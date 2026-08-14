@@ -1,0 +1,59 @@
+name: Unit tests
+
+# Why this exists: build-core.yaml only ever built release BINARIES, so nothing
+# built test_bitcoin. A backport landed tests for a half-present API on
+# 2026-08-11 and the suite stopped compiling for two days without anyone
+# noticing, because the node was unaffected. The moment it could run again it
+# found a 2018 logging bug. A test suite nothing executes is not untested code —
+# it is a stack of findings nobody has collected.
+#
+# Runs on every branch, not just master: the breakage above arrived on a
+# feat/upstream-security-* branch and was merged before anything checked it.
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+# A newer push to the same branch makes the older run irrelevant.
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      # depends cross-builds boost/libevent/BDB from source and dominates the
+      # wall clock. Keyed on the depends inputs so a package bump rebuilds it
+      # and nothing else does.
+      - name: Cache depends
+        uses: actions/cache@v4
+        with:
+          path: |
+            depends/built
+            depends/sources
+            depends/x86_64-linux-gnu
+          key: depends-linux-noqt-${{ hashFiles('depends/packages/**', 'depends/Makefile', 'depends/config.site.in') }}
+          restore-keys: |
+            depends-linux-noqt-
+
+      # Same image, toolchain file and flags as the release build, so the tests
+      # cannot pass on a toolchain that differs from the one shipping binaries.
+      - name: Build and run unit tests
+        run: scripts/run-tests-docker.sh
+
+      # The exclusion list in run-tests-docker.sh is a work queue. Print it on
+      # every run so shrinking it stays visible and a permanent exclusion has to
+      # survive being seen.
+      - name: Report excluded suites
+        if: always()
+        run: |
+          echo "### Suites excluded from this run" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          sed -n '/^EXCLUDED=(/,/^)/p' scripts/run-tests-docker.sh >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"

@@ -290,7 +290,16 @@ public:
         fDefaultConsistencyChecks = false;
         fRequireStandard = false;
         m_is_test_chain = true;
-        checkpointData = {/* .mapCheckpoints = */ {}};
+        // A checkpoint at genesis bans forks that rewrite the genesis block
+        // itself. Upstream ships one on every network; ours were emptied during
+        // the fork (presumably because the hashes changed) and only mainnet was
+        // restored. Their absence made checkpoints_tests abort on a hard
+        // assert(), and that abort cascaded into ~449 downstream test failures.
+        // Derived from consensus.hashGenesisBlock rather than a literal, so it
+        // cannot drift from the genesis block it is meant to pin.
+        checkpointData = {/* .mapCheckpoints = */ {
+            {0, consensus.hashGenesisBlock},
+        }};
         chainTxData = ChainTxData{1669510532, 63972968, 0.00310};
     }
 };
@@ -374,7 +383,16 @@ public:
         fDefaultConsistencyChecks = false;
         fRequireStandard = true;
         m_is_test_chain = true;
-        checkpointData = {/* .mapCheckpoints = */ {}};
+        // A checkpoint at genesis bans forks that rewrite the genesis block
+        // itself. Upstream ships one on every network; ours were emptied during
+        // the fork (presumably because the hashes changed) and only mainnet was
+        // restored. Their absence made checkpoints_tests abort on a hard
+        // assert(), and that abort cascaded into ~449 downstream test failures.
+        // Derived from consensus.hashGenesisBlock rather than a literal, so it
+        // cannot drift from the genesis block it is meant to pin.
+        checkpointData = {/* .mapCheckpoints = */ {
+            {0, consensus.hashGenesisBlock},
+        }};
         chainTxData = {1669510845, 126464, 0.0017};
     }
 };
@@ -454,7 +472,16 @@ public:
         fDefaultConsistencyChecks = false;
         fRequireStandard = false;
         m_is_test_chain = true;
-        checkpointData = {/* .mapCheckpoints = */ {}};
+        // A checkpoint at genesis bans forks that rewrite the genesis block
+        // itself. Upstream ships one on every network; ours were emptied during
+        // the fork (presumably because the hashes changed) and only mainnet was
+        // restored. Their absence made checkpoints_tests abort on a hard
+        // assert(), and that abort cascaded into ~449 downstream test failures.
+        // Derived from consensus.hashGenesisBlock rather than a literal, so it
+        // cannot drift from the genesis block it is meant to pin.
+        checkpointData = {/* .mapCheckpoints = */ {
+            {0, consensus.hashGenesisBlock},
+        }};
         chainTxData = {1660124250, 489847053, 0.00001};
     }
 };
@@ -540,7 +567,16 @@ public:
         fDefaultConsistencyChecks = false;
         fRequireStandard = true;
         m_is_test_chain = true;
-        checkpointData = {/* .mapCheckpoints = */ {}};
+        // A checkpoint at genesis bans forks that rewrite the genesis block
+        // itself. Upstream ships one on every network; ours were emptied during
+        // the fork (presumably because the hashes changed) and only mainnet was
+        // restored. Their absence made checkpoints_tests abort on a hard
+        // assert(), and that abort cascaded into ~449 downstream test failures.
+        // Derived from consensus.hashGenesisBlock rather than a literal, so it
+        // cannot drift from the genesis block it is meant to pin.
+        checkpointData = {/* .mapCheckpoints = */ {
+            {0, consensus.hashGenesisBlock},
+        }};
         chainTxData = {1669512215, 126405, 0.0018};
     }
 };
@@ -613,7 +649,16 @@ public:
         fDefaultConsistencyChecks = true;
         fRequireStandard = true;
         m_is_test_chain = true;
-        checkpointData = {/* .mapCheckpoints = */ {}};
+        // A checkpoint at genesis bans forks that rewrite the genesis block
+        // itself. Upstream ships one on every network; ours were emptied during
+        // the fork (presumably because the hashes changed) and only mainnet was
+        // restored. Their absence made checkpoints_tests abort on a hard
+        // assert(), and that abort cascaded into ~449 downstream test failures.
+        // Derived from consensus.hashGenesisBlock rather than a literal, so it
+        // cannot drift from the genesis block it is meant to pin.
+        checkpointData = {/* .mapCheckpoints = */ {
+            {0, consensus.hashGenesisBlock},
+        }};
         chainTxData = ChainTxData{0, 0, 0};
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<uint8_t>(1, 111);
         base58Prefixes[SCRIPT_ADDRESS] = std::vector<uint8_t>(1, 196);

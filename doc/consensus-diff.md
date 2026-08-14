@@ -119,44 +119,66 @@ ASERT anchored at height 0 with a 6-hour half-life. The response to a hashrate
 step is quantified in `doc/asert-response.md`, including the case an exchange
 will ask about (half the network leaving ⇒ ~10 min blocks for ~26 h).
 
-## Known state of the test suite — read before you clone
+## State of the test suite — read before you clone
 
-Disclosed up front because it is the first thing a reviewer hits and finding it
-unannounced would rightly colour everything else.
+Disclosed up front because it is the first thing a reviewer runs, and finding
+any of it unannounced would rightly colour everything else.
 
-**`test_bitcoin` does not currently build.** `src/test/logging_tests.cpp`
-references `BCLog::ReconstructLogInstance`, which is not defined anywhere in the
-tree, plus a `chrono`→`int64_t` mismatch and a missing `operator<<`. The file
-arrived on 2026-08-11 with the `feat/upstream-security-tier2` backport
-(`473cc615f4`, an upstream BCHN commit): the cherry-pick took the **tests** for
-the log rate-limiter without all of its **implementation**. Node binaries are
-unaffected — the breakage is test-only, which is exactly why it went unnoticed.
+**`test_bitcoin` builds and 105 of its 111 suites pass** (measured 2026-08-14).
+`scripts/run-tests-docker.sh` builds and runs it in the same container, with the
+same toolchain file and flags, as the release build — one command, no host
+toolchain. CI runs it on every branch (`.github/workflows/tests.yaml`).
 
-**No CI job builds the tests.** `.github/workflows/build-core.yaml` is the only
-workflow and it builds release binaries. Nothing would have caught the above.
+That is a recent state. Three things were wrong and are worth knowing:
 
-**With `logging_tests.cpp` excluded, `pow_tests` reports 19 failures.** These are
-**not** caused by anything in the consensus changes described here — verified by
-running the suite with and without the `pow.cpp` assertion restoration and
-getting an identical count. They break down as:
+1. **The suite did not compile for two days.** The `feat/upstream-security-tier2`
+   backport (`473cc615f4`) took an upstream commit's *tests* for the log rate
+   limiter without all of its *implementation*. Node binaries were unaffected,
+   which is why nobody noticed. Fixed by completing the backport, not reverting
+   it — the limiter was in the tree and otherwise had zero coverage.
+2. **Nothing in CI built the tests.** `build-core.yaml` produced release
+   binaries only. That blind spot is why (1) survived. Now fixed.
+3. **Two aborts were hiding the state of the whole corpus.** Boost.Test runs
+   everything in one process, so a `SIGABRT` takes every later fixture with it
+   via `ECC_Start(secp256k1_context_sign == nullptr)`. The raw count was **463
+   failures, of which 449 were collateral**. The real number is 43.
 
-- `retargeting_test` — exercises the pre-ASERT DAA using upstream's 600 s
-  spacing and adjustment interval. BitFinite uses **300 s**. Tests that hardcode
-  upstream constants fail on a chain that changed them; the fixtures were never
-  updated for the fork.
-- `cash_difficulty_test` — aborts on the upstream assertion
-  `nHeight >= params.DifficultyAdjustmentInterval()`, same root cause.
-- `asert_difficulty_test`, `calculate_asert_test`, `asert_activation_anchor_test`
-  — all abort in `ECC_Start` on `secp256k1_context_sign == nullptr`. These are
-  **cascading**: an earlier SIGABRT left ECC initialised, so every subsequent
-  fixture fails to construct. They are not independent results and should not be
-  counted as three more findings.
+   One of those aborts was a genuine defect, not a test problem: upstream ships
+   a **checkpoint at the genesis block on every network**, and ours had been
+   emptied during the fork on five of six — only mainnet was restored. A
+   genesis checkpoint bans forks that rewrite genesis. `checkpoints_tests`
+   asserts the invariant with a hard `assert()`, so its absence aborted the run.
+   Restored on all networks, derived from `consensus.hashGenesisBlock` rather
+   than a literal so it cannot drift.
 
-None of this is a consensus defect, but all of it is work that must happen before
-the suite can serve as evidence of anything. Fixing the fixtures for BitFinite's
-parameters, completing or reverting the partial backport, and adding a CI job
-that builds and runs `test_bitcoin` are prerequisites for a review that can lean
-on tests rather than on reading alone.
+**The 43 remaining failures, and what they are.** Every one is stale test data,
+not a defect in the implementation — these suites carry upstream's constants and
+were never regenerated for the fork:
+
+| suite | failures | divergence |
+|---|---|---|
+| `checkpoints_tests` | 17 | expects upstream's populated checkpoint heights; ours pins genesis only |
+| `cashaddr_tests` | 10 | expects prefix `bitfinite` (ours is `bfx`) and the **standard** base32 charset; ours deliberately swaps `q`↔`f` |
+| `dstencode_tests` | 9 | same prefix/charset divergence via address encoding |
+| `transaction_tests` | 4 | address/script vectors carrying upstream constants |
+| `bip32_tests` | 2 | BIP32 `xpub`/`xprv` version bytes differ from ours |
+| `net_tests` | 1 | not yet diagnosed |
+
+Plus two suites excluded because they abort rather than fail: `miner_tests`
+(throws on `bad-txns-inputs-missingorspent`) and `pow_tests` (asserts
+`nHeight >= DifficultyAdjustmentInterval` — its DAA fixtures hardcode upstream's
+600 s spacing where BitFinite mainnet uses 300 s).
+
+Verify the address claim yourself rather than taking it from this table:
+deployed BitFinite addresses are `bfx:f…`, and `src/cashaddr.cpp` defines
+`CHARSET` as `fpzry9x8gq2tvdw0s3jn54khce6mua7l`. The implementation matches the
+chain; the test vectors do not.
+
+The exclusion list lives in `scripts/run-tests-docker.sh`, each entry with its
+reason, and CI prints it into every job summary. It is a work queue, and the
+right order is aborts first: a failed check reports one thing, an abort destroys
+everything after it.
+
 
 ## Still missing upstream
 
