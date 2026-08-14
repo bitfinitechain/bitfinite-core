@@ -121,64 +121,75 @@ will ask about (half the network leaving ⇒ ~10 min blocks for ~26 h).
 
 ## State of the test suite — read before you clone
 
-Disclosed up front because it is the first thing a reviewer runs, and finding
-any of it unannounced would rightly colour everything else.
+Disclosed up front because it is the first thing a reviewer runs.
 
-**`test_bitcoin` builds and 105 of its 111 suites pass** (measured 2026-08-14).
-`scripts/run-tests-docker.sh` builds and runs it in the same container, with the
-same toolchain file and flags, as the release build — one command, no host
-toolchain. CI runs it on every branch (`.github/workflows/tests.yaml`).
+**`test_bitcoin` builds and 117 of its 120 suites pass** (measured 2026-08-14).
+One command, same container and toolchain as the release build:
 
-That is a recent state. Three things were wrong and are worth knowing:
+```bash
+git clone https://github.com/bitfinitechain/bitfinite-core
+cd bitfinite-core && scripts/run-tests-docker.sh
+```
 
-1. **The suite did not compile for two days.** The `feat/upstream-security-tier2`
-   backport (`473cc615f4`) took an upstream commit's *tests* for the log rate
-   limiter without all of its *implementation*. Node binaries were unaffected,
-   which is why nobody noticed. Fixed by completing the backport, not reverting
-   it — the limiter was in the tree and otherwise had zero coverage.
-2. **Nothing in CI built the tests.** `build-core.yaml` produced release
-   binaries only. That blind spot is why (1) survived. Now fixed.
-3. **Two aborts were hiding the state of the whole corpus.** Boost.Test runs
-   everything in one process, so a `SIGABRT` takes every later fixture with it
-   via `ECC_Start(secp256k1_context_sign == nullptr)`. The raw count was **463
-   failures, of which 449 were collateral**. The real number is 43.
+CI runs it on every branch (`.github/workflows/tests.yaml`). The three excluded
+suites are listed with a reason each in `scripts/run-tests-docker.sh`, and CI
+prints that list into every job summary.
 
-   One of those aborts was a genuine defect, not a test problem: upstream ships
-   a **checkpoint at the genesis block on every network**, and ours had been
-   emptied during the fork on five of six — only mainnet was restored. A
-   genesis checkpoint bans forks that rewrite genesis. `checkpoints_tests`
-   asserts the invariant with a hard `assert()`, so its absence aborted the run.
-   Restored on all networks, derived from `consensus.hashGenesisBlock` rather
-   than a literal so it cannot drift.
+### What the fork process left behind
 
-**The 43 remaining failures, and what they are.** Every one is stale test data,
-not a defect in the implementation — these suites carry upstream's constants and
-were never regenerated for the fork:
+The suite did not run for months — the release pipeline built binaries and
+nothing built the tests. When it was made to run, it surfaced a specific and
+instructive set of problems. They are recorded here, classified honestly,
+because "what did the rebrand break" is a question a reviewer should not have to
+ask twice.
 
-| suite | failures | divergence |
-|---|---|---|
-| `checkpoints_tests` | 17 | expects upstream's populated checkpoint heights; ours pins genesis only |
-| `cashaddr_tests` | 10 | expects prefix `bitfinite` (ours is `bfx`) and the **standard** base32 charset; ours deliberately swaps `q`↔`f` |
-| `dstencode_tests` | 9 | same prefix/charset divergence via address encoding |
-| `transaction_tests` | 4 | address/script vectors carrying upstream constants |
-| `bip32_tests` | 2 | BIP32 `xpub`/`xprv` version bytes differ from ours |
-| `net_tests` | 1 | not yet diagnosed |
+**Real defects in shipped code — found and fixed:**
 
-Plus two suites excluded because they abort rather than fail: `miner_tests`
-(throws on `bad-txns-inputs-missingorspent`) and `pow_tests` (asserts
-`nHeight >= DifficultyAdjustmentInterval` — its DAA fixtures hardcode upstream's
-600 s spacing where BitFinite mainnet uses 300 s).
+| defect | consequence |
+|---|---|
+| Genesis checkpoint missing on **5 of 6 networks** | Upstream pins a checkpoint at the genesis block on every network; ours were emptied during the fork and only mainnet was restored. A genesis checkpoint bans forks that rewrite genesis. |
+| ASERT overflow assertion commented out | `assert((powLimit >> 224) == 0)` guards the headroom used by `CalculateASERT`. The condition held on every live network, so nothing was exploitable — but a disabled guard on consensus arithmetic is worth having back. |
+| Log buffering after rotation | Reopened debug log left fully buffered, losing recent lines on a crash. **Inherited from upstream (2018) and already fixed by BCHN in v29.0.0** — we found it independently and backported theirs. Not our discovery. |
 
-Verify the address claim yourself rather than taking it from this table:
-deployed BitFinite addresses are `bfx:f…`, and `src/cashaddr.cpp` defines
-`CHARSET` as `fpzry9x8gq2tvdw0s3jn54khce6mua7l`. The implementation matches the
-chain; the test vectors do not.
+**Rebranding damage — test-only, no effect on the node:**
 
-The exclusion list lives in `scripts/run-tests-docker.sh`, each entry with its
-reason, and CI prints it into every job summary. It is a work queue, and the
-right order is aborts first: a failed check reports one thing, an abort destroys
-everything after it.
+Four suites failed because a find-replace landed inside a value that carries a
+checksum or an encoding. Every one produced output that still *parsed*, which is
+why nothing looked wrong:
 
+| suite | what the replace did |
+|---|---|
+| `cashaddr_tests` | replaced the prefix *inside the value the checksum covers* — `bitcoincash:` → `bitfinite:`, which is not even our prefix (`bfx`) |
+| `dstencode_tests` | same |
+| `bip32_tests` | altered **one character** inside a base58 `xpub` string |
+| `net_tests` | invented a client name that has never existed: the fixture expected `/BitFinite Node:…/` while `CLIENT_NAME` is `BitFinite`, so it asserted a user agent no node has ever sent |
+
+**Not a defect — a design consequence:**
+
+`transaction_tests` assumed BCH's upgrade timeline. magneticAnomaly introduced a
+100-byte minimum transaction size and upgrade9 later relaxed it to 64; on BCH
+those are four and a half years apart. BitFinite launched with every inherited
+upgrade already active at height 0, so that window never existed here. The test
+is now agnostic to chain shape rather than deleted.
+
+**The rule worth taking from this:** a replace that lands inside a checksummed,
+hashed or encoded value is not a rename — it is corruption that still parses.
+None of it was detectable by reading; all of it failed the moment a test
+computed the expected value independently.
+
+### Still excluded, with reasons
+
+- **`checkpoints_tests`** — the fixtures build blocks on **Bitcoin's** genesis
+  hash (`000000000019d6689c…`) and use Bitcoin's historical checkpoint heights.
+  Needs its fixtures derived from chainparams. Our own checkpoint data is
+  correct.
+- **`miner_tests`** — its `blockinfo[]` nonce table was mined against upstream's
+  chain. Regenerating it is infeasible here: our ASERT anchor puts mainnet at
+  ~70,000 difficulty from block 2, i.e. 3.0e14 hashes per block against
+  difficulty-1's 4.3e9. The fix is porting the suite to regtest.
+- **`pow_tests`** — exercises `GetNextCashWorkRequired`, which is dead code on
+  this chain (`IsAxionEnabled` is `nHeight >= 0` with the anchor at genesis), and
+  its ASERT vectors hardcode BCH's 2-day half-life against our 6 hours.
 
 ## Still missing upstream
 
