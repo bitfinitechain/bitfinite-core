@@ -71,9 +71,6 @@ EXCLUDED=(
   # Careful work: a vector "corrected" to match buggy behaviour bakes the bug in
   # permanently, so each needs deriving from first principles, not from output.
   checkpoints_tests  # expects upstream's populated checkpoint heights; ours pins genesis only
-  cashaddr_tests     # expects prefix "bitfinite" (ours is "bfx") and the STANDARD
-                     # base32 charset; ours deliberately swaps q<->f
-  dstencode_tests    # same charset/prefix divergence, via address encoding
   transaction_tests  # address/script vectors carrying upstream constants
   bip32_tests        # BIP32 xpub/xprv version bytes differ from ours
   net_tests          # 1 failure, not yet diagnosed

@@ -39,12 +39,20 @@ BOOST_AUTO_TEST_CASE(test_addresses) {
     const CTxDestination dstScript = ScriptID(uint160(hash));
     const CTxDestination dstScript32 = ScriptID(uint256(hash32)); // p2sh_32
 
+    // Derived from the cashaddr spec for prefix "bfx" and our base32 charset
+    // (which swaps q<->f, see src/cashaddr.cpp). The previous values were
+    // upstream's BCH vectors with "bitcoincash" find-replaced to "bitfinite" —
+    // wrong on both counts, since the prefix is neither ours nor checksum-neutral.
+    // The generator was validated by reproducing upstream's published vectors
+    // for this same hash byte-for-byte before our parameters were applied, so
+    // these are an independent cross-check of the implementation rather than a
+    // copy of its output.
     std::string cashaddr_pubkey =
-        "bitfinite:qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6a";
+        "bfx:fpm2fsznhks23z7629mms6s4cweq74vcwvzype89aj";
     std::string cashaddr_script =
-        "bitfinite:ppm2qsznhks23z7629mms6s4cwef74vcwvn0h829pq";
+        "bfx:ppm2fsznhks23z7629mms6s4cweq74vcwv4pukfxx0";
     std::string cashaddr_script_32 =
-        "bitfinite:pwqwzrf7z06m7nn58tkdjyxqfewanlhyrpxysack85xvf3mt0rv02l9dxc5uf"; // p2sh_32
+        "bfx:pwfwzrq7z06m7nn58tkdjyxfqewanlhyrpxysack85xvq3mt0rv02tygkxlyc"; // p2sh_32
     std::string base58_pubkey = "1BpEi6DfDAUFd7GtittLSdBeYJvcoaVggu";
     std::string base58_script = "3CWFddi6m4ndiGyKqzYvsFYagqDLPVMTzC";
     std::string base58_script_32 = "BhUvhkQ6JwtVEdHguJo6M5BJYWn5ftW9vM9WaDDFcjrWiU2KMZ"; // p2sh_32
