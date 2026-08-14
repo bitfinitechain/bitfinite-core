@@ -924,7 +924,14 @@ BOOST_AUTO_TEST_CASE(txsize_activation_test) {
     // But the hard-coded chain params are for previous block, hence why we increment the height here.
     const int32_t magneticAnomalyActivationHeight = params.magneticAnomalyHeight + 1;
     const int32_t upgrade9ActivationHeight = params.upgrade9Height + 1;
-    BOOST_CHECK_LT(magneticAnomalyActivationHeight, upgrade9ActivationHeight);
+    // Upstream asserts LT because BCH activated these years apart (Nov 2018 and
+    // May 2023), leaving a window where the 100-byte MIN_TX_SIZE_MAGNETIC_ANOMALY
+    // applied. BitFinite launched with every inherited upgrade already active at
+    // height 0, so both activate together and that window never existed here.
+    // LE keeps the ordering guarantee without assuming BCH's history.
+    BOOST_CHECK_LE(magneticAnomalyActivationHeight, upgrade9ActivationHeight);
+    const bool hasMagneticAnomalyWindow =
+        magneticAnomalyActivationHeight < upgrade9ActivationHeight;
     const int64_t unusedMTP = 0;
 
     // A minimally-sized transction.
@@ -952,10 +959,17 @@ BOOST_AUTO_TEST_CASE(txsize_activation_test) {
     BOOST_CHECK_EQUAL(::GetSerializeSize(smallTx), MIN_TX_SIZE_UPGRADE9);
     BOOST_CHECK_LT(::GetSerializeSize(smallTx), MIN_TX_SIZE_MAGNETIC_ANOMALY);
     state = CValidationState{};
-    BOOST_CHECK(!ContextualCheckTransaction(
-        params, smallTx, state, upgrade9ActivationHeight - 1, 5678, unusedMTP));
-    BOOST_CHECK_EQUAL(state.GetRejectCode(), REJECT_INVALID);
-    BOOST_CHECK_EQUAL(state.GetRejectReason(), "bad-txns-undersize");
+    if (hasMagneticAnomalyWindow) {
+        // Only meaningful on a chain that spent time under the 100-byte rule:
+        // a 65-byte tx is too small then, and legal once upgrade9 relaxes the
+        // minimum to 64. With both active at genesis there is no "before".
+        BOOST_CHECK(!ContextualCheckTransaction(
+            params, smallTx, state, upgrade9ActivationHeight - 1, 5678, unusedMTP));
+        BOOST_CHECK_EQUAL(state.GetRejectCode(), REJECT_INVALID);
+        BOOST_CHECK_EQUAL(state.GetRejectReason(), "bad-txns-undersize");
+    }
+    // This half applies to every chain and is the rule that actually governs
+    // BitFinite today: at and after upgrade9, a 64-byte tx is valid.
     BOOST_CHECK(ContextualCheckTransaction(
         params, smallTx, state, upgrade9ActivationHeight, 5678, unusedMTP));
 }

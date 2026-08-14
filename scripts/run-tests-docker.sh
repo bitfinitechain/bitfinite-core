@@ -71,7 +71,6 @@ EXCLUDED=(
   # Careful work: a vector "corrected" to match buggy behaviour bakes the bug in
   # permanently, so each needs deriving from first principles, not from output.
   checkpoints_tests  # expects upstream's populated checkpoint heights; ours pins genesis only
-  transaction_tests  # address/script vectors carrying upstream constants
 )
 
 # Boost.Test filter syntax: colon-separated, ! negates.
