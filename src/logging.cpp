@@ -264,11 +264,19 @@ void BCLog::Logger::LogPrintStr(std::string &&str, std::source_location &&sloc, 
                 FILE *new_fileout = fsbridge::fopen(m_file_path, "a");
                 if (new_fileout) {
                     // Make the NEW handle unbuffered. This said `m_fileout` —
-                    // the handle being closed on the next line — which left the
-                    // reopened log fully buffered, so after any rotation the
-                    // most recent lines sat in libc's buffer instead of on disk
-                    // and were lost on a crash: exactly when they are wanted.
-                    // Inherited from upstream (72656dda74, 2018); report it back.
+                    // the handle being closed on the next line, where setbuf is
+                    // a no-op since fclose flushes anyway — which left the
+                    // reopened log FULLY BUFFERED, contradicting the comment
+                    // above it. After any rotation the most recent lines sat in
+                    // libc's buffer instead of on disk and were lost on a crash:
+                    // exactly when they are wanted.
+                    //
+                    // Inherited from upstream 72656dda74 (2018-10-12) and
+                    // present through v28.0.1. UPSTREAM HAS SINCE FIXED IT —
+                    // BCHN v29.0.0 and master carry this same change — so this
+                    // is a backport of their fix, not a novel finding. Do not
+                    // file it as a bug report. Found here independently because
+                    // logging_filesize_rate_limit fails without it.
                     setbuf(new_fileout, nullptr);
                     fclose(m_fileout);
                     m_fileout = new_fileout;
