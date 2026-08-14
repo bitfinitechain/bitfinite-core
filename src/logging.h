@@ -111,6 +111,18 @@ public:
     bool SuppressionsActive() const { return m_suppression_active; }
 };
 
+//! Streaming operator for Status. Required by BOOST_CHECK_EQUAL, which must be
+//! able to print both operands when a check fails — without this the rate
+//! limiter's unit tests do not compile.
+inline std::ostream &operator<<(std::ostream &os, LogRateLimiter::Status status) {
+    switch (status) {
+        case LogRateLimiter::Status::UNSUPPRESSED:     return os << "UNSUPPRESSED";
+        case LogRateLimiter::Status::NEWLY_SUPPRESSED: return os << "NEWLY_SUPPRESSED";
+        case LogRateLimiter::Status::STILL_SUPPRESSED: return os << "STILL_SUPPRESSED";
+    }
+    return os << "Status(" << static_cast<int>(status) << ')';
+}
+
 enum LogFlags : uint32_t {
     NONE = 0,
     NET = (1 << 0),
@@ -231,6 +243,19 @@ public:
  * @returns true if `str` was modified, false otherwise.
  */
 bool LogEscapeMessageInPlace(std::string &str);
+
+/**
+ * Replace the global logger with a freshly constructed one.
+ *
+ * FOR TESTS ONLY. Log settings are global and sticky, so a test that changes
+ * them (rate limiting, categories, timestamps) would otherwise leak that state
+ * into every test that runs after it.
+ *
+ * The previous instance is deliberately leaked, exactly as the initial one is —
+ * see the note in LogInstance(). Destroying it is not safe: another thread may
+ * be mid-log, and destructors elsewhere may still call LogPrintf.
+ */
+void ReconstructLogInstance();
 
 } // namespace BCLog
 

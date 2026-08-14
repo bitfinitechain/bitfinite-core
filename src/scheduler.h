@@ -43,6 +43,12 @@ public:
     // Convenience method: call f once deltaMilliSeconds from now
     void scheduleFromNow(Function f, int64_t deltaMilliSeconds);
 
+    // Helper for above that uses a chrono type, mirroring scheduleEvery below.
+    // Callers passing a literal such as `0ms` would otherwise fail to compile.
+    void scheduleFromNow(Function f, std::chrono::milliseconds msec) {
+        scheduleFromNow(std::move(f), static_cast<int64_t>(msec.count()));
+    }
+
     // Another convenience method: call p approximately every deltaMilliSeconds
     // forever, starting deltaMilliSeconds from now untill p returns false. To
     // be more precise: every time p is finished, it is rescheduled to run

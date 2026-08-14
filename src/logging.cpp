@@ -14,6 +14,8 @@
 bool fLogIPs = DEFAULT_LOGIPS;
 const char *const DEFAULT_DEBUGLOGFILE = "debug.log";
 
+static BCLog::Logger *&LoggerPtr();
+
 BCLog::Logger &LogInstance() {
     /**
      * NOTE: the logger instance is leaked on exit. This is ugly, but will be
@@ -30,8 +32,26 @@ BCLog::Logger &LogInstance() {
      * This method of initialization was originally introduced in
      * ee3374234c60aba2cc4c5cd5cac1c0aefc2d817c.
      */
+    return *LoggerPtr();
+}
+
+/**
+ * The logger pointer itself, behind a function so it keeps the lazy,
+ * initialise-on-first-use property described above. A file-scope global would
+ * reintroduce exactly the static-initialisation-order problem that note warns
+ * about: another translation unit's constructor could log before it was set.
+ */
+static BCLog::Logger *&LoggerPtr() {
     static BCLog::Logger *g_logger{new BCLog::Logger()};
-    return *g_logger;
+    return g_logger;
+}
+
+void BCLog::ReconstructLogInstance() {
+    // The old instance is deliberately leaked, on purpose and for the same
+    // reason the first one is: it has no trivial way to prove nobody else holds
+    // a reference or is mid-log on another thread. Tests call this a handful of
+    // times; leaking a logger per call is the cheap, safe option.
+    LoggerPtr() = new BCLog::Logger();
 }
 
 static int FileWriteStr(const std::string &str, FILE *fp) {
@@ -243,8 +263,13 @@ void BCLog::Logger::LogPrintStr(std::string &&str, std::source_location &&sloc, 
                 m_reopen_file = false;
                 FILE *new_fileout = fsbridge::fopen(m_file_path, "a");
                 if (new_fileout) {
-                    // unbuffered.
-                    setbuf(m_fileout, nullptr);
+                    // Make the NEW handle unbuffered. This said `m_fileout` —
+                    // the handle being closed on the next line — which left the
+                    // reopened log fully buffered, so after any rotation the
+                    // most recent lines sat in libc's buffer instead of on disk
+                    // and were lost on a crash: exactly when they are wanted.
+                    // Inherited from upstream (72656dda74, 2018); report it back.
+                    setbuf(new_fileout, nullptr);
                     fclose(m_fileout);
                     m_fileout = new_fileout;
                 }
