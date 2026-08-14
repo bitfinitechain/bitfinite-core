@@ -64,3 +64,23 @@ be184ceab4c0b2bbd2423c970065a2272269825de64a4a29424def4c0eb36bcc  v3.1.1/bitfini
 a77df4f0656bde16cc36eaab44c9df05f5ba2cf75e68f82f54f202b09d354122  v3.1.1/bitfinite-tx.exe
 c7567b318d0a7d3af3479a3c496cc92ded1be352801e4d089d8f9e5be7569e59  v3.1.1/bitfinite-qt.exe
 68087740dc7a2c489465cfb6239361fdcd426d806ed021c1450c3cf06145ad00  v3.1.1/bitfinite-wallet.exe
+
+# --- v3.1.2 ---------------------------------------------------------------
+# Taken from the PUBLISHED assets (downloaded from the release, archive hashes
+# verified against the release's own SHA256SUMS before extracting).
+# Linux reproducibility re-confirmed for this release: bitfinited, bitfinite-cli,
+# bitfinite-tx and bitfinite-wallet are byte-identical between a local Docker
+# build and the GitHub runner. Windows are not, and describe CI's build.
+a67e6233676e48fd6a04d108a2e28a64ae6b2012f5551e0581723208e362e437  bitfinite-v3.1.2-x86_64-linux.tar.gz
+c45403c765b6dbf59bff6ef9552d1b3b469a0ab8f7fe7f093c7649451d9556e6  bitfinite-v3.1.2-x86_64-windows.zip
+127b0a2b23ca08487584db88cb978c5b71011ddf5569a55d8750664625f6d01e  v3.1.2/bitcoin-seeder
+07ed036e8c85b8c7c76b1b6cea7c54f6db279a1781df94e8d7a21647da74054a  v3.1.2/bitfinite-cli
+25ddf82547a9907d19c7b06c07454da9f5c88821822ea42e94d118de7ab3e5bb  v3.1.2/bitfinited
+d407ed7c0e56b4ac3724d371abbd989ec9b3c628c9cb147704ef70b56456a7b6  v3.1.2/bitfinite-qt
+c84b21e711d7593c6ffe9a56309c13e5ca809b3c01f2f7d1adc520c2c9ceb417  v3.1.2/bitfinite-tx
+6a9db9c7164c96eb178ab293e22eb0b1e20cd7676ad86e86ca7e665c5b849316  v3.1.2/bitfinite-wallet
+b37784c941ed2a13d5dfd11e0ba56da9a76db66e684c9ad998f9944402262af4  v3.1.2/bitfinite-cli.exe
+5d645c0ba972fa460f12411fbda0463a4045e72770e496e901420004adddee74  v3.1.2/bitfinited.exe
+2dd3752a04a4405651f6a2e4fca2b0b69a075fd325e84367796abd696b8ba365  v3.1.2/bitfinite-qt.exe
+e7d334cbc0b48925d645bc99315f6ac72c0aeedc3a044affa6600288a0f119b9  v3.1.2/bitfinite-tx.exe
+5b4adc0e48b4b4bf10017753db160bdb35fbbb1baea33ac00dc82016e3064289  v3.1.2/bitfinite-wallet.exe
