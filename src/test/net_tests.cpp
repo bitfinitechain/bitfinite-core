@@ -604,13 +604,18 @@ BOOST_AUTO_TEST_CASE(test_userAgent) {
     const std::string uacomment = "A very nice comment";
     gArgs.ForceSetMultiArg("-uacomment", uacomment);
 
+    // Derive the client name from CLIENT_NAME rather than hardcoding it. The
+    // rebrand replaced upstream's "Bitcoin Cash Node" with "BitFinite Node"
+    // here, but CLIENT_NAME is "BitFinite" — so the test asserted a user agent
+    // the node has never sent. Deriving it means a future rename cannot
+    // desync the test from the string peers actually see.
     const std::string versionMessage =
-        "/BitFinite Node:" + std::to_string(CLIENT_VERSION_MAJOR) + "." +
+        "/" + CLIENT_NAME + ":" + std::to_string(CLIENT_VERSION_MAJOR) + "." +
         std::to_string(CLIENT_VERSION_MINOR) + "." +
         std::to_string(CLIENT_VERSION_REVISION) + "(EB8.0; " + uacomment + ")/";
 
     const std::string versionMessage_strprintf =
-        strprintf("/BitFinite Node:%d.%d.%d(EB8.0; %s)/", CLIENT_VERSION_MAJOR, CLIENT_VERSION_MINOR, CLIENT_VERSION_REVISION, uacomment);
+        strprintf("/%s:%d.%d.%d(EB8.0; %s)/", CLIENT_NAME, CLIENT_VERSION_MAJOR, CLIENT_VERSION_MINOR, CLIENT_VERSION_REVISION, uacomment);
 
     BOOST_CHECK_EQUAL(versionMessage, versionMessage_strprintf); // verify our test methodology is sound - std::to_string is locale-dependent
     BOOST_CHECK_EQUAL(userAgent(config), versionMessage);
