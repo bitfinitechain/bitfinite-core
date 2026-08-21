@@ -8,10 +8,15 @@ changes that matter:
   * nMinimumChainWork and defaultAssumeValid are still 0x00, so a syncing node
     will accept any chain it is handed.
 
-To actually run BitFinite, use the current release:
+To actually run BitFinite, download the current release — deliberately named
+without a version here, because the last pointer in this file said v3.0.2 and
+was still saying it five releases later:
 
-    dist/bitfinite-v3.0.2-x86_64-linux/bin/bitfinite-qt        (GUI)
-    dist/bitfinite-v3.0.2-x86_64-linux/bin/bitfinited          (daemon)
+    https://github.com/bitfinitechain/bitfinite-core/releases/latest
+
+Verify what you downloaded against scripts/release-checksums.txt, which is the
+pin the upgrade scripts check. The SHA256SUMS beside this archive covers the
+v3.0.0.1 binaries ONLY and must never be used to verify a current build.
 
 Always confirm what you launched:  <binary> -version
 

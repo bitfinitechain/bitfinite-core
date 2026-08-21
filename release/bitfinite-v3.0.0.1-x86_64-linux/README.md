@@ -1,3 +1,8 @@
+> **ARCHIVED BUILD — DO NOT RUN.** The Quick Start below installs v3.0.0.1 binaries
+> over your PATH. See ../ARCHIVE-DO-NOT-RUN.txt for why that is a bad idea, and get
+> the current release from
+> <https://github.com/bitfinitechain/bitfinite-core/releases/latest>.
+
 # BitFinite Core v3.0.0.1 — Linux x86_64
 
 ## Quick Start

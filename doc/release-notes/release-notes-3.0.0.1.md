@@ -1,3 +1,8 @@
+> **Archived.** These are the notes for v3.0.0.1 (2026-06-26), kept as a historical
+> record. They are NOT the current release. Current notes live in `doc/release-notes.md`,
+> and every published build is listed at
+> <https://github.com/bitfinitechain/bitfinite-core/releases>.
+
 # BitFinite v3.0.0.1 — Mainnet Release
 
 **Version**: v3.0.0.1
