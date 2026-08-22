@@ -200,10 +200,29 @@ public:
             {0, consensus.hashGenesisBlock},
         }};
 
+        // Measured from the live chain on 2026-08-22, not guessed.
+        //
+        // These were {1782432000, 0, 0.0} — a timestamp that was not actually
+        // genesis (genesis nTime is 1782691200) and, more importantly, a zero
+        // transaction count and a zero rate. Zero is not a harmless placeholder
+        // here. GuessVerificationProgress divides the chain's transaction count
+        // by an estimated total; with nTxCount and dTxRate both zero, any chain
+        // holding at least one transaction takes the else-branch and the
+        // estimate collapses to the count itself, so the ratio is exactly 1.0 at
+        // every height. A node a quarter of the way through initial sync
+        // reported verificationprogress 1.0, so anything deciding "am I synced
+        // yet" from that RPC was reading a constant. Measured after the fix on a
+        // fresh node: 0.249 at height 4163, 0.672 at 11181, 0.9998 at the tip.
+        //
+        // Anchor block 16434, hash 000000000000003b8bd300b88776a4872f8c6cf05817584b819af4e07d5d3474.
+        // The rate is the trailing-window figure from getchaintxstats, and it
+        // cross-checks against first principles: mainnet targets 300s blocks and
+        // is almost entirely coinbase-only, so ~1/300 = 0.00333 tx/s is expected
+        // and 0.00345 is what was measured.
         chainTxData = ChainTxData{
-            1782432000, // Genesis Time (2026-06-26)
-            0,          // 0 Txs
-            0.0         // 0 tx/sec
+            1787407530, // Time of block 16434
+            16836,      // Chain-wide transaction count at that block
+            0.00345     // Transactions per second, trailing window
         };
     }
 };
@@ -317,7 +336,21 @@ public:
         checkpointData = {/* .mapCheckpoints = */ {
             {0, consensus.hashGenesisBlock},
         }};
-        chainTxData = ChainTxData{1669510532, 63972968, 0.00310};
+        // Was {1669510532, 63972968, 0.00310} — Bitcoin Cash's numbers, inherited
+        // at the fork. 63.9M transactions is a chain we are not, so a fully
+        // synced testnet node reported verificationprogress 0.0000017: the same
+        // defect as mainnet's, in the opposite direction. Measured at block 112
+        // on 2026-08-22.
+        //
+        // The rate is DERIVED, not measured. The observed figure right after
+        // launch was 0.0327 tx/s, which only reflects the ASERT ramp mining
+        // blocks every few seconds; using it would peg a synced node at a few
+        // percent forever. Steady state is one coinbase per 600s target spacing.
+        chainTxData = ChainTxData{
+            1787408045, // Time of block 112
+            116,        // Chain-wide transaction count at that block
+            0.00167     // 1 tx per 600s target spacing
+        };
     }
 };
 
