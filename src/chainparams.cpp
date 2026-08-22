@@ -280,6 +280,11 @@ public:
 
         vFixedSeeds.clear();
         vSeeds.clear();
+        // Single A record, DNS-only (not Cloudflare-proxied). A proxied record
+        // would hand peers a Cloudflare address, and Cloudflare forwards HTTP,
+        // not P2P — the connection to 29768 would simply fail. Every mainnet
+        // seed record is DNS-only for the same reason.
+        vSeeds.emplace_back("testnet-seed.bitfinitechain.org");
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<uint8_t>(1, 111);
         base58Prefixes[SCRIPT_ADDRESS] = std::vector<uint8_t>(1, 196);
         base58Prefixes[SECRET_KEY] = std::vector<uint8_t>(1, 239);

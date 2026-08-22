@@ -1455,25 +1455,31 @@ bool AppInitParameterInteraction(Config &config) {
                                    arg, network, network));
     }
 
-    // testnet, testnet4, scalenet and chipnet carry BitFinite genesis blocks but
-    // are not operated: no DNS seeds, no fixed seeds, no nodes. They also keep
-    // Bitcoin Cash Node's network magic and default ports, so a BCH testnet peer
-    // can complete the wire handshake before being dropped on genesis mismatch —
-    // noise, not a chain risk, since the genesis differs and no sync can occur.
+    // Warn when running a network we do not operate.
     //
-    // Their consensus does NOT match mainnet. upgrade8Height and upgrade9Height
-    // are still BCH's (1500205 / 1552787 on testnet) and unreachable on a chain
-    // at height 0, so 64-bit script integers and native introspection are OFF
-    // here and ON for mainnet. The ASERT anchor also points at BCH height
-    // 1421481. Do not treat these as a rehearsal for mainnet behaviour.
+    // testnet is ours: every activation height is 0, the ASERT anchor is our own
+    // block 0, and the network magic is "BFte", rather than a BCH chain wearing
+    // our name. It has a DNS seed and a node behind it, so it is excluded here.
     //
-    // Regtest is the supported local network and does match mainnet on every
-    // upgrade parameter.
-    if (network != CBaseChainParams::MAIN && network != CBaseChainParams::REGTEST) {
+    // It matches mainnet on ACTIVATION HEIGHTS, which is what the warning below
+    // is about. It deliberately does not match on PoW: spacing is 10 minutes
+    // against mainnet's 5, and fPowAllowMinDifficultyBlocks is true here and
+    // false there. Do not call it a full rehearsal for mainnet behaviour.
+    //
+    // testnet4, scalenet and chipnet are NOT. Each still carries BCH's activation
+    // heights (upgrade8 at 95464 / 10006, upgrade9 at 148043 / 10006 / 121956) and
+    // BCH's ASERT anchor at timestamp 1605451779. Those heights are unreachable on
+    // a chain at height 0, so 64-bit script integers and native introspection are
+    // OFF there and ON for mainnet. Nobody runs seeds for them either.
+    //
+    // Use -regtest for local testing: it matches mainnet on every upgrade parameter.
+    if (network != CBaseChainParams::MAIN && network != CBaseChainParams::TESTNET &&
+        network != CBaseChainParams::REGTEST) {
         InitWarning(strprintf(
             _("Network '%s' is not operated by BitFinite: it has no seeds and no nodes. "
-              "Its consensus parameters differ from mainnet, so it is not a valid "
-              "rehearsal for mainnet behaviour. Use -regtest for local testing."),
+              "Its consensus parameters are inherited from Bitcoin Cash and differ from "
+              "mainnet, so it is not a valid rehearsal for mainnet behaviour. Use -testnet "
+              "for a public test chain, or -regtest for local testing."),
             network));
     }
 
