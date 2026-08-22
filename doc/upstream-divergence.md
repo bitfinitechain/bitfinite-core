@@ -108,6 +108,63 @@ decision — just tidying we have not done.
   BCH's genesis. See the exclusion notes in `scripts/run-tests-docker.sh`.
 - **cashaddr uses a swapped alphabet** (`q`↔`f`), so addresses are `bfx:f…`.
 
+## Security triage of the untouched node code — 2026-08-22
+
+Scope: the 101 source files that upstream changed between v27.0.0 and v29.1.0 and
+that BitFinite has never modified. Excludes tests, Qt, bench, the 36
+consensus-sensitive files, and the 71 node-code files we have modified.
+
+**Result: no security backlog. Nothing urgent, nothing to backport for safety.**
+
+### The method matters more than the number
+
+The naive query returns 1,629 upstream commits touching these files, and keyword
+matching flags 51 as security-relevant. Both figures are wrong, in the same way
+the commit-ancestry drift count was wrong.
+
+Filtering by COMMITTER date — when a change actually landed in BCHN — leaves
+**102** commits after our 2023-12-12 fork. The other ~1,500 predate it and are
+already in our tree. Verified by checking the code, not by trusting the range:
+
+| flagged as missing | actually |
+|---|---|
+| `[CVE-2019-18936]` UniValue JSON depth | **present** — `MAX_JSON_DEPTH = 512`, guard at `univalue_read.cpp:315` |
+| `[mining] Fix potential crash in submitblock` | **present** — the `enable_shared_from_this` / `ReqEntry` / `Create()` form |
+| `Fix memleak in TorController` | present |
+| `Fix memory leak in multiUserAuthorized` | present |
+| `fix uninitialized read stringifying addrLocal` | present |
+
+Use committer date, and verify each candidate against the code. A file appearing
+in a drift list says nothing about whether its fix is missing.
+
+### What the 102 post-fork commits actually are
+
+Overwhelmingly toolchain and build compatibility: GCC 14, clang-8, Boost 1.85,
+Arch Linux, older GCC 8.3.0, Darwin gitian, compiler warnings. Valuable when we
+move build environments; irrelevant to a running node.
+
+Two are real code changes and both are absent from our tree:
+
+**1. `blockstorage`: ftell overflow asserts** (upstream 2025-08-01) — adds
+`assert(zSize == nSize && "Overflow check failed")` around `ftell` results.
+**Structurally unreachable here.** The overflow needs a block file above 4 GB and
+`MAX_BLOCKFILE_SIZE` is `0x8000000` — 128 MB. Defensive hardening upstream, not a
+live bug. Worth taking with the next batch; not worth taking alone.
+
+**2. `validationinterface`: registering after threads start** (upstream
+2026-03-20) — reworks `RegisterValidationInterface()` and adds
+`IsStoppedOrAboutToStop()` to the scheduler. Affects a startup-ordering race.
+Our node registers interfaces before starting the scheduler, so it is not
+currently reachable either, but this one is a genuine correctness fix and the
+better of the two to take.
+
+### Recommendation
+
+No emergency. Fold both into a batched maintenance backport whenever we next take
+upstream non-consensus work, alongside the 630 upstream test files — which remain
+the highest-value part of the 878 non-consensus changes, since they are
+regression coverage we do not have.
+
 ## How to check this yourself
 
 ```bash
