@@ -1,75 +1,139 @@
-# Release Notes for BitFinite Node version 3.1.2
+# Release Notes for BitFinite Node version 3.1.3
 
-BitFinite Node version 3.1.2 is now available from:
+BitFinite Node version 3.1.3 is now available from:
 
-  https://github.com/bitfinitechain/bitfinite-core/releases/tag/v3.1.2
+  https://github.com/bitfinitechain/bitfinite-core/releases/tag/v3.1.3
 
-**Drop-in upgrade from 3.1.x or 3.0.x — no reindex, no wallet migration, no
-consensus change.** Stop the node, swap the binaries, start it again.
+**Drop-in upgrade from 3.1.x or 3.0.x on mainnet — no reindex, no wallet
+migration, no consensus change.** Stop the node, swap the binaries, start it
+again.
 
-This release exists because the unit test suite was made to run again after a
-long absence, and it found things. Nothing here changes how blocks are
-validated: the changes to `chainparams.cpp` add a checkpoint at the genesis
-block, which can only ever reject an alternative genesis, and the change to
-`pow.cpp` restores an assertion that provably holds on every network reaching
-that code. Both were verified line by line before tagging.
+**Testnet users must delete their testnet data directory.** The testnet genesis
+block changed in this release, so a node started against an existing
+`testnet3/` directory will refuse to run. See "Public testnet" below. Mainnet
+and regtest are unaffected.
+
+Every change to consensus-reachable code was reviewed against the previous tag
+before release. Mainnet block validation is byte-for-byte identical to 3.1.2.
 
 ## Fixes
 
-- **Genesis checkpoint restored on five of six networks.** Upstream ships a
-  checkpoint at the genesis block on every network. Ours were emptied during the
-  fork and only mainnet was ever restored. A genesis checkpoint bans forks that
-  rewrite the genesis block — defence in depth that was silently dropped. The
-  entry is derived from `consensus.hashGenesisBlock` rather than a literal, so it
-  cannot drift from the block it pins.
+- **`verificationprogress` reported a constant, not a measurement.** On mainnet
+  it returned exactly `1.0` at every height, so a node three blocks into initial
+  sync described itself as fully synced. `chainTxData` shipped with a
+  transaction count and rate of zero, and `GuessVerificationProgress` divides
+  the chain's transaction count by an estimate built from those constants; with
+  both at zero the estimate collapses to the count itself and the ratio is
+  always one.
 
-- **Log lines are no longer lost on a crash after log rotation.** `setbuf` was
-  applied to the file handle being closed rather than the newly opened one,
-  leaving the reopened debug log fully buffered. Recent lines sat in memory
-  instead of on disk — precisely when a crash makes them valuable. Present in
-  upstream from 2018 through v28.0.1; **BCHN fixed this in v29.0.0 before we
-  found it independently, and this is a backport of their fix**, not a discovery
-  of ours.
+  Measured on a fresh node before the fix: `1.0` at height 4163 of 16434. After:
+  `0.249` at 4163, `0.672` at 11181, `0.9998` at the tip.
 
-- **ASERT overflow assertion re-enabled.** `assert((powLimit >> 224) == 0)`
-  guards the headroom `CalculateASERT` relies on. It had been commented out
-  during the genesis/anchor work and the disable was never necessary — the
-  condition holds on mainnet, testnet and scalenet, and the only value that would
-  trip it (regtest's) never reaches the function. No behavioural change; a guard
-  on consensus arithmetic is worth having.
+  This matters to anyone gating an action on whether the node is caught up. An
+  exchange crediting deposits on that field would have been acting on a chain
+  missing twelve thousand blocks. `initialblockdownload` was always correct and
+  remains the field to rely on; this makes the other one honest as well.
 
-- **Log rate limiter completed.** The tier-2 security backport landed the tests
-  for this facility without all of its implementation, so the suite stopped
-  compiling. Added the missing `BCLog::ReconstructLogInstance`, a streaming
-  operator for `LogRateLimiter::Status`, and a `chrono` overload of
-  `CScheduler::scheduleFromNow`.
+  Testnet had the same defect in the opposite direction — it still carried
+  Bitcoin Cash's transaction count of 63,972,968, so a fully synced testnet node
+  reported `0.0000017`. Both networks now carry values measured from the live
+  chains with `getchaintxstats`.
 
-## Testing
+- **`-expire=1` no longer expires a BitFinite node on Bitcoin Cash's schedule.**
+  The node-expiry date was inherited from BCH's Upgrade 11 scheduling, 15 May
+  2025, which is in the past. A node started with `-expire=1` therefore expired
+  immediately and disabled its own RPC. The default has always been forced off
+  in BitFinite, so no default configuration was affected, but the option was
+  unusable. BitFinite schedules no expiry date; the value is now zero on every
+  network and the mechanism does nothing unless a date is supplied explicitly.
 
-- **CI now builds and runs the unit tests on every branch**
-  (`.github/workflows/tests.yaml`). Previously nothing built `test_bitcoin` at
-  all — the release pipeline produced binaries only, which is why a half-landed
-  backport went unnoticed for two days.
+- **Undefined behaviour in `CNoDestination::operator<`.** It returned `true`
+  unconditionally, so both `a < b` and `b < a` held for equivalent values. That
+  is not a strict weak ordering, and `CTxDestination` goes into
+  `std::set` and `std::map` in `GetAddressGroupings`, `GetAddressBalances`,
+  `ListCoins` and the address book. A wallet holding two non-standard outputs is
+  enough to reach it, and libstdc++'s `std::sort` can read past the end of a
+  range given a comparator like this. Backport of BCHN's "Trivial: Prevent UB in
+  class CNoDestination". Not consensus code — `CNoDestination` is an address
+  classification used by the wallet and RPC, never by script validation.
 
-- **117 of 120 suites pass.** `scripts/run-tests-docker.sh` runs them in the same
-  container and toolchain that builds releases. The three exclusions each carry
-  their reason in that script and are printed into every CI job summary.
+## Public testnet
 
-- Six suites were repaired. Five had been broken by the original rebranding: a
-  find-replace that landed inside values carrying a checksum or an encoding
-  (address prefixes, a base58 `xpub`, and a client name that never existed). One,
-  `transaction_tests`, assumed Bitcoin Cash's upgrade timeline, which does not
-  apply to a chain that launched with every inherited upgrade already active.
+BitFinite now operates a testnet, reachable without configuration:
 
-## Documentation
+| | |
+|---|---|
+| P2P seed | `testnet-seed.bitfinitechain.org:29768` |
+| Genesis | `00000000498add4157e47db0e5b06bdedd668af44c60762c37992be703d1ed2e` |
+| Network magic | `BFte` |
+| Address prefix | `bfxtest:` |
+| Default RPC port | 29769 |
 
-- `doc/consensus-diff.md` — scoping document for an independent review of our
-  changes against BCHN v27.0.0, including an honest account of what the fork
-  process left behind.
-- `doc/asert-response.md` — measured difficulty response to hashrate loss.
+```
+bitfinited -testnet -daemon
+```
 
-## Not in this release
+The genesis block was re-mined for this release, which is why an existing
+testnet data directory has to go. The previous testnet genesis carried a
+timestamp of 1296688604 — two seconds after Bitcoin's testnet3 genesis, in
+February 2011 — inherited at the fork and never updated. That was not cosmetic.
+The ASERT anchor time tracks genesis time, so the difficulty algorithm was
+measuring a fifteen-year backlog against a chain at height zero: it expected
+roughly 818,000 blocks to exist, saw none, and clamped the target to `powLimit`.
+Difficulty could never have risen off diff-1 for the next 818,000 blocks, and
+the first real miner pointed at the chain would have raced it through all of
+them. Mainnet never had this defect; its anchor time is its own genesis time.
 
-No consensus change. No change to the difficulty algorithm's behaviour, block
-validity, transaction rules, or the P2P protocol. Nodes running 3.1.1 and 3.1.2
-remain fully compatible on the same chain.
+Testnet matches mainnet on every upgrade activation height, which is not true of
+`testnet4`, `scalenet` or `chipnet` — those still carry Bitcoin Cash's heights
+and remain unoperated. It deliberately differs on proof of work: ten-minute
+target spacing against mainnet's five, and minimum-difficulty blocks permitted
+after twenty minutes, which mainnet does not allow. Treat it as a rehearsal for
+consensus, not for block timing.
+
+Testnet coins have no value and the chain carries no permanence guarantee.
+
+## Other changes
+
+- **The Upgrade 11 gate was removed.** BitFinite has not adopted Bitcoin Cash's
+  Upgrade 11, and the VM Limits and BigInt CHIPs change which scripts are valid,
+  so adopting them would be a hard fork of this chain rather than a backport.
+  The gate was never wired to any rule here: it was declared, it returned true
+  from 15 May 2025 onward because the activation time was inherited, and nothing
+  in the node ever asked. Its only caller was its own unit test. Keeping it cost
+  nothing at runtime and cost accuracy everywhere else, because the source
+  asserted an upgrade this chain does not implement.
+
+- **The startup warning about unoperated networks is accurate again.** It was
+  describing the testnet as it existed before it was rebuilt, and printed on
+  every testnet start. Testnet is excluded and named as the supported public
+  test chain; the warning remains for `testnet4`, `scalenet` and `chipnet`,
+  where its description still holds.
+
+- **`SECURITY.md`'s genesis verification table listed mainnet values that do not
+  reproduce.** It recorded `1782432000 / 1870395023`, from an earlier re-mine,
+  and marked both the hash match and the proof of work as verified. Those values
+  hash to neither the asserted genesis nor valid proof of work, so anyone
+  auditing the chain from that document could not have reproduced it.
+  `chainparams.cpp` was always correct; the table was stale. All six networks
+  have been re-derived and now verify.
+
+- **`contrib/genesis/` is new** — the tool that found the above. It mines or
+  verifies a genesis nonce, so the claim in that table can be checked rather
+  than trusted. Four cores verify or find a nonce at `nBits` 0x1d00ffff in
+  around 77 seconds.
+
+## For developers
+
+- **`miner_tests` was ported to regtest**, taking it from a `SIGABRT` and 111
+  failures to 3. It remains excluded from the default run for those three,
+  documented in `scripts/run-tests-docker.sh`. The exclusion note previously
+  blamed a stale nonce table; the real cause is that BitFinite activates every
+  upgrade at height 0 while upstream activates Magnetic Anomaly at mainnet
+  height 556766 and Upgrade9 at 792772. Tests that mine a hundred blocks
+  therefore run upstream in a pre-2018 rule regime that BitFinite does not have.
+  Minimum transaction size, `SCRIPT_VERIFY_SIGPUSHONLY` and
+  `SCRIPT_VERIFY_CLEANSTACK` all reject its constructions here and never touch
+  it upstream. Worth knowing before diagnosing any other inherited test.
+
+- The default suite is unchanged at 117 of 120 suites passing.
