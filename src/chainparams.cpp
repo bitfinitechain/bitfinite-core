@@ -218,28 +218,28 @@ public:
     CTestNetParams() {
         strNetworkID = CBaseChainParams::TESTNET;
         consensus.nSubsidyHalvingInterval = 4200;
-        consensus.BIP16Height = 514;
-        consensus.BIP34Height = 21111;
-        consensus.BIP34Hash = BlockHash::fromHex("0000000023b3a96d3484e5abb3755c413e7d41500f8e2a5c3f0dd01299cd8ef8");
-        consensus.BIP65Height = 581885;
-        consensus.BIP66Height = 330776;
-        consensus.CSVHeight = 770112;
+        consensus.BIP16Height = 0;
+        consensus.BIP34Height = 0;
+        consensus.BIP34Hash = BlockHash();  // BIP34Height is 0; the BCH hash here was meaningless
+        consensus.BIP65Height = 0;
+        consensus.BIP66Height = 0;
+        consensus.CSVHeight = 0;
         consensus.powLimit = uint256S("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         consensus.nPowTargetTimespan = 14 * 24 * 60 * 60;
         consensus.nPowTargetSpacing = 10 * 60;
         consensus.fPowAllowMinDifficultyBlocks = true;
         consensus.fPowNoRetargeting = false;
         consensus.nASERTHalfLife = 60 * 60;
-        consensus.nMinimumChainWork = ChainParamsConstants::TESTNET_MINIMUM_CHAIN_WORK;
-        consensus.defaultAssumeValid = ChainParamsConstants::TESTNET_DEFAULT_ASSUME_VALID;
-        consensus.uahfHeight = 1155875;
-        consensus.daaHeight = 1188697;
-        consensus.magneticAnomalyHeight = 1267996;
-        consensus.gravitonHeight = 1341711;
-        consensus.phononHeight = 1378460;
+        consensus.nMinimumChainWork = uint256S("0x00");  // fresh chain — BCH's value would never be reached
+        consensus.defaultAssumeValid = BlockHash();      // no trusted history on a chain we are starting
+        consensus.uahfHeight = 0;
+        consensus.daaHeight = 0;
+        consensus.magneticAnomalyHeight = 0;
+        consensus.gravitonHeight = 0;
+        consensus.phononHeight = 0;
         consensus.axionActivationTime = 1605441600;
-        consensus.upgrade8Height = 1500205;
-        consensus.upgrade9Height = 1552787;
+        consensus.upgrade8Height = 0;
+        consensus.upgrade9Height = 0;
         consensus.upgrade10ActivationTime = 1715774400;
         consensus.upgrade11ActivationTime = 0;  // no node expiry — see consensus/params.h
         consensus.nDefaultConsensusBlockSize = DEFAULT_CONSENSUS_BLOCK_SIZE;
@@ -248,23 +248,23 @@ public:
                consensus.nDefaultGeneratedBlockSizePercent <= 100.0);
         assert(consensus.GetDefaultGeneratedBlockSizeBytes() <= consensus.nDefaultConsensusBlockSize);
         consensus.asertAnchorParams = Consensus::Params::ASERTAnchor{
-            1421481,
-            0x1d00ffff,
-            1605445400,
+            0,          // Anchor Height (genesis) — was BCH height 1421481, unreachable here
+            0x1d00ffff, // Anchor Bits (powLimit / diff-1) — testnet stays cheap to mine
+            1296688604, // Anchor Time (== genesis nTime)
         };
         consensus.ablaConfig = abla::Config::MakeDefault(consensus.nDefaultConsensusBlockSize, /* fixedSize = */ true);
         assert(abla::State(consensus.ablaConfig, 0).GetBlockSizeLimit() == consensus.nDefaultConsensusBlockSize);
         assert(consensus.ablaConfig.IsFixedSize());
 
-        diskMagic[0] = 0x0b;
-        diskMagic[1] = 0x11;
-        diskMagic[2] = 0x09;
-        diskMagic[3] = 0x07;
-        netMagic[0] = 0xf4;
-        netMagic[1] = 0xe5;
-        netMagic[2] = 0xf3;
-        netMagic[3] = 0xf4;
-        nDefaultPort = 18333;
+        diskMagic[0] = 0x42;  // 'B'
+        diskMagic[1] = 0x46;  // 'F'
+        diskMagic[2] = 0x74;  // 't'
+        diskMagic[3] = 0x65;  // 'e'   -- "BFte", matching mainnet's "BFin"
+        netMagic[0] = 0x42;
+        netMagic[1] = 0x46;
+        netMagic[2] = 0x74;
+        netMagic[3] = 0x65;
+        nDefaultPort = 29768;
         nPruneAfterHeight = 1000;
         m_assumed_blockchain_size = 60;
         m_assumed_chain_state_size = 2;

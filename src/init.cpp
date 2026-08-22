@@ -1455,23 +1455,25 @@ bool AppInitParameterInteraction(Config &config) {
                                    arg, network, network));
     }
 
-    // BitFinite re-genesised MAINNET only. testnet, testnet4, scalenet and
-    // chipnet still carry Bitcoin Cash Node's genesis block, network magic and
-    // default ports, so they are BCH networks that happen to be reachable from
-    // this binary. They have no DNS seeds and no fixed seeds, so a node will not
-    // find peers on its own — but an -addnode to a BCH testnet peer WILL connect
-    // and sync BCH's chain, because the magic and genesis match.
+    // testnet, testnet4, scalenet and chipnet carry BitFinite genesis blocks but
+    // are not operated: no DNS seeds, no fixed seeds, no nodes. They also keep
+    // Bitcoin Cash Node's network magic and default ports, so a BCH testnet peer
+    // can complete the wire handshake before being dropped on genesis mismatch —
+    // noise, not a chain risk, since the genesis differs and no sync can occur.
     //
-    // Say so at startup. An integrator who reaches for -testnet expecting a
-    // BitFinite network should learn otherwise in the first ten lines of the log,
-    // not after a day of debugging. Regtest is the supported local network and
-    // matches mainnet on every upgrade parameter.
+    // Their consensus does NOT match mainnet. upgrade8Height and upgrade9Height
+    // are still BCH's (1500205 / 1552787 on testnet) and unreachable on a chain
+    // at height 0, so 64-bit script integers and native introspection are OFF
+    // here and ON for mainnet. The ASERT anchor also points at BCH height
+    // 1421481. Do not treat these as a rehearsal for mainnet behaviour.
+    //
+    // Regtest is the supported local network and does match mainnet on every
+    // upgrade parameter.
     if (network != CBaseChainParams::MAIN && network != CBaseChainParams::REGTEST) {
         InitWarning(strprintf(
-            _("Network '%s' is inherited from Bitcoin Cash Node and is NOT operated by "
-              "BitFinite. Its genesis block and network magic are BCH's, so peers found "
-              "on it belong to BCH, not to this chain. No BitFinite test network exists; "
-              "use -regtest for local testing."),
+            _("Network '%s' is not operated by BitFinite: it has no seeds and no nodes. "
+              "Its consensus parameters differ from mainnet, so it is not a valid "
+              "rehearsal for mainnet behaviour. Use -regtest for local testing."),
             network));
     }
 
