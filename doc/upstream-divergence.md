@@ -67,39 +67,37 @@ upstream-changed source files, 783 of them in files we have never touched — bu
 the single largest is `src/script/interpreter.cpp` at 3,528 lines, which is the
 Upgrade 11 CHIP work. "Backport the clean 783" would fork the chain.
 
-## Known divergence that is a defect, not a decision
+## Known divergence that was a defect — fixed 2026-08-22
 
-**`IsUpgrade11Enabled` is a live gate with nothing behind it.**
+`IsUpgrade11Enabled` used to be a live gate with nothing behind it: declared,
+implemented, and returning `true` from 15 May 2025 onward because the activation
+time was inherited from BCH, while no rule in the node ever consulted it. It has
+been **removed** (commit `b5fb09df`). Consensus behaviour is unchanged — nothing
+branched on it — but the source no longer claims an upgrade this chain does not
+implement.
 
-We carry the full activation plumbing for BCH's May 2025 upgrade:
+Chasing it turned up something worse. `upgrade11ActivationTime` was not purely
+dead: `init.cpp` feeds it to the "software outdated" mechanism, which warns and
+then **disables RPC** once the date passes. Every network carried a BCH date
+already in the past, so `-expire=1` would have expired a BitFinite node the
+moment it started, on another chain's schedule. Latent only because an earlier
+fix defaults `-expire` to false at the call site. It is now `0` on all six
+networks, which `software_outdated` treats as "never".
+
+Two help strings were also wrong and are corrected: `-expire` printed
+`DEFAULT_EXPIRE` (still upstream's `true`) while the call site passes `false`,
+and `-upgrade11activationtime` described itself as a BitFinite network upgrade
+rather than what it is, a node-expiry date. The argument keeps its inherited
+name so upstream's functional tests still run.
 
 ```bash
-grep -rn upgrade11ActivationTime src/chainparams.cpp   # 1747310400 = 2025-05-15, all networks
-grep -rn IsUpgrade11Enabled src/                       # activation.{h,cpp} + its own test, nothing else
+grep -rn IsUpgrade11Enabled src/          # only the removal note remains
+grep -rn upgrade11ActivationTime src/chainparams.cpp   # 0 on every network
 ```
 
-The function is implemented in `src/consensus/activation.cpp`, reads a
-configured activation time that has already passed, and therefore returns `true`
-today. **No production code consults it** — the only caller outside
-`consensus/activation.*` is `src/test/activation_tests.cpp`, which tests the gate
-itself and passes precisely because the gate works; it says nothing about whether
-any rule is attached to it. Upstream gates real consensus rules on
-the same function at `validation.cpp:1573`; we have neither those rules nor the
-files they need (`src/script/bigint.cpp`, `bigint.h`, `vm_limits.h`,
-`script_num_encoding.cpp` are all absent).
-
-Consensus impact: **none**. No code branches on the result, so no block is
-validated differently because of it.
-
-Why it still matters: the code asserts that BitFinite activated Upgrade 11 in
-May 2025. It did not. Anyone auditing the source — an exchange integration
-review, a security assessment, a listing questionnaire — will read that
-activation time and reasonably ask where the rules are. It should be removed
-deliberately, or completed deliberately, but not left as-is.
-
-We also retain `IsUpgrade8Enabled`, which upstream has since deleted as
-long-activated cleanup. Harmless, and a fair example of drift that is neither a
-fix nor a decision — just tidying we have not done.
+We still retain `IsUpgrade8Enabled`, which upstream deleted as long-activated
+cleanup. Harmless, and a fair example of drift that is neither a fix nor a
+decision — just tidying we have not done.
 
 ## Where we intentionally differ from BCHN beyond upgrades
 
