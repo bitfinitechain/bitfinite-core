@@ -219,6 +219,56 @@ between v27.0.0 and v29.1.0 — 101 untouched, 71 modified. **No security backlo
 either.** Not yet triaged: the 36 consensus files (deliberate divergence, see
 above) and the 630 upstream test files.
 
+### Third pass — the 36 consensus-sensitive files
+
+The question this set answers: which upstream work *forces* a hard fork, and which
+merely lives in consensus files without changing validity. 41 upstream commits
+landed here after our fork. They split cleanly.
+
+**Hard-fork territory — cannot be taken without a chain decision (8):**
+
+| | |
+|---|---|
+| `2026 CHIPS: Bitops, Loops, Functions, and P2S` | a whole further upgrade beyond Upgrade 11 |
+| `Remove script flags SCRIPT_64_BIT_INTEGERS / SCRIPT_NATIVE_INTROSPECTION` | changes script semantics |
+| `Post 2026 upgrade: checkpoints, height-based activation` | activation scheme |
+| `Upgrade 11: Switch to height-based activation` | activation scheme |
+| `Script VM: native int64_t with BigInt fallback` | depends on BigInt |
+| `C++20 TODOs for script/bigint.cpp` | depends on BigInt |
+| `LibAuth test vectors (on top of BigInt + VMLimits)` | depends on the CHIPs |
+| `Bump node expiry to May 2027` | scheduling, and we removed our expiry |
+
+Note the first row: BCH has a **2026 CHIP set** — Bitops, Loops, Functions, P2S —
+beyond the Upgrade 11 work already declined. The gap widens by design, not neglect.
+
+**The other 33 touch consensus files but do not change validity:** allocation and
+copying optimisations in `VerifyScript` and the checksig paths, the `StackItem`
+abstraction, `prevector`/`std::span` and `boost::variant`→`std::variant`
+migrations, `coinstatsindex`, INV relay tuning, GCC warning fixes, comment typos.
+Safe in principle, large in practice, and worth nothing to us on their own.
+
+**Three were worth extracting. One is now fixed.**
+
+`Trivial: Prevent UB in class CNoDestination` (upstream 2025-02-28) — **applied**.
+`operator<` returned `true` for two equivalent values, so both `a < b` and
+`b < a` held. That is not a strict weak ordering, and it is undefined behaviour in
+every ordered container `CTxDestination` reaches — the wallet puts it in
+`std::set<CTxDestination>` and `std::map<CTxDestination, …>` in
+`GetAddressGroupings`, `GetAddressBalances`, `ListCoins` and the address book. A
+wallet holding a non-standard output yields `CNoDestination`, and two of them in
+one container is enough; libstdc++ `std::sort` can read past the end of the range
+on a broken comparator. One line, no consensus effect — `CNoDestination` is an
+address classification used by wallet and RPC, never by script validation.
+
+Two left deliberately, both non-urgent:
+
+- `CBlockIndex::nChainTx` is still `unsigned int` here; upstream widened it to
+  `uint64_t`. At 16.4k blocks the 32-bit ceiling is decades away. Cheap, take it
+  with the next batch.
+- `-check-abla` (upstream 2024-12-23) makes the slow ABLA startup checks optional
+  and off by default. We run ABLA, so this is a real startup-time win on HDD, but
+  it is performance, not correctness.
+
 ## How to check this yourself
 
 ```bash

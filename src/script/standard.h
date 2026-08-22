@@ -78,7 +78,19 @@ public:
         return true;
     }
     friend bool operator<(const CNoDestination &, const CNoDestination &) {
-        return true;
+        // false, not true. All CNoDestination values are equivalent, and a
+        // strict weak ordering requires !(a < b) for equivalent a and b.
+        // Returning true made both (a < b) and (b < a) hold, which is UB for
+        // every ordered container CTxDestination lands in — and the wallet puts
+        // it in std::set<CTxDestination> and std::map<CTxDestination, ...> in
+        // GetAddressGroupings, GetAddressBalances, ListCoins and the address
+        // book. A wallet holding a non-standard output produces CNoDestination,
+        // and two of them in one container is enough. libstdc++ std::sort can
+        // read past the end of the range on a broken comparator.
+        // Backport of BCHN "Trivial: Prevent UB in class CNoDestination"
+        // (2025-02-28). Not a consensus change — CNoDestination is an address
+        // classification used by wallet and RPC, never by script validation.
+        return false;
     }
 };
 
