@@ -123,6 +123,37 @@ Testnet coins have no value and the chain carries no permanence guarantee.
   than trusted. Four cores verify or find a nonce at `nBits` 0x1d00ffff in
   around 77 seconds.
 
+## Verifying your download
+
+Both builds ship unsigned. There is no code-signing certificate for BitFinite
+yet, so the published `SHA256SUMS` file is the trust mechanism — check it rather
+than relying on the operating system to vouch for the binary.
+
+```
+sha256sum -c SHA256SUMS --ignore-missing
+```
+
+On Windows, PowerShell:
+
+```
+Get-FileHash bitfinite-v3.1.3-x86_64-windows.zip -Algorithm SHA256
+```
+
+and compare against the matching line in `SHA256SUMS`.
+
+**Windows will warn you.** SmartScreen and Defender flag unsigned executables
+from the internet, and a node that opens network sockets and holds a wallet is
+exactly the shape of thing they warn about. The warning is about the missing
+signature, not about anything detected in the binary. If that is not acceptable
+for your environment, run the Linux build, or run Windows inside a VM.
+
+**One asymmetry worth knowing.** The Linux build reproduces: build it yourself
+in the same container and you get the same binary, so the hash is something you
+can independently confirm. The Windows build does not reproduce, so its checksum
+attests only that the file you downloaded is the file CI produced. That is a
+real difference in how much the two checksums prove, and it is why
+`scripts/release-checksums.txt` distinguishes binary hashes from archive hashes.
+
 ## For developers
 
 - **`miner_tests` was ported to regtest**, taking it from a `SIGABRT` and 111
