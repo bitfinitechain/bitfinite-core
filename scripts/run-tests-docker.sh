@@ -41,21 +41,33 @@ EXCLUDED=(
   # state of the entire corpus: the raw count was 463 failures, of which 449
   # were collateral. Fix these before the plain failures — an abort destroys
   # information, a failed check only reports one.
-  # miner_tests — NOT re-mineable, do not try. Its blockinfo[] nonce table was
-  #   mined against upstream's chain; our genesis differs, so every
-  #   hashPrevBlock differs and the nonces no longer satisfy PoW. Blocks are
-  #   rejected and the later bad-txns-inputs-missingorspent is fallout from
-  #   spending coinbases of blocks that were never accepted. BLOCK ASSEMBLY IS
-  #   FINE — this is stale data, not a defect.
-  #   Regenerating the table is INFEASIBLE: TestingSetup defaults to
-  #   CBaseChainParams::MAIN, and our ASERT anchor puts mainnet at ~70,000
-  #   difficulty from block 2 — 3.0e14 hashes per block against difficulty-1's
-  #   4.3e9, i.e. 70,001x harder. 110 blocks is ~3.3e16 hashes. Upstream could
-  #   precompute theirs because BCH mainnet started at difficulty 1; the same
-  #   choice that stops BFX being trivially mineable stops this working.
-  #   The real fix is to port the suite to REGTEST (fPowNoRetargeting, powLimit
-  #   7fffffff…, so PoW is free). That is a test DESIGN change, not a data
-  #   refresh, and needs its own reviewed commit.
+  # miner_tests — PORTED TO REGTEST 2026-08-22, down from a SIGABRT and 111
+  #   failures to 3. Still excluded for those 3, all in TestPackageSelection.
+  #
+  #   The old note here said the nonce table was the problem. It was not, and
+  #   the correction matters because it points at the wrong class of fix. The
+  #   real cause is that OUR chains activate every upgrade at height 0, while
+  #   upstream activates Magnetic Anomaly at mainnet height 556766 and Upgrade9
+  #   later still. This test mines 110 blocks, so upstream runs it entirely in a
+  #   PRE-2018 rule regime that we do not have and cannot have. Three separate
+  #   consensus rules therefore bite us and never bite upstream:
+  #     * minimum transaction size — 65 bytes under Upgrade9, 100 before it.
+  #       The test's coinbase was ~62 bytes and every transaction it builds was
+  #       ~62. Everything was rejected bad-txns-undersize.
+  #     * SCRIPT_VERIFY_SIGPUSHONLY — the "block size > limit" case padded a
+  #       scriptSig with OP_DROP, which is not a push.
+  #     * SCRIPT_VERIFY_CLEANSTACK — that same scriptSig left 19 stack items.
+  #   Fixed by padding to the size floor and moving the bulk into an
+  #   unspendable output. PoW is now ground at run time on regtest rather than
+  #   read from a table, which is what made the port possible at all.
+  #
+  #   WHAT IS LEFT: TestPackageSelection expects medium-fee before a high-fee
+  #   transaction with a low-fee parent. All three are 69 bytes, so the package
+  #   scores 51000/138 = 369 sat/byte against medium's 10000/69 = 145 and the
+  #   package is selected first. No equal-sized arrangement can satisfy the
+  #   expectation. The scenario needs a parent that is physically larger, so its
+  #   FEERATE is low rather than just its fee. That is an input change and wants
+  #   its own commit — do NOT edit the expected txids to match our output.
   miner_tests
   # pow_tests — LOWEST VALUE, do last. assert(nHeight >= 4032) where the test
   #   builds 2049 (upstream's 2016+34) and blocks(3000) is too small anyway. It

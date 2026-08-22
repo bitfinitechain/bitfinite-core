@@ -14,6 +14,7 @@
 #include <consensus/tx_verify.h>
 #include <consensus/validation.h>
 #include <policy/policy.h>
+#include <pow.h>
 #include <pubkey.h>
 #include <script/standard.h>
 #include <txmempool.h>
@@ -29,9 +30,54 @@
 #include <memory>
 #include "compat/optional.h"
 
-BOOST_FIXTURE_TEST_SUITE(miner_tests, TestingSetup)
+// This suite runs on REGTEST, not mainnet, and that is load-bearing.
+//
+// It needs 110 blocks before it can spend a coinbase, and it used to get them
+// from a hardcoded {extranonce, nonce} table mined against upstream's chain.
+// Our genesis differs, so every hashPrevBlock differs, so none of those nonces
+// satisfied proof of work any more: the blocks were rejected, and the later
+// bad-txns-inputs-missingorspent failures were fallout from spending coinbases
+// of blocks that were never accepted. Block assembly was never the problem.
+//
+// Regenerating the table for mainnet is not possible. Our ASERT anchor puts
+// mainnet at roughly 70,000 difficulty from block 2 — about 3e14 hashes per
+// block against difficulty-1's 4.3e9 — so 110 blocks is on the order of 3e16
+// hashes. Upstream could precompute theirs only because BCH mainnet began at
+// difficulty 1. The same choice that stops BFX being trivially mineable stops
+// the table being regenerable.
+//
+// On regtest powLimit is 7fffffff… and fPowNoRetargeting is set, so a valid
+// nonce is found in about one attempt and the blocks are ground at run time
+// instead. Two further regtest properties matter here: the subsidy halving
+// interval is 150, so all 110 blocks pay 50 COIN and BLOCKSUBSIDY below stays
+// right; and BIP34Height is 100000000, so the deliberately non-BIP34 coinbase
+// scriptSig this test builds is not rejected for its height encoding, which it
+// would be on mainnet where BIP34 is active from height 0.
+struct RegtestingSetup : public TestingSetup {
+    RegtestingSetup() : TestingSetup(CBaseChainParams::REGTEST) {}
+};
+
+BOOST_FIXTURE_TEST_SUITE(miner_tests, RegtestingSetup)
 
 static CFeeRate blockMinFeeRate = CFeeRate(DEFAULT_BLOCK_MIN_TX_FEE_PER_KB);
+
+// The scriptSig used to spend the coinbase outputs this suite mines, which have
+// an empty scriptPubKey.
+//
+// It has to be push-only and leave exactly one truthy stack item, because
+// Magnetic Anomaly is active from height 0 on our chains and that makes
+// SCRIPT_VERIFY_SIGPUSHONLY and SCRIPT_VERIFY_CLEANSTACK consensus rules. A bare
+// OP_1 satisfies both and is what this test used to use — but the resulting
+// transaction serialises to 62 bytes, and Upgrade9 sets a 65-byte floor, so
+// ContextualCheckTransaction rejects it as bad-txns-undersize. Pushing eight
+// bytes instead clears the floor while keeping the script trivially valid.
+//
+// None of this is fork-specific divergence. Both rules are ordinary Bitcoin Cash
+// consensus; the test simply predates them and was never updated, which is why
+// it could only ever have run on a chain that had not activated them.
+static CScript MinSizeSpendSig() {
+    return CScript() << std::vector<uint8_t>(8, 0x01);
+}
 
 static BlockAssembler AssemblerForTest(const Config &config, const CTxMemPool &mempool) {
     BlockAssembler::Options options;
@@ -39,39 +85,14 @@ static BlockAssembler AssemblerForTest(const Config &config, const CTxMemPool &m
     return BlockAssembler(config, mempool, options);
 }
 
-static struct {
-    uint8_t extranonce;
-    uint32_t nonce;
-} blockinfo[] = {
-    {4, 0xa4a3e223}, {2, 0x15c32f9e}, {1, 0x0375b547}, {1, 0x7004a8a5},
-    {2, 0xce440296}, {2, 0x52cfe198}, {1, 0x77a72cd0}, {2, 0xbb5d6f84},
-    {2, 0x83f30c2c}, {1, 0x48a73d5b}, {1, 0xef7dcd01}, {2, 0x6809c6c4},
-    {2, 0x0883ab3c}, {1, 0x087bbbe2}, {2, 0x2104a814}, {2, 0xdffb6daa},
-    {1, 0xee8a0a08}, {2, 0xba4237c1}, {1, 0xa70349dc}, {1, 0x344722bb},
-    {3, 0xd6294733}, {2, 0xec9f5c94}, {2, 0xca2fbc28}, {1, 0x6ba4f406},
-    {2, 0x015d4532}, {1, 0x6e119b7c}, {2, 0x43e8f314}, {2, 0x27962f38},
-    {2, 0xb571b51b}, {2, 0xb36bee23}, {2, 0xd17924a8}, {2, 0x6bc212d9},
-    {1, 0x630d4948}, {2, 0x9a4c4ebb}, {2, 0x554be537}, {1, 0xd63ddfc7},
-    {2, 0xa10acc11}, {1, 0x759a8363}, {2, 0xfb73090d}, {1, 0xe82c6a34},
-    {1, 0xe33e92d7}, {3, 0x658ef5cb}, {2, 0xba32ff22}, {5, 0x0227a10c},
-    {1, 0xa9a70155}, {5, 0xd096d809}, {1, 0x37176174}, {1, 0x830b8d0f},
-    {1, 0xc6e3910e}, {2, 0x823f3ca8}, {1, 0x99850849}, {1, 0x7521fb81},
-    {1, 0xaacaabab}, {1, 0xd645a2eb}, {5, 0x7aea1781}, {5, 0x9d6e4b78},
-    {1, 0x4ce90fd8}, {1, 0xabdc832d}, {6, 0x4a34f32a}, {2, 0xf2524c1c},
-    {2, 0x1bbeb08a}, {1, 0xad47f480}, {1, 0x9f026aeb}, {1, 0x15a95049},
-    {2, 0xd1cb95b2}, {2, 0xf84bbda5}, {1, 0x0fa62cd1}, {1, 0xe05f9169},
-    {1, 0x78d194a9}, {5, 0x3e38147b}, {5, 0x737ba0d4}, {1, 0x63378e10},
-    {1, 0x6d5f91cf}, {2, 0x88612eb8}, {2, 0xe9639484}, {1, 0xb7fabc9d},
-    {2, 0x19b01592}, {1, 0x5a90dd31}, {2, 0x5bd7e028}, {2, 0x94d00323},
-    {1, 0xa9b9c01a}, {1, 0x3a40de61}, {1, 0x56e7eec7}, {5, 0x859f7ef6},
-    {1, 0xfd8e5630}, {1, 0x2b0c9f7f}, {1, 0xba700e26}, {1, 0x7170a408},
-    {1, 0x70de86a8}, {1, 0x74d64cd5}, {1, 0x49e738a1}, {2, 0x6910b602},
-    {0, 0x643c565f}, {1, 0x54264b3f}, {2, 0x97ea6396}, {2, 0x55174459},
-    {2, 0x03e8779a}, {1, 0x98f34d8f}, {1, 0xc07b2b07}, {1, 0xdfe29668},
-    {1, 0x3141c7c1}, {1, 0xb3b595f4}, {1, 0x735abf08}, {5, 0x623bfbce},
-    {2, 0xd351e722}, {1, 0xf4ca48c9}, {1, 0x5b19c670}, {1, 0xa164bf0e},
-    {2, 0xbbbeb305}, {2, 0xfe1c810a},
-};
+// How many blocks to mine before the test can spend a coinbase. COINBASE_MATURITY
+// is 100, and the test spends the first few coinbases, so 110 leaves headroom.
+// This replaces a 110-entry table of {extranonce, nonce} pairs; the nonces are
+// now ground at run time (see the suite comment) and the extranonce is simply
+// the loop index, which is all it ever needed to be — its only job is to keep
+// each coinbase distinct.
+static constexpr size_t NUM_BLOCKS_TO_MINE = 110;
+
 
 using CBlockIndexPtr = std::unique_ptr<CBlockIndex>;
 
@@ -102,7 +123,7 @@ static void TestPackageSelection(const Config &config,
     // transaction when the high-fee tx has a low fee parent.
     CMutableTransaction tx;
     tx.vin.resize(1);
-    tx.vin[0].scriptSig = CScript() << OP_1;
+    tx.vin[0].scriptSig = MinSizeSpendSig();
     tx.vin[0].prevout = COutPoint(txFirst[0]->GetId(), 0);
     tx.vout.resize(1);
     tx.vout[0].nValue = int64_t(5000000000LL - 1000) * SATOSHI;
@@ -137,6 +158,27 @@ static void TestPackageSelection(const Config &config,
         AssemblerForTest(config, g_mempool).CreateNewBlock(scriptPubKey);
 
 
+    // KNOWN FAILURE on BitFinite — the last thing keeping this suite excluded.
+    //
+    // These three assertions are upstream's, unchanged, and they expect the
+    // medium-fee transaction to be mined ahead of the high-fee one whose parent
+    // pays a low fee. What the assembler actually produces here is
+    // parent, high, medium — the package first.
+    //
+    // Measured: all three transactions serialise to 69 bytes, so the package
+    // scores (1000 + 50000) / 138 = 369 sat/byte against medium's 10000 / 69 =
+    // 145. Ancestor-feerate selection prefers the package, and no choice of
+    // equal-sized transactions can make 51000/2s smaller than 10000/s. The
+    // expectation cannot hold as written; the stated intent needs a parent that
+    // is genuinely low FEERATE, meaning a physically larger transaction, not
+    // merely a low absolute fee.
+    //
+    // Deliberately NOT "fixed" by editing these expected values. Rewriting an
+    // expectation to match whatever our code emits would assert only that our
+    // code does what our code does, and would give that a test's authority. The
+    // honest fix is to change the INPUTS so the scenario expresses its intent,
+    // and that wants its own reviewed commit with the fee arithmetic derived
+    // first.
     BOOST_CHECK(pblocktemplate->block.vtx[1]->GetId() == mediumFeeTxId);
     BOOST_CHECK(pblocktemplate->block.vtx[2]->GetId() == parentTxId);
     BOOST_CHECK(pblocktemplate->block.vtx[3]->GetId() == highFeeTxId);
@@ -227,7 +269,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity) {
     // Therefore, load 100 blocks :)
     int baseheight = 0;
     std::vector<CTransactionRef> txFirst;
-    for (size_t i = 0; i < sizeof(blockinfo) / sizeof(*blockinfo); ++i) {
+    for (size_t i = 0; i < NUM_BLOCKS_TO_MINE; ++i) {
         // pointer for convenience.
         CBlock *pblock = &pblocktemplate->block;
         {
@@ -237,8 +279,25 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity) {
             CMutableTransaction txCoinbase(*pblock->vtx[0]);
             txCoinbase.nVersion = 1;
             txCoinbase.vin[0].scriptSig = CScript();
-            txCoinbase.vin[0].scriptSig.push_back(blockinfo[i].extranonce);
+            txCoinbase.vin[0].scriptSig.push_back(uint8_t(i));
             txCoinbase.vin[0].scriptSig.push_back(::ChainActive().Height());
+            // Pad the coinbase up to the minimum transaction size.
+            //
+            // Without this the block is rejected with bad-txns-undersize, and
+            // that — not the proof of work — is what actually stopped this suite
+            // running. The coinbase built here is about 62 bytes serialised,
+            // while ContextualCheckTransaction enforces a floor of 65 bytes once
+            // Upgrade9 is active and 100 before it. Both are active from height 0
+            // on our chains (magneticAnomalyHeight is 0), so pad past the larger
+            // of the two and the rule is satisfied either way.
+            //
+            // This is not a workaround. A real coinbase carries an extranonce and
+            // a miner tag and is comfortably over 100 bytes; a two-byte scriptSig
+            // is the unrealistic thing here. The scriptSig may legally be 2 to 100
+            // bytes, so padding to 64 stays well inside that.
+            while (txCoinbase.vin[0].scriptSig.size() < 64) {
+                txCoinbase.vin[0].scriptSig.push_back(uint8_t(0x00));
+            }
             txCoinbase.vout.resize(1);
             txCoinbase.vout[0].scriptPubKey = CScript();
             pblock->vtx[0] = MakeTransactionRef(std::move(txCoinbase));
@@ -249,7 +308,14 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity) {
                 txFirst.push_back(pblock->vtx[0]);
             }
             pblock->hashMerkleRoot = BlockMerkleRoot(*pblock);
-            pblock->nNonce = blockinfo[i].nonce;
+            // Grind. On regtest the target is 7fffffff…, so this almost always
+            // succeeds on the first nonce; the loop is here for correctness,
+            // not because it is expected to spin.
+            pblock->nNonce = 0;
+            while (!CheckProofOfWork(pblock->GetHash(), pblock->nBits,
+                                     chainparams.GetConsensus())) {
+                ++pblock->nNonce;
+            }
         }
         std::shared_ptr<const CBlock> shared_pblock =
             std::make_shared<const CBlock>(*pblock);
@@ -270,18 +336,36 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity) {
     const Amount HIGHERFEE = 4 * COIN;
 
     // block size > limit
+    //
+    // The bulk used to live in the scriptSig: 18 * (520-byte push + OP_DROP)
+    // followed by OP_1, about 9433 bytes. That construction predates the 2018
+    // Magnetic Anomaly rules and cannot be used on this chain. Magnetic Anomaly
+    // is active from height 0 here, which makes SCRIPT_VERIFY_SIGPUSHONLY and
+    // SCRIPT_VERIFY_CLEANSTACK consensus (validation.cpp GetBlockScriptFlags),
+    // so a scriptSig may contain nothing but pushes and must leave exactly one
+    // stack item. OP_DROP breaks the first rule and nineteen pushes break the
+    // second; the block was rejected with blk-bad-inputs.
+    //
+    // The padding therefore moves into an unspendable output, which no script
+    // rule constrains. The transaction stays the same order of magnitude, which
+    // is all this section needs — its job is to put enough bytes in the mempool
+    // that the assembler has to make a size decision, not to exercise scripts.
+    // The spending input uses the same push-only form as every other case below.
     tx.vin.resize(1);
-    tx.vin[0].scriptSig = CScript();
-    // 18 * (520char + DROP) + OP_1 = 9433 bytes
-    std::vector<uint8_t> vchData(520);
-    for (unsigned int i = 0; i < 18; ++i) {
-        tx.vin[0].scriptSig << vchData << OP_DROP;
-    }
-
-    tx.vin[0].scriptSig << OP_1;
+    tx.vin[0].scriptSig = MinSizeSpendSig();
     tx.vin[0].prevout = COutPoint(txFirst[0]->GetId(), 0);
-    tx.vout.resize(1);
+    tx.vout.resize(2);
     tx.vout[0].nValue = BLOCKSUBSIDY;
+    // ~9400 bytes of padding, carried in a provably-unspendable output so it
+    // costs nothing and is never redeemed by the chained transactions below.
+    tx.vout[1].nValue = Amount::zero();
+    tx.vout[1].scriptPubKey = CScript() << OP_RETURN;
+    {
+        const std::vector<uint8_t> vchData(520);
+        for (unsigned int i = 0; i < 18; ++i) {
+            tx.vout[1].scriptPubKey << vchData;
+        }
+    }
     for (unsigned int i = 0; i < 128; ++i) {
         tx.vout[0].nValue -= LOWFEE;
         const TxId txid = tx.GetId();
@@ -298,6 +382,10 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity) {
                                      .CreateNewBlock(scriptPubKey));
     g_mempool.clear();
 
+    // Drop the padding output again, so the cases below build the same small
+    // transactions they always did rather than inheriting 9 kB of OP_RETURN.
+    tx.vout.resize(1);
+
     // Orphan in mempool, template creation fails.
     g_mempool.addUnchecked(entry.Fee(LOWFEE).Time(GetTime()).FromTx(tx));
     BOOST_CHECK_EXCEPTION(
@@ -306,7 +394,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity) {
     g_mempool.clear();
 
     // Child with higher priority than parent.
-    tx.vin[0].scriptSig = CScript() << OP_1;
+    tx.vin[0].scriptSig = MinSizeSpendSig();
     tx.vin[0].prevout = COutPoint(txFirst[1]->GetId(), 0);
     tx.vout[0].nValue = BLOCKSUBSIDY - HIGHFEE;
     TxId txid = tx.GetId();
@@ -314,7 +402,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity) {
         entry.Fee(HIGHFEE).Time(GetTime()).SpendsCoinbase(true).FromTx(tx));
     tx.vin[0].prevout = COutPoint(txid, 0);
     tx.vin.resize(2);
-    tx.vin[1].scriptSig = CScript() << OP_1;
+    tx.vin[1].scriptSig = MinSizeSpendSig();
     tx.vin[1].prevout = COutPoint(txFirst[0]->GetId(), 0);
     // First txn output + fresh coinbase - new txn fee.
     tx.vout[0].nValue = tx.vout[0].nValue + BLOCKSUBSIDY - HIGHERFEE;
@@ -328,7 +416,12 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity) {
     // Coinbase in mempool, template creation fails.
     tx.vin.resize(1);
     tx.vin[0].prevout = COutPoint();
-    tx.vin[0].scriptSig = CScript() << OP_0 << OP_1;
+    // Padded past the 65-byte floor like every other transaction here. Without
+    // it the transaction is dropped as bad-txns-undersize during assembly, so
+    // the bad-tx-coinbase check below never runs and no exception is raised —
+    // the test would silently stop testing the thing it names.
+    tx.vin[0].scriptSig = CScript() << OP_0 << OP_1
+                                    << std::vector<uint8_t>(8, 0x01);
     tx.vout[0].nValue = Amount::zero();
     txid = tx.GetId();
     // Give it a fee so it'll get mined.
@@ -342,9 +435,9 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity) {
 
     // Double spend txn pair in mempool, template creation fails.
     tx.vin[0].prevout = COutPoint(txFirst[0]->GetId(), 0);
-    tx.vin[0].scriptSig = CScript() << OP_1;
+    tx.vin[0].scriptSig = MinSizeSpendSig();
     tx.vout[0].nValue = BLOCKSUBSIDY - HIGHFEE;
-    tx.vout[0].scriptPubKey = CScript() << OP_1;
+    tx.vout[0].scriptPubKey = MinSizeSpendSig();
     txid = tx.GetId();
     g_mempool.addUnchecked(
         entry.Fee(HIGHFEE).Time(GetTime()).SpendsCoinbase(true).FromTx(tx));
@@ -389,7 +482,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity) {
 
     // Invalid p2sh txn in mempool, template creation fails
     tx.vin[0].prevout = COutPoint(txFirst[0]->GetId(), 0);
-    tx.vin[0].scriptSig = CScript() << OP_1;
+    tx.vin[0].scriptSig = MinSizeSpendSig();
     tx.vout[0].nValue = BLOCKSUBSIDY - LOWFEE;
     script = CScript() << OP_0;
     tx.vout[0].scriptPubKey = GetScriptForDestination(ScriptID(script, false /* no p2sh_32 */));
@@ -430,13 +523,13 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity) {
     prevheights.resize(1);
     // Only 1 transaction.
     tx.vin[0].prevout = COutPoint(txFirst[0]->GetId(), 0);
-    tx.vin[0].scriptSig = CScript() << OP_1;
+    tx.vin[0].scriptSig = MinSizeSpendSig();
     // txFirst[0] is the 2nd block
     tx.vin[0].nSequence = ::ChainActive().Tip()->nHeight + 1;
     prevheights[0] = baseheight + 1;
     tx.vout.resize(1);
     tx.vout[0].nValue = BLOCKSUBSIDY - HIGHFEE;
-    tx.vout[0].scriptPubKey = CScript() << OP_1;
+    tx.vout[0].scriptPubKey = MinSizeSpendSig();
     tx.nLockTime = 0;
     txid = tx.GetId();
     g_mempool.addUnchecked(
