@@ -1455,6 +1455,26 @@ bool AppInitParameterInteraction(Config &config) {
                                    arg, network, network));
     }
 
+    // BitFinite re-genesised MAINNET only. testnet, testnet4, scalenet and
+    // chipnet still carry Bitcoin Cash Node's genesis block, network magic and
+    // default ports, so they are BCH networks that happen to be reachable from
+    // this binary. They have no DNS seeds and no fixed seeds, so a node will not
+    // find peers on its own — but an -addnode to a BCH testnet peer WILL connect
+    // and sync BCH's chain, because the magic and genesis match.
+    //
+    // Say so at startup. An integrator who reaches for -testnet expecting a
+    // BitFinite network should learn otherwise in the first ten lines of the log,
+    // not after a day of debugging. Regtest is the supported local network and
+    // matches mainnet on every upgrade parameter.
+    if (network != CBaseChainParams::MAIN && network != CBaseChainParams::REGTEST) {
+        InitWarning(strprintf(
+            _("Network '%s' is inherited from Bitcoin Cash Node and is NOT operated by "
+              "BitFinite. Its genesis block and network magic are BCH's, so peers found "
+              "on it belong to BCH, not to this chain. No BitFinite test network exists; "
+              "use -regtest for local testing."),
+            network));
+    }
+
     // Warn if unrecognized section name are present in the config file.
     for (const auto &section : gArgs.GetUnrecognizedSections()) {
         InitWarning(
