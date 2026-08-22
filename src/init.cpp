@@ -531,13 +531,17 @@ void SetupServerArgs() {
                            defaultChainParams->GetConsensus().nMinimumChainWork.GetHex(),
                            testnetChainParams->GetConsensus().nMinimumChainWork.GetHex()),
                  ArgsManager::ALLOW_ANY | ArgsManager::DEBUG_ONLY, OptionsCategory::OPTIONS);
+    // Reports 0, not software_outdated::DEFAULT_EXPIRE. That constant is still
+    // upstream's `true`, but the call site below passes false, so printing the
+    // constant told the operator the opposite of what the node does. BitFinite
+    // has no scheduled expiry: upgrade11ActivationTime is 0 on every network
+    // (see consensus/params.h), which disables the mechanism even when enabled.
     gArgs.AddArg("-expire",
-                 strprintf("Limit functionality of this node after the tentative upgrade "
-                           "date of May 15, 2025 (date can be set with "
-                           "-upgrade11activationtime=<n>). To avoid inadvertently using the "
-                           "wrong chain, the RPC interface will be disabled at that time. "
-                           "(default: %d)",
-                           software_outdated::DEFAULT_EXPIRE),
+                 "Limit functionality of this node after a scheduled upgrade date, "
+                 "disabling the RPC interface once it passes, so a node cannot "
+                 "silently stay on the wrong chain. BitFinite schedules no such "
+                 "date, so this does nothing unless one is set with "
+                 "-upgrade11activationtime=<n>. (default: 0)",
                  ArgsManager::ALLOW_ANY, OptionsCategory::OPTIONS);
     gArgs.AddArg("-par=<n>",
                  strprintf("Set the number of script verification threads (up to %d, 0 "
@@ -903,10 +907,14 @@ void SetupServerArgs() {
                            defaultChainParams->GetConsensus().upgrade10ActivationTime,
                            chipnetChainParams->GetConsensus().upgrade10ActivationTime),
                  true, OptionsCategory::DEBUG_TEST);
+    // Retained, but it schedules NODE EXPIRY, not a BitFinite upgrade. The name
+    // is inherited from BCH and kept so the upstream functional tests that pass
+    // it still run. There is no BitFinite Upgrade 11 — the consensus gate of
+    // that name was removed; see doc/upstream-divergence.md.
     gArgs.AddArg(
         "-upgrade11activationtime=<n>",
-        strprintf("Activation time of the tentative May 2025 BitFinite Network Upgrade (<n> seconds since epoch, "
-                  "default: %d, chipnet: %d)",
+        strprintf("Node-expiry date used by -expire (<n> seconds since epoch). BitFinite sets "
+                  "no expiry, so this is 0 unless overridden (default: %d, chipnet: %d)",
                   defaultChainParams->GetConsensus().upgrade11ActivationTime,
                   chipnetChainParams->GetConsensus().upgrade11ActivationTime),
         true, OptionsCategory::DEBUG_TEST);

@@ -53,7 +53,17 @@ struct Params {
     int upgrade9Height;
     /** Unix time used for MTP activation of 15 May 2024 12:00:00 UTC upgrade */
     int64_t upgrade10ActivationTime;
-    /** Unix time used for tentative MTP activation of 15 May 2025 12:00:00 UTC upgrade */
+    /**
+     * Node-expiry date, inherited from BCH's Upgrade 11 scheduling.
+     *
+     * BitFinite sets this to 0 on every network. It no longer gates any
+     * consensus rule — see activation.cpp — and its one remaining consumer is
+     * the "software outdated" mechanism in init.cpp, which uses it to warn and
+     * then disable RPC once the date passes. BCH's date (15 May 2025) is in the
+     * past, so leaving it populated meant `-expire=1` would expire a BitFinite
+     * node the moment it started, on a schedule belonging to another chain.
+     * Zero disables that path outright (software_outdated treats 0 as "never").
+     */
     int64_t upgrade11ActivationTime;
 
     /** Default blocksize limit -- can be overridden with the -excessiveblocksize= command-line switch.

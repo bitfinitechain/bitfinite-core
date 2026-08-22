@@ -84,7 +84,7 @@ public:
         consensus.upgrade8Height = 0;
         consensus.upgrade9Height = 0;
         consensus.upgrade10ActivationTime = 1715774400;
-        consensus.upgrade11ActivationTime = 1747310400;
+        consensus.upgrade11ActivationTime = 0;  // no node expiry — see consensus/params.h
 
         // --- DIFFICULTY: ASERT FROM GENESIS, RE-ANCHORED AT ~70,000 ---
         // Genesis re-anchor (2026-06-29, fair launch): the chain OPERATES at ~70,000
@@ -241,7 +241,7 @@ public:
         consensus.upgrade8Height = 1500205;
         consensus.upgrade9Height = 1552787;
         consensus.upgrade10ActivationTime = 1715774400;
-        consensus.upgrade11ActivationTime = 1747310400;
+        consensus.upgrade11ActivationTime = 0;  // no node expiry — see consensus/params.h
         consensus.nDefaultConsensusBlockSize = DEFAULT_CONSENSUS_BLOCK_SIZE;
         consensus.nDefaultGeneratedBlockSizePercent = 50.0;
         assert(consensus.nDefaultGeneratedBlockSizePercent >= 0.0 &&
@@ -335,7 +335,7 @@ public:
         consensus.upgrade8Height = 95464;
         consensus.upgrade9Height = 148043;
         consensus.upgrade10ActivationTime = 1715774400;
-        consensus.upgrade11ActivationTime = 1747310400;
+        consensus.upgrade11ActivationTime = 0;  // no node expiry — see consensus/params.h
         consensus.nDefaultConsensusBlockSize = 2 * ONE_MEGABYTE;
         consensus.nDefaultGeneratedBlockSizePercent = 100.0;
         assert(consensus.nDefaultGeneratedBlockSizePercent >= 0.0 &&
@@ -428,7 +428,7 @@ public:
         consensus.upgrade8Height = 10'006;
         consensus.upgrade9Height = 10'006;
         consensus.upgrade10ActivationTime = 1715774400;
-        consensus.upgrade11ActivationTime = 1747310400;
+        consensus.upgrade11ActivationTime = 0;  // no node expiry — see consensus/params.h
         consensus.nDefaultConsensusBlockSize = 256 * ONE_MEGABYTE;
         consensus.nDefaultGeneratedBlockSizePercent = 6.25;
         assert(consensus.nDefaultGeneratedBlockSizePercent >= 0.0 &&
@@ -517,7 +517,7 @@ public:
         consensus.upgrade8Height = 95464;
         consensus.upgrade9Height = 121956;
         consensus.upgrade10ActivationTime = 1700049600;
-        consensus.upgrade11ActivationTime = 1731672000;
+        consensus.upgrade11ActivationTime = 0;  // no node expiry — see consensus/params.h
         consensus.nDefaultConsensusBlockSize = 2 * ONE_MEGABYTE;
         consensus.nDefaultGeneratedBlockSizePercent = 100.0;
         assert(consensus.nDefaultGeneratedBlockSizePercent >= 0.0 &&
@@ -612,7 +612,7 @@ public:
         consensus.upgrade8Height = 0;
         consensus.upgrade9Height = 0;
         consensus.upgrade10ActivationTime = 1715774400;
-        consensus.upgrade11ActivationTime = 1747310400;
+        consensus.upgrade11ActivationTime = 0;  // no node expiry — see consensus/params.h
         consensus.nDefaultConsensusBlockSize = DEFAULT_CONSENSUS_BLOCK_SIZE;
         consensus.nDefaultGeneratedBlockSizePercent = 50.0;
         assert(consensus.nDefaultGeneratedBlockSizePercent >= 0.0 &&

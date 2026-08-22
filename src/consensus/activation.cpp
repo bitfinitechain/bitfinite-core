@@ -129,14 +129,15 @@ bool IsUpgrade10Enabled(const Consensus::Params &params, const CBlockIndex *pind
     return IsUpgrade10Enabled(params, pindexPrev->GetMedianTimePast());
 }
 
-static bool IsUpgrade11Enabled(const Consensus::Params &params, const int64_t nMedianTimePast) {
-    return nMedianTimePast >= gArgs.GetArg("-upgrade11activationtime", params.upgrade11ActivationTime);
-}
-
-bool IsUpgrade11Enabled(const Consensus::Params &params, const CBlockIndex *pindexPrev) {
-    if (pindexPrev == nullptr) {
-        return false;
-    }
-
-    return IsUpgrade11Enabled(params, pindexPrev->GetMedianTimePast());
-}
+// IsUpgrade11Enabled was removed 2026-08-22. BitFinite has not adopted BCH's
+// Upgrade 11 (the VM Limits and BigInt CHIPs) — those change which scripts are
+// valid, so adopting them is a hard fork of this chain and a decision to take
+// deliberately, not a backport. The gate itself was never wired to any rule
+// here: it was declared, implemented, returned true from 15 May 2025 onward
+// because the activation time was inherited from BCH, and nothing in the node
+// ever asked. Its only caller was its own unit test.
+//
+// Keeping it cost nothing at runtime and cost credibility everywhere else: the
+// source asserted an upgrade this chain does not implement. If Upgrade 11 is
+// ever adopted, re-add the gate together with the rules it gates.
+// See doc/upstream-divergence.md.
