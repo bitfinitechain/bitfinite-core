@@ -250,7 +250,7 @@ public:
         consensus.asertAnchorParams = Consensus::Params::ASERTAnchor{
             0,          // Anchor Height (genesis) — was BCH height 1421481, unreachable here
             0x1d00ffff, // Anchor Bits (powLimit / diff-1) — testnet stays cheap to mine
-            1296688604, // Anchor Time (== genesis nTime)
+            1787400000, // Anchor Time (== genesis nTime)
         };
         consensus.ablaConfig = abla::Config::MakeDefault(consensus.nDefaultConsensusBlockSize, /* fixedSize = */ true);
         assert(abla::State(consensus.ablaConfig, 0).GetBlockSizeLimit() == consensus.nDefaultConsensusBlockSize);
@@ -269,12 +269,24 @@ public:
         m_assumed_blockchain_size = 60;
         m_assumed_chain_state_size = 2;
 
-        // BFX testnet genesis: re-mined for the v3 timestamp (nBits 0x1d00ffff).
-        genesis = CreateGenesisBlock(1296688604, 1168812312, 0x1d00ffff, 1, 50 * COIN);
+        // BFX testnet genesis, re-mined 2026-08-22 for a timestamp that is actually
+        // ours (nBits 0x1d00ffff).
+        //
+        // The nonce was re-mined once before, when the coinbase string changed, but
+        // the TIMESTAMP was left at 1296688604 — two seconds after Bitcoin testnet3's
+        // genesis, in February 2011. That mattered because the ASERT anchor time
+        // tracks genesis nTime, so ASERT measured the chain against a 15.5-year
+        // backlog: it expected ~818,000 blocks to exist and saw 0. The target was
+        // therefore clamped to powLimit for the next ~818,000 blocks, meaning
+        // difficulty could never rise off diff-1 and any real miner would race the
+        // chain through that many blocks before spacing became meaningful.
+        //
+        // Mainnet never had this: its anchor time is its own genesis nTime.
+        genesis = CreateGenesisBlock(1787400000, 575664822, 0x1d00ffff, 1, 50 * COIN);
         consensus.hashGenesisBlock = genesis.GetHash();
 
         assert(consensus.hashGenesisBlock ==
-               uint256S("0x000000004b6e4759b93dbe0f3df9fa909d65830e75e88117aadffe8e9779ea4f"));
+               uint256S("0x00000000498add4157e47db0e5b06bdedd668af44c60762c37992be703d1ed2e"));
         assert(genesis.hashMerkleRoot ==
                uint256S("0x8b091b56222f40fb242b3811b07cf9b75e48024501058e66c0c1c5e653bd8a1d"));
 

@@ -78,10 +78,10 @@ substance of "we did the work," and we list them plainly.
 
 | # | Finding | Severity (pre-fix) | Status | Evidence |
 |---|---|---|---|---|
-| 1 | **Difficulty crash at block 1** — ASERT was anchored at height 10001 while the DAA height was 0, so the node asserted/crashed on the first block. | Critical (chain could not advance) | **Fixed** | ASERT anchored at genesis `{0, 0x1d00ffff, 1782432000}` `chainparams.cpp:133-137`; genesis-parent guard `pow.cpp:107-113` |
+| 1 | **Difficulty crash at block 1** — ASERT was anchored at height 10001 while the DAA height was 0, so the node asserted/crashed on the first block. | Critical (chain could not advance) | **Fixed** | ASERT anchored at genesis `{0, 0x1d00ffff, 1782691200}` (mainnet); genesis-parent guard `pow.cpp:107-113` |
 | 2 | **Block-subsidy regression** — coinbase subsidy had been reduced to `1 * COIN` instead of `50 * COIN`. | High (wrong issuance) | **Fixed** | `validation.cpp:885` → `50 * COIN`; halving interval `210000` `chainparams.cpp:69` |
 | 3 | **Money-supply-cap regression** — `MAX_MONEY` was `100'000 * COIN` instead of the intended `21'000'000`. | High (supply-cap / `MoneyRange` wrong) | **Fixed** | `amount.h:131` → `21'000'000 * COIN` |
-| 4 | **Genesis "time-too-new"** — first re-mine used a timestamp hours ahead of wall-clock, so peers rejected block 1. | High (launch blocker) | **Fixed** | genesis `nTime=1782432000` `chainparams.cpp:161` |
+| 4 | **Genesis "time-too-new"** — first re-mine used a timestamp hours ahead of wall-clock, so peers rejected block 1. | High (launch blocker) | **Fixed** | genesis `nTime` moved back below wall-clock; now `1782691200` (see the verification table below) |
 | 5 | **Non-mainnet genesis PoW mismatch** — changing the coinbase string altered the Merkle root for every network, but only mainnet's nonce had been re-mined. | Medium (test nets failed to start) | **Fixed** | all networks re-mined; every nonce independently PoW-verified |
 | 6 | **`chipnet`/`testnet4` magic-byte collision** | Low (test-net cross-talk) | **Fixed** | distinct magic `chainparams.cpp:507-510` vs `341-344` |
 | 7 | **Min-difficulty hardening on mainnet** — `fPowAllowMinDifficultyBlocks` left `true` from bootstrap would allow trivial blocks. | Medium (cheap chain takeover) | **Fixed** | mainnet `= false` `chainparams.cpp:105`; no leak path (`pow.cpp:121-125`) |
@@ -91,12 +91,27 @@ All genesis blocks were re-derived and PoW-checked as part of fix verification:
 
 | Network | nTime | nNonce | nBits | Recomputed hash == assert | PoW valid |
 |---|---|---|---|---|---|
-| main | 1782432000 | 1870395023 | 0x1d00ffff | ✅ | ✅ |
-| testnet | 1296688604 | 1168812312 | 0x1d00ffff | ✅ | ✅ |
+| main | 1782691200 | 3406937121 | 0x1d00ffff | ✅ | ✅ |
+| testnet | 1787400000 | 575664822 | 0x1d00ffff | ✅ | ✅ |
 | testnet4 | 1597811185 | 1633225309 | 0x1d00ffff | ✅ | ✅ |
 | scalenet | 1598282438 | 3022631194 | 0x1d00ffff | ✅ | ✅ |
 | chipnet | 1597811185 | 1633225309 | 0x1d00ffff | ✅ | ✅ |
 | regtest | 1296688602 | 3 | 0x207fffff | ✅ | ✅ |
+
+Re-verified 2026-08-22 by recomputing SHA256d over each header from the values in
+this table and comparing against the `assert` in `chainparams.cpp`. All six pass.
+
+Two rows changed in that pass:
+
+- **main** previously read `1782432000 / 1870395023`. Those were the values from
+  the first re-mine, before finding 4 above was fixed a second time; they do not
+  hash to the asserted genesis and are not valid proof of work. The table said
+  ✅ ✅ for both. Anyone auditing our genesis from this document would have been
+  unable to reproduce it. `chainparams.cpp` was always correct — only this table
+  was stale.
+- **testnet** was re-mined on 2026-08-22 to move its timestamp off Bitcoin
+  testnet3's February 2011 genesis, which the ASERT anchor inherited. See the
+  comment on the genesis line in `chainparams.cpp` for why that mattered.
 
 ---
 
