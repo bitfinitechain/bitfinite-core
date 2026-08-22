@@ -165,6 +165,60 @@ upstream non-consensus work, alongside the 630 upstream test files — which rem
 the highest-value part of the 878 non-consensus changes, since they are
 regression coverage we do not have.
 
+### Second pass — the 71 files we have also modified
+
+The harder half: files where our changes and upstream's overlap, so each needs
+reading rather than pattern-matching.
+
+**Result: also no missing security fixes.**
+
+164 upstream commits touch these files; filtering by committer date leaves those
+that landed after our fork. Stripping build/toolchain noise leaves ~14 with
+security or correctness language. Every one checked against our code:
+
+| upstream fix | in our tree |
+|---|---|
+| `net: UB in CNode::ReceiveMsgBytes` | present (`net.cpp:629`, the `find()` form) |
+| `Fix socket leaks -> fd exhaustion` | present (`~CSeederNode` closes the socket) |
+| `Rare crash when out of file descriptors` | present |
+| `seeder: UB/race starting DNS threads` | present |
+| `seeder: UB passing pointers through void *` | present |
+| `seeder: graceful exit, persist db` | present |
+| `Fix seeder checkpoint check` | present |
+| `UB in AddToCompactExtraTransactions` | present |
+| `net: msghand CPU / early-wake logic` | present |
+| `CBloomFilter is{Empty,Full}` (CVE-2013-5700) | present |
+| `Logging: unbuffered fileout on reopen` | present — and independently found here first |
+
+One genuine absence, and it is not reachable:
+
+**`mempool: Fix potential for bug in removeForBlock()`** (upstream 2024-12-24)
+splits `addNoLimit` from `addForBlock` and clamps a per-instance
+`maxDynamicUsage` so `while (DynamicMemoryUsage() > maxUsage)` cannot spin
+forever. That loop can only fail to terminate if the cap is below the pool's own
+baseline, which requires the configurable constructor upstream added. Ours has no
+such constructor — `maxDynamicUsage()` is `static`, returning
+`max(20 * DEFAULT_CONSENSUS_BLOCK_SIZE, GetMaxMemPoolSize())`, a floor of 640 MB.
+Nothing can drive it low enough to hang. Take it with the next batch as a
+refactor; it is not a live defect.
+
+### Method notes
+
+Two checks produced wrong answers and both were caught by reading the code:
+
+- Marker-grep reported the logging fix ABSENT. It is present; our copy carries a
+  long explanatory comment that displaced the line the marker matched. **Every
+  "absent" must be confirmed by reading the file.**
+- Symbol-presence checks (does `RegisterLoad` exist?) prove nothing about whether
+  a fix is applied. Compare the fixed *form*, not the identifier.
+
+### Combined scope
+
+Both passes together cover all 172 non-consensus node-code files upstream changed
+between v27.0.0 and v29.1.0 — 101 untouched, 71 modified. **No security backlog in
+either.** Not yet triaged: the 36 consensus files (deliberate divergence, see
+above) and the 630 upstream test files.
+
 ## How to check this yourself
 
 ```bash
