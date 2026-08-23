@@ -84,3 +84,27 @@ b37784c941ed2a13d5dfd11e0ba56da9a76db66e684c9ad998f9944402262af4  v3.1.2/bitfini
 2dd3752a04a4405651f6a2e4fca2b0b69a075fd325e84367796abd696b8ba365  v3.1.2/bitfinite-qt.exe
 e7d334cbc0b48925d645bc99315f6ac72c0aeedc3a044affa6600288a0f119b9  v3.1.2/bitfinite-tx.exe
 5b4adc0e48b4b4bf10017753db160bdb35fbbb1baea33ac00dc82016e3064289  v3.1.2/bitfinite-wallet.exe
+
+# --- v3.1.3 ---------------------------------------------------------------
+# Taken from the PUBLISHED assets (downloaded from the release, archive hashes
+# verified against the release's own SHA256SUMS before extracting).
+# Linux reproducibility re-confirmed for this release, and this time for ALL
+# SIX binaries including bitfinite-qt and bitcoin-seeder: a local
+# scripts/build-core-docker.sh linux run produced bytes identical to the
+# GitHub runner's. The archives differ (c668eb2f… local vs e0127af5… CI) purely
+# from tar mtimes and member order, which is the whole reason archive lines are
+# advisory and binary lines are not. Windows binaries are not reproducible —
+# PE headers carry a build timestamp — so those describe CI's build.
+e0127af500af910c7bc66fb33816a10e8de4924a6a968e6186636f0328168c75  bitfinite-v3.1.3-x86_64-linux.tar.gz
+687ab18d41c9a368314ceb38a9f94ec53ed5a715ef2bea39c482c16d6a247269  bitfinite-v3.1.3-x86_64-windows.zip
+3c9af7cbb63338c81f1bc4fbba6d99f8ffd541bdec73adef9761a12d758f4eee  v3.1.3/bitcoin-seeder
+9ea82a6ef20025d5f5c3c09aab898cccc6d74a45c5b0a78962f8836bd146dd84  v3.1.3/bitfinite-cli
+a68ed614b136633d2676a7a25a0b41bbc5fd5992c5ec8930ed7d21b31d3aaf47  v3.1.3/bitfinited
+a6d9817c9313900ed29b2a595a54da59b824def241a11099a521b3d38de9675c  v3.1.3/bitfinite-qt
+ad7cc6218533afb65ac2d147ba95dc8bba1ef24b1da427b3d83c9d85d3bd053e  v3.1.3/bitfinite-tx
+8748b2e73bcddd41eb8cdb3b3d5c8a0b38fc90eb4f9736bd9c1d91be185d5206  v3.1.3/bitfinite-wallet
+99bd75365e84953e881b98bd58bb6934a200363b3a26c22b50b2564883e8ed38  v3.1.3/bitfinite-cli.exe
+0062691a054a3d0eceac2c74b71b043d4874f3ae66edf9039d8a644fb490fbb9  v3.1.3/bitfinited.exe
+fe86e55812ad7ea762c4f6fbb3e944d25629d63523ac360dbf10a43958b74bab  v3.1.3/bitfinite-qt.exe
+01bad45864c1b6f315dbb1e082a34d55a8d33c391226b20b8a497c4aa69216a6  v3.1.3/bitfinite-tx.exe
+8d8c2bf7652b26f74b701d0ef4523f5ac40cbba617e8e53a8a4640cd2b246b33  v3.1.3/bitfinite-wallet.exe
