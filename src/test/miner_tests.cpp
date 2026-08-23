@@ -28,6 +28,7 @@
 #include <boost/test/unit_test.hpp>
 
 #include <memory>
+#include <set>
 #include "compat/optional.h"
 
 // This suite runs on REGTEST, not mainnet, and that is load-bearing.
@@ -121,6 +122,12 @@ static void TestPackageSelection(const Config &config,
 
     // Test that a medium fee transaction will be selected before a higher fee
     // transaction when the high-fee tx has a low fee parent.
+    //
+    // Upstream gives the parent a low absolute fee. That does not make its
+    // FEERATE low — 1000 satoshis over 69 bytes is 14.5 sat/byte — so the
+    // fixture never quite expressed the scenario its comment describes. Left
+    // as upstream has it, because on this chain the assertions below do not
+    // depend on it either way. See the CTOR note under them.
     CMutableTransaction tx;
     tx.vin.resize(1);
     tx.vin[0].scriptSig = MinSizeSpendSig();
@@ -158,30 +165,44 @@ static void TestPackageSelection(const Config &config,
         AssemblerForTest(config, g_mempool).CreateNewBlock(scriptPubKey);
 
 
-    // KNOWN FAILURE on BitFinite — the last thing keeping this suite excluded.
+    // Upstream asserts POSITION here — vtx[1] medium, vtx[2] parent, vtx[3] high
+    // — to show that a medium-fee transaction is mined ahead of a high-fee one
+    // whose parent pays little. Those assertions cannot mean that on this chain,
+    // and it is worth being precise about why rather than adjusting them until
+    // they pass.
     //
-    // These three assertions are upstream's, unchanged, and they expect the
-    // medium-fee transaction to be mined ahead of the high-fee one whose parent
-    // pays a low fee. What the assembler actually produces here is
-    // parent, high, medium — the package first.
+    // Magnetic Anomaly brings CTOR, canonical transaction ordering. When it is
+    // active the assembler sorts every non-coinbase transaction by txid before
+    // building the block (miner.cpp, "we make sure transaction are canonically
+    // ordered"), and ContextualCheckBlock rejects any block that is not sorted
+    // that way, as "tx-ordering". So a transaction's index in block.vtx is
+    // decided by its txid and carries no information about the order the
+    // assembler chose it in.
     //
-    // Measured: all three transactions serialise to 69 bytes, so the package
-    // scores (1000 + 50000) / 138 = 369 sat/byte against medium's 10000 / 69 =
-    // 145. Ancestor-feerate selection prefers the package, and no choice of
-    // equal-sized transactions can make 51000/2s smaller than 10000/s. The
-    // expectation cannot hold as written; the stated intent needs a parent that
-    // is genuinely low FEERATE, meaning a physically larger transaction, not
-    // merely a low absolute fee.
+    // Upstream can assert on position because its test mines 110 blocks and
+    // Magnetic Anomaly does not activate on BCH mainnet until height 556766 —
+    // the test never reaches CTOR. Ours activates at height 0, so it is in CTOR
+    // from block 1. The measured order here is parent, high, medium, which is
+    // simply those three txids in ascending order.
     //
-    // Deliberately NOT "fixed" by editing these expected values. Rewriting an
-    // expectation to match whatever our code emits would assert only that our
-    // code does what our code does, and would give that a test's authority. The
-    // honest fix is to change the INPUTS so the scenario expresses its intent,
-    // and that wants its own reviewed commit with the fee arithmetic derived
-    // first.
-    BOOST_CHECK(pblocktemplate->block.vtx[1]->GetId() == mediumFeeTxId);
-    BOOST_CHECK(pblocktemplate->block.vtx[2]->GetId() == parentTxId);
-    BOOST_CHECK(pblocktemplate->block.vtx[3]->GetId() == highFeeTxId);
+    // What remains testable is that all three were selected: the assembler saw a
+    // low-feerate parent, a high-fee child depending on it, and an unrelated
+    // medium-fee transaction, and included every one. Selection PREFERENCE
+    // cannot be observed from a block that holds everything offered to it —
+    // testing that needs a size-constrained block where something has to lose,
+    // which is a different fixture and deserves its own commit.
+    const std::set<TxId> selected = {
+        pblocktemplate->block.vtx[1]->GetId(),
+        pblocktemplate->block.vtx[2]->GetId(),
+        pblocktemplate->block.vtx[3]->GetId(),
+    };
+    BOOST_CHECK_EQUAL(pblocktemplate->block.vtx.size(), 4UL);
+    BOOST_CHECK(selected.count(mediumFeeTxId) == 1);
+    BOOST_CHECK(selected.count(parentTxId) == 1);
+    BOOST_CHECK(selected.count(highFeeTxId) == 1);
+    // CTOR itself is worth asserting, since it is why the above is a set.
+    BOOST_CHECK(pblocktemplate->block.vtx[1]->GetId() < pblocktemplate->block.vtx[2]->GetId());
+    BOOST_CHECK(pblocktemplate->block.vtx[2]->GetId() < pblocktemplate->block.vtx[3]->GetId());
 
     // Test that a tranactions with ancestor below the block min tx fee doesn't get included
     tx.vin[0].prevout = COutPoint(highFeeTxId, 0);
