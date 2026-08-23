@@ -102,9 +102,21 @@ MESSAGEMAP = {
     b"dsproof-beta": msg_dsproof,
 }
 
+# Network magic, taken from src/chainparams.cpp netMagic[].
+#
+# mainnet and testnet3 previously held Bitcoin Cash's values (\xe3\xe1\xf3\xe8 and
+# \xf4\xe5\xf3\xf4), inherited at the fork and never updated. A P2PConnection
+# using them cannot complete a version handshake with a BitFinite node, so any
+# functional test outside regtest failed to connect. It went unnoticed because
+# essentially every functional test runs on regtest, whose magic we never changed
+# and which was therefore correct by accident.
+#
+# BitFinite uses printable ASCII here on purpose: "BFin" for mainnet, "BFte" for
+# testnet. If these ever disagree with chainparams again, the symptom is a
+# connection that opens and then goes silent, not an error.
 MAGIC_BYTES = {
-    "mainnet": b"\xe3\xe1\xf3\xe8",
-    "testnet3": b"\xf4\xe5\xf3\xf4",
+    "mainnet": b"\x42\x46\x69\x6e",   # "BFin"
+    "testnet3": b"\x42\x46\x74\x65",  # "BFte"
     "regtest": b"\xda\xb5\xbf\xfa",
 }
 
