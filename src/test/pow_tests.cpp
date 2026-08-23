@@ -656,35 +656,50 @@ BOOST_AUTO_TEST_CASE(calculate_asert_test) {
     arith_uint256 initialTarget = powLimit >> 4;
     int64_t height = 0;
 
-    // The CalculateASERT function uses the absolute ASERT formulation
-    // and adds +1 to the height difference that it receives.
-    // The time difference passed to it must factor in the difference
-    // to the *parent* of the reference block.
-    // We assume the parent is ideally spaced in time before the reference block.
-    static const int64_t parent_time_diff = 600;
+    // Everything below is derived from the chain's own spacing and half-life
+    // rather than written as literals. Upstream hardcodes 600 and 288*1200,
+    // which encode BCH's 600-second spacing and two-day half-life; BitFinite
+    // mainnet uses 300 seconds and six hours, so every one of those constants is
+    // wrong here. The RELATIONSHIPS they express are what the test is actually
+    // about, and those hold on any parameters:
+    //
+    //   ASERT exponent = (nTimeDiff - spacing * (heightDiff + 1)) / halfLife
+    //
+    // so the target doubles when the chain is exactly one half-life ahead of
+    // schedule and halves when it is one half-life behind. Expressed that way the
+    // case tests the algorithm instead of a particular chain's numbers.
+    const int64_t spacing = params.nPowTargetSpacing;
 
-    // Steady
-    arith_uint256 nextTarget = CalculateASERT(initialTarget, params.nPowTargetSpacing, parent_time_diff + 600 /* nTimeDiff */, ++height, powLimit, nHalfLife);
+    // CalculateASERT adds +1 to the height difference it receives, so the time
+    // difference must reach back to the PARENT of the reference block. Assume
+    // that parent was ideally spaced.
+    const int64_t parent_time_diff = spacing;
+
+    // Steady: one ideally-spaced block leaves the target untouched.
+    arith_uint256 nextTarget = CalculateASERT(initialTarget, spacing, parent_time_diff + spacing, ++height, powLimit, nHalfLife);
     BOOST_CHECK(nextTarget == initialTarget);
 
-    // A block that arrives in half the expected time
-    nextTarget = CalculateASERT(initialTarget, params.nPowTargetSpacing, parent_time_diff + 600 + 300, ++height, powLimit, nHalfLife);
+    // A block that arrives in half the expected time tightens the target.
+    nextTarget = CalculateASERT(initialTarget, spacing, parent_time_diff + spacing + spacing/2, ++height, powLimit, nHalfLife);
     BOOST_CHECK(nextTarget < initialTarget);
 
-    // A block that makes up for the shortfall of the previous one, restores the target to initial
+    // A block that makes up the shortfall restores it exactly.
     arith_uint256 prevTarget = nextTarget;
-    nextTarget = CalculateASERT(initialTarget, params.nPowTargetSpacing, parent_time_diff + 600 + 300 + 900, ++height, powLimit, nHalfLife);
+    nextTarget = CalculateASERT(initialTarget, spacing, parent_time_diff + spacing + spacing/2 + (spacing*3)/2, ++height, powLimit, nHalfLife);
     BOOST_CHECK(nextTarget > prevTarget);
     BOOST_CHECK(nextTarget == initialTarget);
 
-    // Two days ahead of schedule should double the target (halve the difficulty)
+    // One half-life AHEAD of schedule doubles the target (halves difficulty).
+    // Solving (t - spacing*(N+1)) / halfLife == 1 with t = parent_time_diff + X
+    // and parent_time_diff == spacing gives X = spacing*N + halfLife.
+    const int64_t N = 288;
     prevTarget = nextTarget;
-    nextTarget = CalculateASERT(prevTarget, params.nPowTargetSpacing, parent_time_diff + 288*1200, 288, powLimit, nHalfLife);
+    nextTarget = CalculateASERT(prevTarget, spacing, parent_time_diff + spacing*N + nHalfLife, N, powLimit, nHalfLife);
     BOOST_CHECK(nextTarget == prevTarget * 2);
 
-    // Two days behind schedule should halve the target (double the difficulty)
+    // One half-life BEHIND schedule halves it again, back to where we started.
     prevTarget = nextTarget;
-    nextTarget = CalculateASERT(prevTarget, params.nPowTargetSpacing, parent_time_diff + 288*0, 288, powLimit, nHalfLife);
+    nextTarget = CalculateASERT(prevTarget, spacing, parent_time_diff + spacing*N - nHalfLife, N, powLimit, nHalfLife);
     BOOST_CHECK(nextTarget == prevTarget / 2);
     BOOST_CHECK(nextTarget == initialTarget);
 
@@ -693,7 +708,7 @@ BOOST_AUTO_TEST_CASE(calculate_asert_test) {
     uint32_t next_nBits;
     for (size_t k = 0; k < 3; k++) {
         prevTarget = nextTarget;
-        nextTarget = CalculateASERT(prevTarget, params.nPowTargetSpacing, parent_time_diff + 288*1200, 288, powLimit, nHalfLife);
+        nextTarget = CalculateASERT(prevTarget, spacing, parent_time_diff + spacing*N + nHalfLife, N, powLimit, nHalfLife);
         BOOST_CHECK(nextTarget == prevTarget * 2);
         BOOST_CHECK(nextTarget < powLimit);
         next_nBits = nextTarget.GetCompact();
@@ -701,7 +716,7 @@ BOOST_AUTO_TEST_CASE(calculate_asert_test) {
     }
 
     prevTarget = nextTarget;
-    nextTarget = CalculateASERT(prevTarget, params.nPowTargetSpacing, parent_time_diff + 288*1200, 288, powLimit, nHalfLife);
+    nextTarget = CalculateASERT(prevTarget, spacing, parent_time_diff + spacing*N + nHalfLife, N, powLimit, nHalfLife);
     next_nBits = nextTarget.GetCompact();
     BOOST_CHECK(nextTarget == prevTarget * 2);
     BOOST_CHECK(next_nBits == powLimit_nBits);
@@ -709,13 +724,17 @@ BOOST_AUTO_TEST_CASE(calculate_asert_test) {
     // Fast periods now cannot increase target beyond POW limit, even if we try to overflow nextTarget.
     // prevTarget is a uint256, so 256*2 = 512 days would overflow nextTarget unless CalculateASERT
     // correctly detects this error
-    nextTarget = CalculateASERT(prevTarget, params.nPowTargetSpacing, parent_time_diff + 512*144*600, 0, powLimit, nHalfLife);
+    // 512*144*600 upstream is 256 half-lives at BCH's parameters; written that
+    // way it stays 256 half-lives on ours.
+    nextTarget = CalculateASERT(prevTarget, spacing, parent_time_diff + 256*nHalfLife, 0, powLimit, nHalfLife);
     next_nBits = nextTarget.GetCompact();
     BOOST_CHECK(next_nBits == powLimit_nBits);
 
     // We also need to watch for underflows on nextTarget. We need to withstand an extra ~446 days worth of blocks.
     // This should bring down a powLimit target to the a minimum target of 1.
-    nextTarget = CalculateASERT(powLimit, params.nPowTargetSpacing, 0, 2*(256-33)*144, powLimit, nHalfLife);
+    // Likewise 2*(256-33)*144 blocks is (256-33) half-lives behind schedule at
+    // BCH's spacing. heightDiff = K*halfLife/spacing keeps that meaning here.
+    nextTarget = CalculateASERT(powLimit, spacing, 0, (256-33)*nHalfLife/spacing, powLimit, nHalfLife);
     next_nBits = nextTarget.GetCompact();
     BOOST_CHECK_EQUAL(next_nBits, arith_uint256(1).GetCompact());
 
@@ -762,14 +781,34 @@ BOOST_AUTO_TEST_CASE(calculate_asert_test) {
         { 1, 600, 600*2*224*144 - 1, 0, arith_uint256(0xffff8) << 204, powLimit_nBits }, // just under powlimit (not clamped) yet over powlimit_nbits
     };
 
+    // These eighteen vectors are upstream's, and every expected target in them
+    // was computed for a 600-second spacing and a two-day half-life — the table
+    // passes targetSpacing = 600 explicitly, but took the half-life from
+    // chainparams, so on a chain with a different half-life all eighteen break.
+    //
+    // They are run against the parameters they were derived for, deliberately.
+    // CalculateASERT is a pure function whose contract is parameterised by
+    // spacing and half-life; proving the arithmetic with a known-good vector set
+    // is the point, and recomputing eighteen expected uint256 targets for our
+    // half-life would mean deriving them from our own implementation — which
+    // would assert only that our code does what our code does. BitFinite's own
+    // half-life is exercised by the chainparams-driven assertions above.
+    const int64_t vectorHalfLife = 2 * 24 * 60 * 60;  // what the table was built for
+    const int64_t vectorParentTimeDiff = 600;         // ditto, matches targetSpacing 600
     for (auto& v : calculate_args) {
-        nextTarget = CalculateASERT(v.refTarget, v.targetSpacing, parent_time_diff + v.timeDiff, v.heightDiff, powLimit, nHalfLife);
+        nextTarget = CalculateASERT(v.refTarget, v.targetSpacing, vectorParentTimeDiff + v.timeDiff, v.heightDiff, powLimit, vectorHalfLife);
         next_nBits = nextTarget.GetCompact();
         const auto failMsg =
-            StrPrintCalcArgs(v.refTarget, v.targetSpacing, parent_time_diff + v.timeDiff, v.heightDiff, v.expectedTarget, v.expectednBits)
+            StrPrintCalcArgs(v.refTarget, v.targetSpacing, vectorParentTimeDiff + v.timeDiff, v.heightDiff, v.expectedTarget, v.expectednBits)
             + strprintf("nextTarget=  %s\nnext nBits=  0x%08x\n", nextTarget.ToString(), next_nBits);
         BOOST_CHECK_MESSAGE(nextTarget == v.expectedTarget && next_nBits == v.expectednBits, failMsg);
     }
+
+    // And assert the chain's own half-life is what the derivations above assume,
+    // so a change to chainparams shows up here rather than silently altering
+    // what this case tests.
+    BOOST_CHECK_EQUAL(params.nASERTHalfLife, 6 * 60 * 60);
+    BOOST_CHECK_EQUAL(params.nPowTargetSpacing, 5 * 60);
 }
 
 /**
