@@ -23,8 +23,7 @@
 namespace {
 
 std::vector<std::string> GetNetworks() {
-    return {CBaseChainParams::MAIN,     CBaseChainParams::TESTNET, CBaseChainParams::TESTNET4,
-            CBaseChainParams::SCALENET, CBaseChainParams::CHIPNET, CBaseChainParams::REGTEST};
+    return {CBaseChainParams::MAIN, CBaseChainParams::TESTNET, CBaseChainParams::REGTEST};
 }
 
 uint160 insecure_GetRandUInt160(FastRandomContext &rand) {

@@ -825,7 +825,7 @@ uint32_t GetMemPoolScriptFlags(const Consensus::Params &params, const CBlockInde
 
 /// Returns the adaptive blocksize limit for the next block, given `pindexPrev`, if upgrade10 is activated.
 /// If upgrade 10 is not activated, returns the legacy blocksize limit for the chain (e.g. 32MB for mainnet,
-/// 2MB for testnet4, -excessiveblocksize=XX, etc).
+/// -excessiveblocksize=XX, etc).
 /// @pre Either upgrade10 must *not* be activated, *or* if it is, `pindexPrev` *must* have a valid `ablaStateOpt`.
 ///      (This precondition is guaranteed if `pindexPrev` is on the active chain.)
 uint64_t GetNextBlockSizeLimit(const Config &config, const CBlockIndex *pindexPrev);

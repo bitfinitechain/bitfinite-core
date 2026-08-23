@@ -53,6 +53,3 @@ static const int MAX_URI_LENGTH = 255;
 #define QAPP_ORG_DOMAIN "bitfinitechain.org"
 #define QAPP_APP_NAME_DEFAULT "BitFinite-Qt"
 #define QAPP_APP_NAME_TESTNET "BitFinite-Qt-testnet"
-#define QAPP_APP_NAME_TESTNET4 "BitFinite-Qt-testnet4"
-#define QAPP_APP_NAME_SCALENET "BitFinite-Qt-scalenet"
-#define QAPP_APP_NAME_CHIPNET "BitFinite-Qt-chipnet"

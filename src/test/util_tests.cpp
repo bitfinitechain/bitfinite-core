@@ -1111,16 +1111,10 @@ struct SettingsMergeTestingSetup : public BasicTestingSetup {
                     for (bool force_set : {false, true}) {
                         for (const std::string &section :
                              {CBaseChainParams::MAIN,
-                              CBaseChainParams::TESTNET,
-                              CBaseChainParams::TESTNET4,
-                              CBaseChainParams::SCALENET,
-                              CBaseChainParams::CHIPNET}) {
+                              CBaseChainParams::TESTNET}) {
                             for (const std::string &network :
                                  {CBaseChainParams::MAIN,
-                                  CBaseChainParams::TESTNET,
-                                  CBaseChainParams::TESTNET4,
-                                  CBaseChainParams::SCALENET,
-                                  CBaseChainParams::CHIPNET}) {
+                                  CBaseChainParams::TESTNET}) {
                                 for (bool net_specific : {false, true}) {
                                     fn(arg_actions, conf_actions, soft_set,
                                        force_set, section, network,
@@ -1328,7 +1322,15 @@ BOOST_FIXTURE_TEST_CASE(util_SettingsMerge, SettingsMergeTestingSetup) {
     //   <GetUnsuitable output>
     BOOST_CHECK_EQUAL(
         out_sha_hex,
-        "c90958b09fa4c1a4b13b4561d07c7ab8a95bd094d0f97cd76eaec336f74ab158");
+        // Regenerated 2026-08-23 following the procedure in the comment above.
+        // The matrix shrank because testnet4, scalenet and chipnet were removed
+        // from the tree, so the enumeration this digest covers is genuinely
+        // smaller. Verified before updating: the dumped results contain only
+        // net=main and net=test rows, in equal numbers, and nothing else moved.
+        // This is a checksum of the test's own inputs, not an assertion about
+        // merge behaviour — which is why regenerating it is safe here and would
+        // not be for an expected value.
+        "80964e17fbd3c5569d3c824d032e28e2d319ef57494735b0e76eb7aad9957f2c");
 }
 
 BOOST_AUTO_TEST_CASE(util_FormatMoney) {

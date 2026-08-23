@@ -373,16 +373,10 @@ void SetupServerArgs() {
 
     const auto defaultBaseParams = CreateBaseChainParams(CBaseChainParams::MAIN);
     const auto testnetBaseParams = CreateBaseChainParams(CBaseChainParams::TESTNET);
-    const auto testnet4BaseParams = CreateBaseChainParams(CBaseChainParams::TESTNET4);
     const auto regtestBaseParams = CreateBaseChainParams(CBaseChainParams::REGTEST);
-    const auto scalenetBaseParams = CreateBaseChainParams(CBaseChainParams::SCALENET);
-    const auto chipnetBaseParams = CreateBaseChainParams(CBaseChainParams::CHIPNET);
     const auto defaultChainParams = CreateChainParams(CBaseChainParams::MAIN);
     const auto testnetChainParams = CreateChainParams(CBaseChainParams::TESTNET);
-    const auto testnet4ChainParams = CreateChainParams(CBaseChainParams::TESTNET4);
     const auto regtestChainParams = CreateChainParams(CBaseChainParams::REGTEST);
-    const auto scalenetChainParams = CreateChainParams(CBaseChainParams::SCALENET);
-    const auto chipnetChainParams = CreateChainParams(CBaseChainParams::CHIPNET);
 
     // Hidden Options
     std::vector<std::string> hidden_args = {"-dbcrashratio", "-forcecompactdb", "-expirerpc",
@@ -455,13 +449,10 @@ void SetupServerArgs() {
     gArgs.AddArg("-excessiveblocksize=<n>",
                  strprintf("Before upgrade 10 activates: Do not accept blocks larger than this limit, in bytes."
                            " After upgrade 10 activates: The minimum (floor) maximum block size used by the adaptive"
-                           " blocksize limit algorithm, in bytes. (default: %u, testnet: %u, testnet4: %u,"
-                           " scalenet: %u, chipnet: %u, regtest: %u)",
+                           " blocksize limit algorithm, in bytes. (default: %u, testnet: %u,"
+                           ", regtest: %u)",
                            defaultChainParams->GetConsensus().nDefaultConsensusBlockSize,
                            testnetChainParams->GetConsensus().nDefaultConsensusBlockSize,
-                           testnet4ChainParams->GetConsensus().nDefaultConsensusBlockSize,
-                           scalenetChainParams->GetConsensus().nDefaultConsensusBlockSize,
-                           chipnetChainParams->GetConsensus().nDefaultConsensusBlockSize,
                            regtestChainParams->GetConsensus().nDefaultConsensusBlockSize),
                  ArgsManager::ALLOW_ANY, OptionsCategory::OPTIONS);
     gArgs.AddArg("-feefilter",
@@ -498,17 +489,13 @@ void SetupServerArgs() {
                  ArgsManager::ALLOW_ANY, OptionsCategory::OPTIONS);
     gArgs.AddArg("-maxmempool=<n>",
                  strprintf("Keep the transaction memory pool below <n> "
-                           "megabytes (default: %u, testnet: %u, testnet4: %u, scalenet: %u, chipnet: %u)",
+                           "megabytes (default: %u, testnet: %u, regtest: %u)",
                            DEFAULT_MAX_MEMPOOL_SIZE_PER_MB *
                                defaultChainParams->GetConsensus().nDefaultConsensusBlockSize / ONE_MEGABYTE,
                            DEFAULT_MAX_MEMPOOL_SIZE_PER_MB *
                                testnetChainParams->GetConsensus().nDefaultConsensusBlockSize / ONE_MEGABYTE,
                            DEFAULT_MAX_MEMPOOL_SIZE_PER_MB *
-                               testnet4ChainParams->GetConsensus().nDefaultConsensusBlockSize / ONE_MEGABYTE,
-                           DEFAULT_MAX_MEMPOOL_SIZE_PER_MB *
-                               scalenetChainParams->GetConsensus().nDefaultConsensusBlockSize / ONE_MEGABYTE,
-                           DEFAULT_MAX_MEMPOOL_SIZE_PER_MB *
-                               chipnetChainParams->GetConsensus().nDefaultConsensusBlockSize / ONE_MEGABYTE),
+                               regtestChainParams->GetConsensus().nDefaultConsensusBlockSize / ONE_MEGABYTE),
                  ArgsManager::ALLOW_ANY, OptionsCategory::OPTIONS);
     gArgs.AddArg("-maxorphantx=<n>",
                  strprintf("Keep at most <n> unconnectable transactions in "
@@ -628,11 +615,10 @@ void SetupServerArgs() {
                  strprintf("Bind to given address and always listen on it (default: 0.0.0.0). Use [host]:port notation "
                            "for IPv6. Append =onion to tag any incoming connections to that address and port as "
                            "incoming Tor connections (default: 127.0.0.1:%u=onion, testnet: 127.0.0.1:%u=onion, "
-                           "testnet4: 127.0.0.1:%u=onion, scalenet: 127.0.0.1:%u=onion, chipnet: 127.0.0.1:%u=onion, "
+                           ", "
                            "regtest: 127.0.0.1:%u=onion)",
                            defaultBaseParams->OnionServiceTargetPort(), testnetBaseParams->OnionServiceTargetPort(),
-                           testnet4BaseParams->OnionServiceTargetPort(), scalenetBaseParams->OnionServiceTargetPort(),
-                           chipnetBaseParams->OnionServiceTargetPort(), regtestBaseParams->OnionServiceTargetPort()),
+                           regtestBaseParams->OnionServiceTargetPort()),
                  ArgsManager::ALLOW_ANY | ArgsManager::NETWORK_ONLY, OptionsCategory::CONNECTION);
     gArgs.AddArg("-connect=<ip>",
                  "Connect only to the specified node(s); -connect=0 disables automatic "
@@ -693,10 +679,9 @@ void SetupServerArgs() {
                  ArgsManager::ALLOW_ANY, OptionsCategory::CONNECTION);
     gArgs.AddArg("-port=<port>",
                  strprintf("Listen for connections on <port> (default: %u, "
-                           "testnet: %u, testnet4: %u, scalenet: %u, chipnet: %u, regtest: %u)",
+                           "testnet: %u, regtest: %u)",
                            defaultChainParams->GetDefaultPort(), testnetChainParams->GetDefaultPort(),
-                           testnet4ChainParams->GetDefaultPort(), scalenetChainParams->GetDefaultPort(),
-                           chipnetChainParams->GetDefaultPort(), regtestChainParams->GetDefaultPort()),
+                           regtestChainParams->GetDefaultPort()),
                  ArgsManager::ALLOW_ANY | ArgsManager::NETWORK_ONLY, OptionsCategory::CONNECTION);
     gArgs.AddArg("-proxy=<ip:port>", "Connect through SOCKS5 proxy", ArgsManager::ALLOW_ANY,
                  OptionsCategory::CONNECTION);
@@ -895,17 +880,14 @@ void SetupServerArgs() {
     gArgs.AddArg(
         "-upgrade9activationheight=<n>",
         strprintf("Activation height of the May 2023 BitFinite Network Upgrade; first block using new rules will be"
-                  " after this height (default: %d, testnet: %d, testnet4: %d, scalenet: %d, chipnet: %d, regtest: %d)",
+                  " after this height (default: %d, testnet: %d, regtest: %d)",
                   defaultChainParams->GetConsensus().upgrade9Height, testnetChainParams->GetConsensus().upgrade9Height,
-                  testnet4ChainParams->GetConsensus().upgrade9Height,
-                  scalenetChainParams->GetConsensus().upgrade9Height, chipnetChainParams->GetConsensus().upgrade9Height,
                   regtestChainParams->GetConsensus().upgrade9Height),
         true, OptionsCategory::DEBUG_TEST);
     gArgs.AddArg("-upgrade10activationtime=<n>",
                  strprintf("Activation time of the May 2024 BitFinite Network Upgrade (<n> seconds since epoch, "
-                           "default: %d, chipnet: %d)",
-                           defaultChainParams->GetConsensus().upgrade10ActivationTime,
-                           chipnetChainParams->GetConsensus().upgrade10ActivationTime),
+                           "default: %d)",
+                           defaultChainParams->GetConsensus().upgrade10ActivationTime),
                  true, OptionsCategory::DEBUG_TEST);
     // Retained, but it schedules NODE EXPIRY, not a BitFinite upgrade. The name
     // is inherited from BCH and kept so the upstream functional tests that pass
@@ -914,9 +896,8 @@ void SetupServerArgs() {
     gArgs.AddArg(
         "-upgrade11activationtime=<n>",
         strprintf("Node-expiry date used by -expire (<n> seconds since epoch). BitFinite sets "
-                  "no expiry, so this is 0 unless overridden (default: %d, chipnet: %d)",
-                  defaultChainParams->GetConsensus().upgrade11ActivationTime,
-                  chipnetChainParams->GetConsensus().upgrade11ActivationTime),
+                  "no expiry, so this is 0 unless overridden (default: %d)",
+                  defaultChainParams->GetConsensus().upgrade11ActivationTime),
         true, OptionsCategory::DEBUG_TEST);
     gArgs.AddArg("-printtoconsole",
                  "Send trace/debug info to console instead of debug.log file (default: "
@@ -1005,25 +986,19 @@ void SetupServerArgs() {
                  ArgsManager::ALLOW_ANY | ArgsManager::DEBUG_ONLY, OptionsCategory::NODE_RELAY);
 
     gArgs.AddArg("-blockmaxsize=<n>",
-                 strprintf("Set maximum mined block size in bytes (default: %u, testnet: %u, testnet4: %u,"
-                           " scalenet: %u, chipnet: %u, regtest: %u)",
+                 strprintf("Set maximum mined block size in bytes (default: %u, testnet: %u,"
+                           ", regtest: %u)",
                            defaultChainParams->GetConsensus().GetDefaultGeneratedBlockSizeBytes(),
                            testnetChainParams->GetConsensus().GetDefaultGeneratedBlockSizeBytes(),
-                           testnet4ChainParams->GetConsensus().GetDefaultGeneratedBlockSizeBytes(),
-                           scalenetChainParams->GetConsensus().GetDefaultGeneratedBlockSizeBytes(),
-                           chipnetChainParams->GetConsensus().GetDefaultGeneratedBlockSizeBytes(),
                            regtestChainParams->GetConsensus().GetDefaultGeneratedBlockSizeBytes()),
                  ArgsManager::ALLOW_ANY, OptionsCategory::BLOCK_CREATION);
     gArgs.AddArg("-percentblockmaxsize=<percent>",
                  strprintf("Set maximum mined block size as a floating-point percentage of the excessive block size."
                            " This is an alternative to -blockmaxsize. This option and -blockmaxsize cannot both be"
-                           " specified at the same time. (default: %.1f, testnet: %.1f, testnet4: %.1f,"
-                           " scalenet: %.3f, chipnet: %.1f, regtest: %.1f)",
+                           " specified at the same time. (default: %.1f, testnet: %.1f,"
+                           ", regtest: %.1f)",
                            defaultChainParams->GetConsensus().nDefaultGeneratedBlockSizePercent,
                            testnetChainParams->GetConsensus().nDefaultGeneratedBlockSizePercent,
-                           testnet4ChainParams->GetConsensus().nDefaultGeneratedBlockSizePercent,
-                           scalenetChainParams->GetConsensus().nDefaultGeneratedBlockSizePercent,
-                           chipnetChainParams->GetConsensus().nDefaultGeneratedBlockSizePercent,
                            regtestChainParams->GetConsensus().nDefaultGeneratedBlockSizePercent),
                  ArgsManager::ALLOW_ANY, OptionsCategory::BLOCK_CREATION);
 
@@ -1086,9 +1061,8 @@ void SetupServerArgs() {
                  ArgsManager::ALLOW_ANY, OptionsCategory::RPC);
     gArgs.AddArg("-rpcport=<port>",
                  strprintf("Listen for JSON-RPC connections on <port> "
-                           "(default: %u, testnet: %u, testnet4: %u, scalenet: %u, chipnet: %u, regtest: %u)",
-                           defaultBaseParams->RPCPort(), testnetBaseParams->RPCPort(), testnet4BaseParams->RPCPort(),
-                           scalenetBaseParams->RPCPort(), chipnetBaseParams->RPCPort(), regtestBaseParams->RPCPort()),
+                           "(default: %u, testnet: %u, regtest: %u)",
+                           defaultBaseParams->RPCPort(), testnetBaseParams->RPCPort(), regtestBaseParams->RPCPort()),
                  ArgsManager::ALLOW_ANY | ArgsManager::NETWORK_ONLY, OptionsCategory::RPC);
     gArgs.AddArg("-rpcallowip=<ip>",
                  "Allow JSON-RPC connections from specified source. Valid for "
@@ -1455,33 +1429,16 @@ bool AppInitParameterInteraction(Config &config) {
                                    arg, network, network));
     }
 
-    // Warn when running a network we do not operate.
+    // The warning that stood here — "network X is not operated by BitFinite" —
+    // is gone with the networks it described. testnet4, scalenet and chipnet
+    // were removed on 2026-08-23; every network this node can now select is one
+    // we operate or one meant to be local. There is nothing left to warn about,
+    // and a condition that can never be true is worse than no condition.
     //
-    // testnet is ours: every activation height is 0, the ASERT anchor is our own
-    // block 0, and the network magic is "BFte", rather than a BCH chain wearing
-    // our name. It has a DNS seed and a node behind it, so it is excluded here.
-    //
-    // It matches mainnet on ACTIVATION HEIGHTS, which is what the warning below
-    // is about. It deliberately does not match on PoW: spacing is 10 minutes
-    // against mainnet's 5, and fPowAllowMinDifficultyBlocks is true here and
-    // false there. Do not call it a full rehearsal for mainnet behaviour.
-    //
-    // testnet4, scalenet and chipnet are NOT. Each still carries BCH's activation
-    // heights (upgrade8 at 95464 / 10006, upgrade9 at 148043 / 10006 / 121956) and
-    // BCH's ASERT anchor at timestamp 1605451779. Those heights are unreachable on
-    // a chain at height 0, so 64-bit script integers and native introspection are
-    // OFF there and ON for mainnet. Nobody runs seeds for them either.
-    //
-    // Use -regtest for local testing: it matches mainnet on every upgrade parameter.
-    if (network != CBaseChainParams::MAIN && network != CBaseChainParams::TESTNET &&
-        network != CBaseChainParams::REGTEST) {
-        InitWarning(strprintf(
-            _("Network '%s' is not operated by BitFinite: it has no seeds and no nodes. "
-              "Its consensus parameters are inherited from Bitcoin Cash and differ from "
-              "mainnet, so it is not a valid rehearsal for mainnet behaviour. Use -testnet "
-              "for a public test chain, or -regtest for local testing."),
-            network));
-    }
+    // Worth keeping in mind if a network is ever added back: testnet matches
+    // mainnet on ACTIVATION HEIGHTS but deliberately not on proof of work —
+    // 10-minute spacing against mainnet's 5, and fPowAllowMinDifficultyBlocks
+    // true here and false there. It is a consensus rehearsal, not a timing one.
 
     // Warn if unrecognized section name are present in the config file.
     for (const auto &section : gArgs.GetUnrecognizedSections()) {

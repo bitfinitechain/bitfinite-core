@@ -33,13 +33,6 @@ uint32_t CalculateNextWorkRequired(const CBlockIndex *pindexPrev,
 bool CheckProofOfWork(const BlockHash &hash, uint32_t nBits,
                       const Consensus::Params &params);
 
-/**
- * Bitcoin cash's difficulty adjustment mechanism.
- */
-uint32_t GetNextCashWorkRequired(const CBlockIndex *pindexPrev,
-                                 const CBlockHeader *pblock,
-                                 const Consensus::Params &params);
-
 arith_uint256 CalculateASERT(const arith_uint256 &refTarget,
                              const int64_t nPowTargetSpacing,
                              const int64_t nTimeDiff,

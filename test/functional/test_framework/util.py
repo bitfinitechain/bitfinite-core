@@ -294,16 +294,12 @@ def wait_until(predicate, *, attempts=float('inf'),
 CHAIN_CONF_ARG = {
     'testnet': 'testnet',
     'testnet3': 'testnet',
-    'testnet4': 'testnet4',
-    'scalenet': 'scalenet',
     'regtest': 'regtest',
 }
 
 CHAIN_CONF_SECTION = {
     'testnet': 'test',
     'testnet3': 'test',
-    'testnet4': 'test4',
-    'scalenet': 'scale',
     'regtest': 'regtest',
 }
 

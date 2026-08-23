@@ -123,9 +123,8 @@ static bool ipcCanParseLegacyURI(const QString &arg,
 //
 void PaymentServer::ipcParseCommandLine(interfaces::Node &node, int argc,
                                         char *argv[]) {
-    std::array<const std::string *, 5> networks = {
-        {&CBaseChainParams::MAIN, &CBaseChainParams::TESTNET, &CBaseChainParams::TESTNET4, &CBaseChainParams::CHIPNET,
-         &CBaseChainParams::REGTEST}};
+    std::array<const std::string *, 3> networks = {
+        {&CBaseChainParams::MAIN, &CBaseChainParams::TESTNET, &CBaseChainParams::REGTEST}};
 
     const std::string *chosenNetwork = nullptr;
 

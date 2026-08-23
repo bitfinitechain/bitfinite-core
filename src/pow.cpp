@@ -283,82 +283,6 @@ arith_uint256 CalculateASERT(const arith_uint256 &refTarget,
     return nextTarget;
 }
 
-/**
- * Compute the next required proof of work using the legacy Bitcoin difficulty
- * adjustment + Emergency Difficulty Adjustment (EDA).
- */
-static uint32_t GetNextEDAWorkRequired(const CBlockIndex *pindexPrev,
-                                       const CBlockHeader *pblock,
-                                       const Consensus::Params &params) {
-    // Only change once per difficulty adjustment interval
-    uint32_t nHeight = pindexPrev->nHeight + 1;
-    if (nHeight % params.DifficultyAdjustmentInterval() == 0) {
-        // Go back by what we want to be 14 days worth of blocks
-        assert(nHeight >= params.DifficultyAdjustmentInterval());
-        uint32_t nHeightFirst = nHeight - params.DifficultyAdjustmentInterval();
-        const CBlockIndex *pindexFirst = pindexPrev->GetAncestor(nHeightFirst);
-        assert(pindexFirst);
-
-        return CalculateNextWorkRequired(pindexPrev,
-                                         pindexFirst->GetBlockTime(), params);
-    }
-
-    const uint32_t nProofOfWorkLimit =
-        UintToArith256(params.powLimit).GetCompact();
-
-    if (params.fPowAllowMinDifficultyBlocks) {
-        // Special difficulty rule for testnet:
-        // If the new block's timestamp is more than 2* 10 minutes then allow
-        // mining of a min-difficulty block.
-        if (pblock->GetBlockTime() >
-            pindexPrev->GetBlockTime() + 2 * params.nPowTargetSpacing) {
-            return nProofOfWorkLimit;
-        }
-
-        // Return the last non-special-min-difficulty-rules-block
-        const CBlockIndex *pindex = pindexPrev;
-        while (pindex->pprev &&
-               pindex->nHeight % params.DifficultyAdjustmentInterval() != 0 &&
-               pindex->nBits == nProofOfWorkLimit) {
-            pindex = pindex->pprev;
-        }
-
-        return pindex->nBits;
-    }
-
-    // We can't go below the minimum, so bail early.
-    uint32_t nBits = pindexPrev->nBits;
-    if (nBits == nProofOfWorkLimit) {
-        return nProofOfWorkLimit;
-    }
-
-    // If producing the last 6 blocks took less than 12h, we keep the same
-    // difficulty.
-    const CBlockIndex *pindex6 = pindexPrev->GetAncestor(nHeight - 7);
-    assert(pindex6);
-    int64_t mtp6blocks =
-        pindexPrev->GetMedianTimePast() - pindex6->GetMedianTimePast();
-    if (mtp6blocks < 12 * 3600) {
-        return nBits;
-    }
-
-    // If producing the last 6 blocks took more than 12h, increase the
-    // difficulty target by 1/4 (which reduces the difficulty by 20%).
-    // This ensures that the chain does not get stuck in case we lose
-    // hashrate abruptly.
-    arith_uint256 nPow;
-    nPow.SetCompact(nBits);
-    nPow += (nPow >> 2);
-
-    // Make sure we do not go below allowed values.
-    const arith_uint256 bnPowLimit = UintToArith256(params.powLimit);
-    if (nPow > bnPowLimit) {
-        nPow = bnPowLimit;
-    }
-
-    return nPow.GetCompact();
-}
-
 uint32_t GetNextWorkRequired(const CBlockIndex *pindexPrev,
                              const CBlockHeader *pblock,
                              const Consensus::Params &params) {
@@ -380,11 +304,10 @@ uint32_t GetNextWorkRequired(const CBlockIndex *pindexPrev,
         return GetNextASERTWorkRequired(pindexPrev, pblock, params, panchorBlock);
     }
 
-    if (IsDAAEnabled(params, pindexPrev)) {
-        return GetNextCashWorkRequired(pindexPrev, pblock, params);
-    }
-
-    return GetNextEDAWorkRequired(pindexPrev, pblock, params);
+    // No fallback. Every BitFinite network activates Axion before its own
+    // genesis, so this line is unreachable — and the pre-ASERT algorithms it
+    // used to reach have been removed. See the note above GetNextWorkRequired.
+    assert(false && "unreachable: ASERT applies from genesis on every network");
 }
 
 uint32_t CalculateNextWorkRequired(const CBlockIndex *pindexPrev,
@@ -509,55 +432,5 @@ static const CBlockIndex *GetSuitableBlock(const CBlockIndex *pindex) {
 
     // We should have our candidate in the middle now.
     return blocks[1];
-}
-
-/**
- * Compute the next required proof of work using a weighted average of the
- * estimated hashrate per block.
- *
- * Using a weighted average ensure that the timestamp parameter cancels out in
- * most of the calculation - except for the timestamp of the first and last
- * block. Because timestamps are the least trustworthy information we have as
- * input, this ensures the algorithm is more resistant to malicious inputs.
- */
-uint32_t GetNextCashWorkRequired(const CBlockIndex *pindexPrev,
-                                 const CBlockHeader *pblock,
-                                 const Consensus::Params &params) {
-    // This cannot handle the genesis block and early blocks in general.
-    assert(pindexPrev);
-
-    // Special difficulty rule for testnet:
-    // If the new block's timestamp is more than 2* 10 minutes then allow
-    // mining of a min-difficulty block.
-    if (params.fPowAllowMinDifficultyBlocks &&
-        (pblock->GetBlockTime() >
-         pindexPrev->GetBlockTime() + 2 * params.nPowTargetSpacing)) {
-        return UintToArith256(params.powLimit).GetCompact();
-    }
-
-    // Compute the difficulty based on the full adjustment interval.
-    const uint32_t nHeight = pindexPrev->nHeight;
-    assert(nHeight >= params.DifficultyAdjustmentInterval());
-
-    // Get the last suitable block of the difficulty interval.
-    const CBlockIndex *pindexLast = GetSuitableBlock(pindexPrev);
-    assert(pindexLast);
-
-    // Get the first suitable block of the difficulty interval.
-    uint32_t nHeightFirst = nHeight - 144;
-    const CBlockIndex *pindexFirst =
-        GetSuitableBlock(pindexPrev->GetAncestor(nHeightFirst));
-    assert(pindexFirst);
-
-    // Compute the target based on time and work done during the interval.
-    const arith_uint256 nextTarget =
-        ComputeTarget(pindexFirst, pindexLast, params);
-
-    const arith_uint256 powLimit = UintToArith256(params.powLimit);
-    if (nextTarget > powLimit) {
-        return powLimit.GetCompact();
-    }
-
-    return nextTarget.GetCompact();
 }
 

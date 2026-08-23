@@ -56,7 +56,7 @@ struct Config {
     /// Returns a default configuration for mainnet, etc as suggested in the ABLA spec: https://gitlab.com/0353F40E/ebaa
     /// @param fixedSize - if `true`, set `epsilonMax = epsilon0`, `betaMax = beta0`, thus making the ABLA algorithm
     ///        a no-op that always returns `defaultBlockSize` as the static max block size. This is normally set to
-    ///        `true` for testnet3 and testnet4 (where we do not want the max block size to grow over time).
+    ///        `true` for testnet (where we do not want the max block size to grow over time).
     static Config MakeDefault(uint64_t defaultBlockSize = DEFAULT_CONSENSUS_BLOCK_SIZE, bool fixedSize = false);
 };
 

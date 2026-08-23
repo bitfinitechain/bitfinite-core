@@ -64,7 +64,13 @@ BOOST_AUTO_TEST_CASE(isphononenabled) {
 BOOST_AUTO_TEST_CASE(isaxionenabled) {
     // first, test chains with no hard-coded activation height (activation based on MTP)
     {
-        const auto pparams = CreateChainParams(CBaseChainParams::SCALENET);
+        // Was SCALENET, which no longer exists. It has to be REGTEST, not MAIN:
+        // IsAxionEnabled does a HEIGHT check whenever asertAnchorParams is set
+        // and only falls back to MTP when it is not. MAIN anchors at height 0,
+        // so it is always enabled there and this branch would never be reached.
+        // REGTEST is now the only network without a hard-coded anchor, which is
+        // also what keeps the MTP path from becoming dead code.
+        const auto pparams = CreateChainParams(CBaseChainParams::REGTEST);
         const Consensus::Params &params = pparams->GetConsensus();
         const auto activation =
             gArgs.GetArg("-axionactivationtime", params.axionActivationTime);

@@ -34,53 +34,29 @@ PLAT=Linux64
 # should be deleted as its suite is fixed. miner_tests and checkpoints_tests both came off it on 2026-08-23.
 #
 # Measured 2026-08-14 on 1264e3222d. Full details in doc/consensus-diff.md.
-EXCLUDED=(
-  # --- Aborters. These SIGABRT/throw, and because Boost.Test runs everything in
-  # one process, an abort takes every later fixture with it via
-  # ECC_Start(secp256k1_context_sign == nullptr). Two of these were hiding the
-  # state of the entire corpus: the raw count was 463 failures, of which 449
-  # were collateral. Fix these before the plain failures — an abort destroys
-  # information, a failed check only reports one.
-  # pow_tests — 6 of its 10 cases pass. Measured per case on 2026-08-23, because
-  #   "pow_tests fails" hid four different situations:
-  #
-  #     PASS  get_next_work, get_next_work_pow_limit,
-  #           get_next_work_lower_limit_actual, get_next_work_upper_limit_actual,
-  #           GetBlockProofEquivalentTime_test
-  #     PASS  calculate_asert_test — fixed 2026-08-23 by deriving its constants
-  #           from spacing and half-life instead of inheriting BCH's 600s/2-day
-  #           literals. This is the one that matters: it tests the arithmetic of
-  #           the difficulty algorithm this chain actually runs.
-  #
-  #     FAIL  retargeting_test      — legacy DAA
-  #     ABORT cash_difficulty_test  — legacy DAA (cw144)
-  #     ABORT asert_activation_anchor_test — the cw144 -> ASERT transition
-  #     FAIL  asert_difficulty_test — real ASERT, ~27 inherited constants
-  #
-  #   The first three exercise DEAD CODE and cannot be made meaningful.
-  #   GetNextWorkRequired takes the ASERT branch whenever IsAxionEnabled, and our
-  #   axionActivationTime predates our genesis, so GetNextCashWorkRequired and
-  #   GetNextEDAWorkRequired are unreachable on every BitFinite network. The
-  #   anchor test is worse than unreachable: it exercises a transition FROM cw144
-  #   TO ASERT that never happened here, because ASERT is anchored at genesis.
-  #   Both aborts are the same assert, nHeight >= DifficultyAdjustmentInterval(),
-  #   which is 4032 for us (14d/300s) against BCH's 2016 (14d/600s) — the tests
-  #   build ~2050 blocks. Building 4032 would only let dead code run.
-  #
-  #   Only asert_difficulty_test is worth further work. It is mechanical but
-  #   needs per-site review, NOT substitution: one of the nine `2*24*3600`
-  #   occurrences is a vector SIZE, not a duration.
-  #
-  #   The real decision here is not about the tests. If GetNextCashWorkRequired
-  #   and GetNextEDAWorkRequired can never execute, the honest move is to delete
-  #   them and their cases rather than build fixtures for them. That is a
-  #   consensus-surface change and wants its own reviewed commit.
-  pow_tests
-
-)
+# Suites excluded from the default run. EMPTY as of 2026-08-23 — every suite in
+# the tree passes.
+#
+# It has not always been so, and the reason is worth keeping: almost every
+# inherited failure came from ONE difference, not from stale data. BitFinite
+# activates every upgrade at height 0, while upstream activates them at real
+# historical heights far above where these tests reach. Tests that mine a
+# hundred-odd blocks therefore run upstream in a pre-2018 rule regime we do not
+# have. Minimum transaction size, SIGPUSHONLY, CLEANSTACK and CTOR each broke a
+# suite for exactly that reason.
+#
+# If a suite is ever added back here, say which of those it is, or say plainly
+# that it is something new.
+EXCLUDED=()
 
 # Boost.Test filter syntax: colon-separated, ! negates.
-DEFAULT_FILTER="$(printf '!%s:' "${EXCLUDED[@]}")"; DEFAULT_FILTER="${DEFAULT_FILTER%:}"
+# An empty EXCLUDED must mean "run everything", not "!" — printf over an empty
+# array still emits one '!' and Boost rejects it with exit 200.
+if [ ${#EXCLUDED[@]} -eq 0 ]; then
+  DEFAULT_FILTER='*'
+else
+  DEFAULT_FILTER="$(printf '!%s:' "${EXCLUDED[@]}")"; DEFAULT_FILTER="${DEFAULT_FILTER%:}"
+fi
 
 FILTER="${1:-${BFX_TEST_FILTER:-$DEFAULT_FILTER}}"
 

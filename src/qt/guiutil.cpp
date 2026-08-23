@@ -552,15 +552,6 @@ static fs::path StartupShortcutPath() {
     if (chain == CBaseChainParams::TESTNET) {
         return GetSpecialFolderPath(CSIDL_STARTUP) / "BitFinite Node (testnet).lnk";
     }
-    if (chain == CBaseChainParams::TESTNET4) {
-        return GetSpecialFolderPath(CSIDL_STARTUP) / "BitFinite Node (testnet4).lnk";
-    }
-    if (chain == CBaseChainParams::SCALENET) {
-        return GetSpecialFolderPath(CSIDL_STARTUP) / "BitFinite Node (scalenet).lnk";
-    }
-    if (chain == CBaseChainParams::CHIPNET) {
-        return GetSpecialFolderPath(CSIDL_STARTUP) / "BitFinite Node (chipnet).lnk";
-    }
     return GetSpecialFolderPath(CSIDL_STARTUP) /
            strprintf("BitFinite Node (%s).lnk", chain); // If we get here: "regtest"
 }
