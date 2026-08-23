@@ -304,10 +304,21 @@ uint32_t GetNextWorkRequired(const CBlockIndex *pindexPrev,
         return GetNextASERTWorkRequired(pindexPrev, pblock, params, panchorBlock);
     }
 
-    // No fallback. Every BitFinite network activates Axion before its own
-    // genesis, so this line is unreachable — and the pre-ASERT algorithms it
-    // used to reach have been removed. See the note above GetNextWorkRequired.
+    // Unreachable on every network this node can select. Mainnet and testnet
+    // anchor ASERT at height 0, so IsAxionEnabled is a height check that is
+    // always true; regtest returns above on fPowNoRetargeting and never gets
+    // here. The pre-ASERT algorithms this used to fall through to are gone.
+    //
+    // The assert states the invariant, but it must not be the only thing
+    // standing between this function and falling off its end. This build
+    // deliberately compiles without NDEBUG so asserts survive into release
+    // (CMAKE_CXX_FLAGS_RELWITHDEBINFO is "-g -O2", CMake's -DNDEBUG removed on
+    // purpose) — but that is a build setting, and a toolchain that put NDEBUG
+    // back would turn this into undefined behaviour rather than a crash. So
+    // return a defined value too: powLimit is the safest answer, since it makes
+    // the next block easier rather than accidentally trivial to forge.
     assert(false && "unreachable: ASERT applies from genesis on every network");
+    return UintToArith256(params.powLimit).GetCompact();
 }
 
 uint32_t CalculateNextWorkRequired(const CBlockIndex *pindexPrev,
