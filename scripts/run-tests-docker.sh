@@ -31,7 +31,7 @@ PLAT=Linux64
 # EVERY entry carries its reason. An unexplained exclusion is indistinguishable
 # from hiding a bug, and this suite is meant to be evidence for an external
 # review. This list is a work queue, not a settled state, and each line below
-# should be deleted as its suite is fixed. miner_tests came off it on 2026-08-23.
+# should be deleted as its suite is fixed. miner_tests and checkpoints_tests both came off it on 2026-08-23.
 #
 # Measured 2026-08-14 on 1264e3222d. Full details in doc/consensus-diff.md.
 EXCLUDED=(
@@ -50,11 +50,6 @@ EXCLUDED=(
   #   and must come from the ASERT formula, never from our own output.
   pow_tests
 
-  # --- Stale test vectors. The implementation is correct in each of these; the
-  # EXPECTED values are upstream's and were never regenerated for the fork.
-  # Careful work: a vector "corrected" to match buggy behaviour bakes the bug in
-  # permanently, so each needs deriving from first principles, not from output.
-  checkpoints_tests  # expects upstream's populated checkpoint heights; ours pins genesis only
 )
 
 # Boost.Test filter syntax: colon-separated, ! negates.
