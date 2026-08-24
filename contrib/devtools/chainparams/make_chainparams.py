@@ -32,7 +32,7 @@ def get_chainparams(rpc_caller, block):
         chain = Chain.TestNet4
     elif chaininfo['chain'] == 'scale':
         chain = Chain.ScaleNet
-        # Comment-out the below to actually update chain params for scalenet
+        # Left from upstream's scalenet handling; BitFinite has no such network.
         sys.exit("ScaleNet chainparams should not be updated. See BFXN issue "
                  "#293. If you really wish to proceed anyway, then please "
                  "edit this script to comment-out this line of code.")
@@ -53,7 +53,7 @@ def get_chainparams(rpc_caller, block):
         if chain == Chain.MainNet:
             block -= 10
         elif chain == Chain.ScaleNet:
-            # Use fixed block at height=9999 for scalenet because it re-orgs at 10,000
+            # Upstream pinned height=9999 for scalenet, which re-orged at 10,000.
             block = 9999
         else:
             block -= 2000

@@ -20,8 +20,6 @@ help_message() {
   echo ""
   echo "Options:"
   echo "-t3, --testnet3       Connect to testnet3 seeds (mainnet is default)."
-  echo "-t4, --testnet4       Connect to testnet4 seeds"
-  echo "-s1, --scalenet       Connect to scalenet seeds"
   echo "-h, --help            Display this help message."
   echo ""
   echo "Environment Variables:"
@@ -37,14 +35,6 @@ while [[ $# -gt 0 ]]; do
 case $1 in
   -t3|--testnet3)
     OPTION_TESTNET="--testnet3"
-    shift # shift past argument
-    ;;
-  -t4|--testnet4)
-    OPTION_TESTNET="--testnet4"
-    shift # shift past argument
-    ;;
-  -s1|--scalenet)
-    OPTION_TESTNET="--scalenet"
     shift # shift past argument
     ;;
   -h|--help)

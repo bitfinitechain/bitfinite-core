@@ -11,9 +11,6 @@ as an argument:
 
     chainparams_main.txt
     chainparams_test.txt
-    chainparams_testnet4.txt
-    chainparams_scalenet.txt
-    chainparams_chipnet.txt
 
 These files must consist of lines in the format
 
@@ -77,9 +74,7 @@ namespace ChainParamsConstants {{
         "generated",
         *process_constants(indir, 'chainparams_main.txt'),
         *process_constants(indir, 'chainparams_test.txt'),
-        *process_constants(indir, 'chainparams_testnet4.txt'),
-        *process_constants(indir, 'chainparams_scalenet.txt'),
-        *process_constants(indir, 'chainparams_chipnet.txt'))
+        )
     )
 
 

@@ -10,9 +10,6 @@ argument:
 
     nodes_main.txt
     nodes_testnet3.txt
-    nodes_testnet4.txt
-    nodes_scalenet.txt
-    nodes_chipnet.txt
 
 These files must consist of lines in the format
 
@@ -29,15 +26,6 @@ The output will be four data structures with the peers in binary format:
    ...
    }
    static SeedSpec6 pnSeed6_testnet3[]={
-   ...
-   }
-   static SeedSpec6 pnSeed6_testnet4[]={
-   ...
-   }
-   static SeedSpec6 pnSeed6_scalenet[]={
-   ...
-   }
-   static SeedSpec6 pnSeed6_chipnet[]={
    ...
    }
 
@@ -146,19 +134,10 @@ def main():
     g.write(' * IPv6 hex notation, followed by a colon and a port.\n')
     g.write(' */\n')
     with open(os.path.join(indir, 'nodes_main.txt'), 'r', encoding="utf8") as f:
-        process_nodes(g, f, 'pnSeed6_main', 8333)
+        process_nodes(g, f, 'pnSeed6_main', 19768)
     g.write('\n')
     with open(os.path.join(indir, 'nodes_testnet3.txt'), 'r', encoding="utf8") as f:
-        process_nodes(g, f, 'pnSeed6_testnet3', 18333)
-    g.write('\n')
-    with open(os.path.join(indir, 'nodes_testnet4.txt'), 'r', encoding="utf8") as f:
-        process_nodes(g, f, 'pnSeed6_testnet4', 28333)
-    g.write('\n')
-    with open(os.path.join(indir, 'nodes_scalenet.txt'), 'r', encoding="utf8") as f:
-        process_nodes(g, f, 'pnSeed6_scalenet', 38333)
-    g.write('\n')
-    with open(os.path.join(indir, 'nodes_chipnet.txt'), 'r', encoding="utf8") as f:
-        process_nodes(g, f, 'pnSeed6_chipnet', 48333)
+        process_nodes(g, f, 'pnSeed6_testnet3', 29768)
 
 
 if __name__ == '__main__':
