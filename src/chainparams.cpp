@@ -189,7 +189,14 @@ public:
         base58Prefixes[EXT_SECRET_KEY] = {0x04, 0x88, 0xAD, 0xE4};
         cashaddrPrefix = "bfx";
 
-        vFixedSeeds.clear();
+        // Fallback peers, used only when DNS seeding fails outright. Without
+        // these a fresh node with no peers.dat and no working resolver cannot
+        // reach the network at all. Generated from contrib/seeds/nodes_main.txt
+        // by contrib/seeds/generate-seeds.py; every entry is a host we run and
+        // already publish through seed.bitfinitechain.org. A stale entry is
+        // harmless — the client simply tries the next one.
+        vFixedSeeds = std::vector<SeedSpec6>(std::begin(pnSeed6_main),
+                                             std::end(pnSeed6_main));
 
         fDefaultConsistencyChecks = false;
         fRequireStandard = true;
@@ -309,7 +316,8 @@ public:
         assert(genesis.hashMerkleRoot ==
                uint256S("0x8b091b56222f40fb242b3811b07cf9b75e48024501058e66c0c1c5e653bd8a1d"));
 
-        vFixedSeeds.clear();
+        vFixedSeeds = std::vector<SeedSpec6>(std::begin(pnSeed6_testnet3),
+                                             std::end(pnSeed6_testnet3));
         vSeeds.clear();
         // Single A record, DNS-only (not Cloudflare-proxied). A proxied record
         // would hand peers a Cloudflare address, and Cloudflare forwards HTTP,

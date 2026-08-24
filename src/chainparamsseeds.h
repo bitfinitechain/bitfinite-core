@@ -5,19 +5,14 @@
  *
  * Each string must be numeric IPv4 dot-notation or numeric
  * IPv6 hex notation, followed by a colon and a port.
- *
- * SECURITY: This file was cleared of all BCH seed node IPs.
- * BFX uses DNS seeds (seed-{1,2,3}.bitfinitechain.org) configured
- * in chainparams.cpp, plus any addnode= entries in bitfinite.conf.
- *
- * To add fixed seeds, run contrib/seeds/generate-seeds.py with
- * BFX mainnet node IPs and regenerate this file.
  */
 static const SeedSpec6 pnSeed6_main[] = {
-    // Add verified BFX mainnet node IPs here as the network grows
-    // Example: { "1.2.3.4:19768" },
+    { "178.128.22.195:19768" },
+    { "188.166.183.29:19768" },
+    { "134.209.105.173:19768" },
+    { "128.199.227.216:19768" }
 };
 
-static const SeedSpec6 pnSeed6_test[] = {
-    // Add verified BFX testnet node IPs here
+static const SeedSpec6 pnSeed6_testnet3[] = {
+    { "128.199.227.216:29768" }
 };
