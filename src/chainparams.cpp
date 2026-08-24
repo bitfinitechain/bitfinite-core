@@ -109,14 +109,14 @@ public:
         // absorbed in hours, not days, sharply limiting any excess minting.
         consensus.nASERTHalfLife = 6 * 60 * 60;
         // Anti-fake-chain / IBD trust anchor. Set to a well-buried block
-        // (height 2639, ~200 deep at the time of this release) so a syncing node
+        // (height 16640, ~200 deep at the time of this release) so a syncing node
         // rejects any presented chain with less accumulated work, and can skip
         // signature verification below the assume-valid block. Bump these on
         // future releases as the chain grows (chainwork from getblockheader).
         consensus.nMinimumChainWork = uint256S(
-            "0x0000000000000000000000000000000000000000000000001932d1a31b9f30fd");
+            "0x00000000000000000000000000000000000000000000004af6543a0b84f12ae9");
         consensus.defaultAssumeValid = BlockHash::fromHex(
-            "00000000000018aa22cb9a4c2a84df7bfa3c4146c8acddad02610143529d5b70");
+            "0000000000000003c62870f8322b29c15493b4c0b15fbaeda3abc0019ea18786");
 
         // Default limit for block size (in bytes)
         consensus.nDefaultConsensusBlockSize = DEFAULT_CONSENSUS_BLOCK_SIZE;
@@ -225,11 +225,11 @@ public:
         // The rate is the trailing-window figure from getchaintxstats, and it
         // cross-checks against first principles: mainnet targets 300s blocks and
         // is almost entirely coinbase-only, so ~1/300 = 0.00333 tx/s is expected
-        // and 0.00345 is what was measured.
+        // and 0.00366 is what was measured over the trailing 4096 blocks.
         chainTxData = ChainTxData{
-            1787407530, // Time of block 16434
-            16836,      // Chain-wide transaction count at that block
-            0.00345     // Transactions per second, trailing window
+            1787489610, // Time of block 16640
+            17052,      // Chain-wide transaction count at that block
+            0.00366     // Transactions per second, trailing window
         };
     }
 };

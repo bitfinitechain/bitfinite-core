@@ -1,123 +1,74 @@
-# Release Notes for BitFinite Node version 3.2.0
+# Release Notes for BitFinite Node version 3.2.1
 
-BitFinite Node version 3.2.0 is now available from:
+BitFinite Node version 3.2.1 is now available from:
 
-  https://github.com/bitfinitechain/bitfinite-core/releases/tag/v3.2.0
+  https://github.com/bitfinitechain/bitfinite-core/releases/tag/v3.2.1
 
-**Mainnet is a drop-in upgrade from 3.1.x or 3.0.x — no reindex, no wallet
-migration, no consensus change.** Stop the node, swap the binaries, start it
-again. Testnet and regtest are likewise unaffected.
+**This is a drop-in upgrade from any 3.x release — no reindex, no wallet
+migration, no consensus change, no configuration change.** Stop the node, swap
+the binaries, start it again.
 
-**This release removes three test networks.** If your configuration or scripts
-pass `-testnet4`, `-scalenet` or `-chipnet`, or set `testnet4=1` and the like in
-a config file, **the node will refuse to start**:
+**Nothing in this release affects a node that is already running and synced.**
+Everything here changes how a *new* node reaches the network and how quickly it
+catches up. If your node is up, there is no reason to hurry.
 
-```
-Error reading configuration file: Invalid configuration value testnet4
-```
+## Fixed seeds: DNS is no longer a single point of failure
 
-A leftover `[test4]`, `[scale]` or `[chip]` *section* is gentler — the node
-starts and warns:
+Until now `vFixedSeeds` was empty on every network, which meant DNS seeding was
+the only way in. A fresh node with no `peers.dat` and no working resolver could
+not reach the network at all — and `seed.bitfinitechain.org` is one name, on one
+provider.
 
-```
-Warning: bitfinite.conf:1 Section [chip] is not recognized.
-```
+This release compiles in four mainnet nodes and one testnet node as a fallback.
+Every one of them is a host we operate and already publish through DNS, so
+nothing that was private has been made public; that is the deliberate trade for
+removing the single point of failure. A fixed seed that later goes away is
+harmless — the client simply tries the next.
 
-That is the one upgrade step in this release, and it is covered in full below.
+**They are a fallback, not a shortcut.** The node adds them only when its
+address manager is still empty 60 seconds after startup. In normal operation DNS
+answers first and the fixed seeds are never touched, so do not be alarmed if you
+never see them used.
 
-## Removed: testnet4, scalenet and chipnet
+Verified rather than assumed: a fresh node started with `-dnsseed=0` connected to
+all four seeds and synced the full chain.
 
-These three networks were inherited whole when BitFinite forked Bitcoin Cash
-Node, and they were never BitFinite networks in any meaningful sense. Each
-carried Bitcoin Cash's genesis block, Bitcoin Cash's upgrade activation heights
-and Bitcoin Cash's ASERT anchor. None had a DNS seed, a fixed seed, or a node
-anyone operated. The startup code printed a warning telling you not to use them.
+**If you run a node others rely on**, nothing is required of you. If you would
+like it added to a future list, get in touch — the list lives in
+`contrib/seeds/nodes_main.txt`.
 
-They existed to be warned about, so they are gone.
+## Faster initial sync
 
-**What each was for, and why it did not transfer.** `chipnet` exists on Bitcoin
-Cash to rehearse CHIPs roughly six months before they activate on mainnet — its
-only distinguishing parameter was an earlier `upgrade10ActivationTime`. BitFinite
-has not adopted those CHIPs, so a network for testing them early rehearsed
-somebody else's schedule. `scalenet` is a large-block stress network, 256 MB
-against 2 MB elsewhere; a sound idea, but stress-testing block propagation
-requires peers, and it had none. `testnet4` is simply a testnet3 with shorter
-history, which is only useful if it is running.
+`nMinimumChainWork` and `defaultAssumeValid` were pinned at height 2639 and had
+fallen roughly 14,000 blocks behind. Both now point at height 16640, about 200
+deep at the time of this release.
 
-**If you want any of them back**, the honest versions look different: our own
-genesis, our own spacing, an activation date for an upgrade we have actually
-decided to adopt, and at least one node. That is a decision rather than a config
-file, and nothing in this release forecloses it. The removed code is in git
-history.
+For a new node this means signature verification is skipped below that block
+during initial sync, and a presented chain with less accumulated work is rejected
+outright. `chainTxData` is refreshed to the same block, so the sync progress
+percentage reflects the current chain rather than a months-old estimate.
 
-**What to do on upgrade.** Remove `testnet4=1`, `scalenet=1` or `chipnet=1` from
-any config file — those stop the node from starting. Then remove any `[test4]`,
-`[scale]` or `[chip]` sections, which only produce a warning but are now dead
-weight.
+These are trust anchors for syncing, not consensus rules. They do not change
+which blocks are valid.
 
-Old `testnet4/`, `scalenet/` and `chipnet/` data directories are simply ignored
-and can be deleted at your convenience. Mainnet, testnet and regtest data
-directories are untouched.
+## Developer tooling for the removed networks
 
-## Removed: the pre-ASERT difficulty algorithms
+Version 3.2.0 removed testnet4, scalenet and chipnet but left their tooling
+behind, and it had started to rot: `generate-seeds.py` still opened
+`nodes_testnet4.txt`, `nodes_scalenet.txt` and `nodes_chipnet.txt`, so deleting
+those files alone would have made the script crash rather than simply produce
+dead output.
 
-`GetNextCashWorkRequired` (the cw144 algorithm) and `GetNextEDAWorkRequired` (the
-emergency difficulty adjustment) are gone, along with the three test cases that
-exercised them.
+Worth stating plainly, because it was the more serious half: every `nodes_*.txt`
+in `contrib/seeds` was inherited **Bitcoin Cash** data. `nodes_main.txt` listed
+94 peers on port 8333, none of them ours, and the generator hardcoded 8333/18333
+as the mainnet and testnet ports. Anyone regenerating `chainparamsseeds.h` would
+have compiled Bitcoin Cash nodes into a BitFinite binary. It never shipped,
+because `vFixedSeeds` was cleared — the same emptiness this release fills. The
+lists are now ours and the ports are 19768 and 29768.
 
-`GetNextWorkRequired` reaches those two only when Axion is not yet active, and
-Axion is time-gated. Mainnet and testnet have genesis timestamps well past the
-activation time, so both always took the ASERT branch. The three removed
-networks kept Bitcoin Cash's 2020 genesis timestamps, which sit 83 to 88 days
-*before* the activation time they also inherited — so on those chains alone the
-pre-ASERT algorithms were live.
-
-That distinction was worth establishing before deleting anything. An earlier note
-in this repository asserted the legacy code was unreachable, and it was not.
-With the networks gone it now is, on every chain this node can select.
-
-The unreachable branch that remains returns a defined value rather than relying
-on an assertion. This build compiles without `NDEBUG` on purpose, so assertions
-survive into release, but that is a build setting: a toolchain that restored
-`NDEBUG` would have turned a crash into undefined behaviour, in the function that
-decides proof-of-work difficulty.
-
-## Test suite: 120 of 120, with an empty exclusion list
-
-For the first time, no suite is excluded from the default run.
-
-The exclusion list was a visible work queue rather than a quiet silence — every
-entry carried its reason in `scripts/run-tests-docker.sh`, printed into every CI
-job summary. It is now empty, and `miner_tests`, `checkpoints_tests` and
-`pow_tests` all pass.
-
-Almost every one of those failures came from a single difference rather than
-from stale test data, and it is worth stating because it will come up again.
-**BitFinite activates every upgrade at height 0. Upstream activates them at real
-historical heights, far above where these tests reach.** A test that mines a
-hundred blocks therefore runs upstream in a pre-2018 rule regime that BitFinite
-does not have, and four separate consensus rules broke a suite for exactly that
-reason:
-
-- **Minimum transaction size.** `miner_tests` built a 62-byte coinbase against a
-  65-byte floor.
-- **`SCRIPT_VERIFY_SIGPUSHONLY`.** It padded a scriptSig with `OP_DROP`, which is
-  not a push.
-- **`SCRIPT_VERIFY_CLEANSTACK`.** That same scriptSig left nineteen stack items.
-- **CTOR.** `miner_tests` asserted which transaction sat at which index in a
-  block, but canonical transaction ordering sorts them by txid, so those indices
-  never described selection order here at all.
-
-`checkpoints_tests` was hard-wired to Bitcoin's genesis and its 2009 blocks; it
-now mines its own fork structure at run time. `pow_tests` inherited BCH's
-600-second spacing and two-day half-life as literals throughout; those are
-derived from the chain's own parameters now, so the cases test the algorithm
-rather than one chain's numbers.
-
-No expected value was rewritten to match our output. Where a suite could not
-observe what it claimed to — selection preference under CTOR — the assertion was
-replaced with what is observable and the gap documented, rather than adjusted
-until it passed.
+The functional test framework was also still using Bitcoin Cash's network magic
+bytes, which is fixed here. Test-only; it does not affect the node.
 
 ## Verifying your download
 
@@ -132,7 +83,7 @@ sha256sum -c SHA256SUMS --ignore-missing
 On Windows, PowerShell:
 
 ```
-Get-FileHash bitfinite-v3.2.0-x86_64-windows.zip -Algorithm SHA256
+Get-FileHash bitfinite-v3.2.1-x86_64-windows.zip -Algorithm SHA256
 ```
 
 **Windows will warn you.** SmartScreen and Defender flag unsigned executables
