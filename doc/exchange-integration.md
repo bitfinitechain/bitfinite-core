@@ -133,6 +133,9 @@ The supply endpoints return plain numbers and are intended for listing sites:
   rather give you a number you can check than a slogan you cannot.
 - The reorg cap is inherited from BCHN, not invented here, and has been active
   since genesis.
+- We are staying on SHA-256d, deliberately, and the reasoning is written down in
+  [proof-of-work-policy.md](proof-of-work-policy.md) — including why changing
+  the algorithm would not fix what it appears to fix.
 
 ## Contact
 
