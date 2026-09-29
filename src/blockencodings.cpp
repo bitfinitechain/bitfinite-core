@@ -58,7 +58,14 @@ ReadStatus PartiallyDownloadedBlock::InitData(const CBlockHeaderAndShortTxIDs &c
         return READ_STATUS_INVALID;
     }
 
-    assert(header.IsNull() && txns_available.empty());
+    // CVE-2024-35202 class: re-entry on an already-initialised or already-
+    // consumed object must not abort the node. Backport of BCHN cf5cdf1fb
+    // (Bitcoin Core PR #26898). READ_STATUS_INVALID routes the caller to its
+    // cleanup-and-discourage branch, which is what upstream intends here.
+    if (!header.IsNull() || !txns_available.empty()) {
+        return READ_STATUS_INVALID;
+    }
+
     header = cmpctblock.header;
     txns_available.resize(cmpctblock.BlockTxCount());
 
@@ -197,13 +204,32 @@ ReadStatus PartiallyDownloadedBlock::InitData(const CBlockHeaderAndShortTxIDs &c
 }
 
 bool PartiallyDownloadedBlock::IsTxAvailable(size_t index) const {
-    assert(!header.IsNull());
+    // Same re-entry hardening as above. NOTE: upstream cf5cdf1fb returns
+    // READ_STATUS_INVALID here, but this function returns bool and that enum
+    // value is 1, i.e. TRUE -- it would tell the caller at net_processing
+    // `if (!IsTxAvailable(i))` that every transaction is already available and
+    // suppress the getblocktxn request. A consumed object holds nothing, so
+    // the correct answer is false. Deliberate divergence from upstream.
+    if (header.IsNull()) {
+        return false;
+    }
     assert(index < txns_available.size());
     return txns_available[index] != nullptr;
 }
 
 ReadStatus PartiallyDownloadedBlock::FillBlock(CBlock &block, const std::vector<CTransactionRef> &vtx_missing) {
-    assert(!header.IsNull());
+    // THE reachable one. A second blocktxn for the same block arrives after a
+    // failing FillBlock has already run `header.SetNull()` below, and the
+    // BLOCKTXN handler's READ_STATUS_FAILED branch leaves the in-flight entry
+    // and this object alive. The assert that used to be here aborted the
+    // process; asserts are live in shipped builds because
+    // cmake/modules/OverrideInitFlags.cmake drops -DNDEBUG.
+    //
+    // The BFX empty-txns_available guard below cannot cover this: it sits
+    // after the entry check and never ran.
+    if (header.IsNull()) {
+        return READ_STATUS_INVALID;
+    }
 
     // BFX SECURITY: Additional safety check to prevent processing empty blocks
     if (txns_available.empty()) {

@@ -390,6 +390,63 @@ BOOST_AUTO_TEST_CASE(EmptyBlockRoundTripTest) {
     }
 }
 
+// Regression test for the CVE-2024-35202 class of bug (BCHN cf5cdf1fb,
+// Bitcoin Core PR #26898). PartiallyDownloadedBlock is single-use: FillBlock
+// nulls the header before validating, so a second call used to hit
+// assert(!header.IsNull()) and abort the process.
+//
+// That was remotely reachable. The BLOCKTXN handler's READ_STATUS_FAILED
+// branch (short-ID collision, deliberately forgiving) leaves both the
+// in-flight entry and this object alive without clearing them, so a peer could
+// send a second blocktxn for the same block and kill the node. Asserts are
+// live in shipped builds: OverrideInitFlags.cmake drops -DNDEBUG.
+//
+// Note the other tests in this file save and restore a copy around each
+// FillBlock precisely because the object is consumed, which is why none of
+// them ever exercised re-entry. This one does it deliberately.
+BOOST_AUTO_TEST_CASE(FillBlockReentryIsNotFatalTest) {
+    CTxMemPool pool;
+    TestMemPoolEntryHelper entry;
+    CBlock block(BuildBlockTestCase());
+
+    LOCK2(cs_main, pool.cs);
+    pool.addUnchecked(entry.FromTx(block.vtx[2]));
+
+    CBlockHeaderAndShortTxIDs shortIDs(block);
+    PartiallyDownloadedBlock partialBlock(GetConfig(), &pool);
+    BOOST_CHECK(partialBlock.InitData(shortIDs, extra_txn) == READ_STATUS_OK);
+
+    // Re-initialising an already-initialised object is refused, not fatal.
+    BOOST_CHECK(partialBlock.InitData(shortIDs, extra_txn) ==
+                READ_STATUS_INVALID);
+
+    // First fill consumes the object.
+    CBlock block2;
+    BOOST_CHECK(partialBlock.FillBlock(block2, {block.vtx[1]}) ==
+                READ_STATUS_OK);
+    BOOST_CHECK_EQUAL(block.GetHash().ToString(), block2.GetHash().ToString());
+
+    // THE ONE THAT USED TO ABORT: a second FillBlock on the same object must
+    // return an error the caller can act on, not kill the process. The
+    // BLOCKTXN handler treats READ_STATUS_INVALID as punishable and clears the
+    // in-flight state, which is exactly the desired outcome for a peer that
+    // sends a duplicate blocktxn.
+    CBlock block3;
+    BOOST_CHECK(partialBlock.FillBlock(block3, {}) == READ_STATUS_INVALID);
+
+    // And a third, to prove the object stays in a defined state.
+    CBlock block4;
+    BOOST_CHECK(partialBlock.FillBlock(block4, {}) == READ_STATUS_INVALID);
+
+    // IsTxAvailable on a consumed object must answer false, not true. Upstream
+    // returns READ_STATUS_INVALID here, which is 1 and therefore TRUE through
+    // the bool return -- that would tell net_processing every transaction is
+    // already available and suppress the getblocktxn it still needs.
+    BOOST_CHECK(!partialBlock.IsTxAvailable(0));
+    BOOST_CHECK(!partialBlock.IsTxAvailable(1));
+    BOOST_CHECK(!partialBlock.IsTxAvailable(2));
+}
+
 BOOST_AUTO_TEST_CASE(TransactionsRequestSerializationTest) {
     BlockTransactionsRequest req1;
     req1.blockhash = BlockHash(InsecureRand256());
