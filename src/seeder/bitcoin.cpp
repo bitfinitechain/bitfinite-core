@@ -22,6 +22,7 @@
 #include <cstdio>
 #include <cstring>
 #include <ctime>
+#include <new>
 
 #ifdef USE_POLL /* USE_POLL comes from compat.h */
 #  if __has_include(<poll.h>)
@@ -139,7 +140,19 @@ PeerMessagingState CSeederNode::ProcessMessage(const std::string &msg_type,
         recv >> nVersion >> nServiceInt >> nTime >> addrMe;
         you.nServices = ServiceFlags(nServiceInt);
         recv >> addrFrom >> nNonce;
-        recv >> strSubVer;
+        // SECURITY: cap the user-agent read. The generic string unserializer
+        // reads an attacker-declared CompactSize, bounded only by MAX_SIZE
+        // (32 MiB), and then calls resize() BEFORE reading any bytes, so the
+        // allocation follows what the peer CLAIMS to be sending, not what it
+        // sends. A ~120-byte message could therefore cost 32 MiB, times 96
+        // crawler threads, and an in-bounds 2 MiB subversion was copied into
+        // the database and persisted to dnsseed.dat forever.
+        //
+        // LIMITED_STRING throws before the resize. This is exactly what the
+        // node itself does for the same wire field in net_processing.cpp;
+        // the seeder never picked it up. strSubVer only feeds the dump and
+        // stats output, so 256 bytes costs us nothing.
+        recv >> LIMITED_STRING(strSubVer, SEEDER_MAX_SUBVERSION_LENGTH);
         recv >> nStartingHeight;
 
         if (nVersion >= FEATURE_NEGOTIATION_BEFORE_VERACK_VERSION) {
@@ -516,7 +529,21 @@ bool TestNode(const CService &cip, int &ban, int &clientV,
         // std::fprintf(stdout, "%s: %s!!!\n", cip.ToString().c_str(), ret ? "GOOD" :
         //              "BAD");
         return ret;
-    } catch (std::ios_base::failure &e) {
+    } catch (const std::ios_base::failure &e) {
+        ban = 0;
+        return false;
+    } catch (const std::bad_alloc &e) {
+        // SECURITY: this used to escape. A crawler thread is a pthread, so an
+        // uncaught exception calls std::terminate and takes the whole seeder
+        // down, which is a remote kill switch for the network's bootstrap if
+        // any allocation on this path can be driven by a peer. The subversion
+        // cap above closes the worst of those, but the receive buffer and the
+        // per-message copy are still peer-sized, so failing this one crawl is
+        // the behaviour we want rather than dying.
+        ban = 0;
+        return false;
+    } catch (const std::exception &e) {
+        // Same reasoning. Nothing below this is worth a process abort.
         ban = 0;
         return false;
     }

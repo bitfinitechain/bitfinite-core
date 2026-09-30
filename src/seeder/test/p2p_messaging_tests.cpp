@@ -7,6 +7,7 @@
 #include <arith_uint256.h>
 #include <chainparams.h>
 #include <clientversion.h>
+#include <netbase.h>
 #include <protocol.h>
 #include <seeder/bitcoin.h>
 #include <seeder/db.h>
@@ -76,6 +77,23 @@ CreateVersionMessage(int64_t now, CAddress addrTo, CAddress addrFrom,
     ServiceFlags serviceflags = ServiceFlags(NODE_NETWORK);
     payload << nVersion << uint64_t(serviceflags) << now << addrTo << addrFrom
             << nonce << user_agent << start_height;
+    return payload;
+}
+
+// Builds a version message whose strSubVer CompactSize is a lie: it declares
+// `declaredLength` bytes while only `actualBytes` follow. This is the shape of
+// the amplification payload, a ~120-byte message that asks for a 32 MiB
+// allocation.
+static CDataStream CreateVersionMessageWithOverdeclaredSubVer(int64_t now, CAddress addrTo, CAddress addrFrom,
+                                                              uint64_t declaredLength, size_t actualBytes) {
+    CDataStream payload(SER_NETWORK, 0);
+    payload.SetVersion(INIT_PROTO_VERSION);
+    ServiceFlags serviceflags = ServiceFlags(NODE_NETWORK);
+    payload << int32_t(OUR_VERSION) << uint64_t(serviceflags) << now << addrTo << addrFrom << uint64_t(0);
+    WriteCompactSize(payload, declaredLength);
+    const std::string partial(actualBytes, 'A');
+    payload.write(partial.data(), partial.size());
+    payload << int32_t(1);
     return payload;
 }
 
@@ -328,6 +346,65 @@ BOOST_AUTO_TEST_CASE(stale_checkpoint_flag_is_not_trusted_on_reload) {
 
     // And the reloaded entry is not servable, whichever gate catches it.
     BOOST_CHECK(!info.IsReliable());
+}
+
+// Regression tests for the uncapped user-agent read (BUG-R3-S2-A6-H2).
+//
+// The generic string unserializer reads a peer-declared CompactSize, bounded
+// only by MAX_SIZE (32 MiB), then calls resize() BEFORE reading any bytes. So
+// the allocation followed what the peer claimed rather than what it sent: a
+// ~120-byte message bought a 32 MiB allocation, across 96 crawler threads, and
+// an in-bounds 2 MiB subversion was copied into the database and persisted.
+// The node caps the same wire field at 256 bytes; the seeder never did.
+
+// An over-declared length must be refused, and refused before it allocates.
+BOOST_AUTO_TEST_CASE(overdeclared_subversion_is_refused) {
+    CService serviceFrom;
+    CAddress addrFrom(serviceFrom, ServiceFlags(NODE_NETWORK | NODE_BITCOIN_CASH));
+
+    // Claim 32 MiB of user agent, send 8 bytes of it.
+    CDataStream versionMessage = CreateVersionMessageWithOverdeclaredSubVer(
+        std::time(nullptr), vAddr[0], addrFrom, 32u * 1024 * 1024, 8);
+    // The whole message is far smaller than what it asks us to allocate, which
+    // is the amplification.
+    BOOST_CHECK(versionMessage.size() < 200);
+
+    // THE BEHAVIOUR THAT USED TO BE MISSING: the read throws instead of
+    // resizing. Before the cap this call allocated 32 MiB and then failed on
+    // the short read, leaving the entry un-banned and re-crawlable.
+    BOOST_CHECK_THROW(testNode->TestProcessMessage(NetMsgType::VERSION, versionMessage,
+                                                   PeerMessagingState::AwaitingMessages),
+                      std::ios_base::failure);
+
+    // Nothing was recorded from the rejected message.
+    BOOST_CHECK_EQUAL(testNode->GetClientSubVersion(), "");
+}
+
+// A subversion that is over the cap but well inside the 2 MiB message limit is
+// the persistent variant: it used to be stored and written to dnsseed.dat.
+BOOST_AUTO_TEST_CASE(oversized_subversion_within_message_limit_is_refused) {
+    CService serviceFrom;
+    CAddress addrFrom(serviceFrom, ServiceFlags(NODE_NETWORK | NODE_BITCOIN_CASH));
+
+    const size_t oversized = SEEDER_MAX_SUBVERSION_LENGTH + 1;
+    CDataStream versionMessage = CreateVersionMessage(std::time(nullptr), vAddr[0], addrFrom, 1, OUR_VERSION, 0,
+                                                      std::string(oversized, 'A'));
+    BOOST_CHECK_THROW(testNode->TestProcessMessage(NetMsgType::VERSION, versionMessage,
+                                                   PeerMessagingState::AwaitingMessages),
+                      std::ios_base::failure);
+    BOOST_CHECK_EQUAL(testNode->GetClientSubVersion(), "");
+}
+
+// The cap must not break an honest node. 256 bytes exactly is still accepted.
+BOOST_AUTO_TEST_CASE(subversion_at_the_cap_is_accepted) {
+    CService serviceFrom;
+    CAddress addrFrom(serviceFrom, ServiceFlags(NODE_NETWORK | NODE_BITCOIN_CASH));
+
+    const std::string atCap(SEEDER_MAX_SUBVERSION_LENGTH, 'A');
+    CDataStream versionMessage =
+        CreateVersionMessage(std::time(nullptr), vAddr[0], addrFrom, 1, OUR_VERSION, 0, atCap);
+    testNode->TestProcessMessage(NetMsgType::VERSION, versionMessage, PeerMessagingState::AwaitingMessages);
+    BOOST_CHECK_EQUAL(testNode->GetClientSubVersion(), atCap);
 }
 
 BOOST_AUTO_TEST_CASE(ban_too_many_headers) {
