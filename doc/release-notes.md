@@ -1,79 +1,168 @@
-# Release Notes for BitFinite Node version 3.2.1
+# Release Notes for BitFinite Node version 3.2.2
 
-BitFinite Node version 3.2.1 is now available from:
+BitFinite Node version 3.2.2 is now available from:
 
-  https://github.com/bitfinitechain/bitfinite-core/releases/tag/v3.2.1
+  https://github.com/bitfinitechain/bitfinite-core/releases/tag/v3.2.2
 
-**This is a drop-in upgrade from any 3.x release — no reindex, no wallet
-migration, no consensus change, no configuration change.** Stop the node, swap
-the binaries, start it again.
+**This is a security release. Upgrade.** It is still a drop-in upgrade from any
+3.x release: no reindex, no wallet migration, no consensus change, no
+configuration change. Stop the node, swap the binaries, start it again.
 
-**Nothing in this release affects a node that is already running and synced.**
-Everything here changes how a *new* node reaches the network and how quickly it
-catches up. If your node is up, there is no reason to hurry.
+Unlike 3.2.1, this one does affect a node that is already running and synced.
+Two of the issues below let an unauthenticated peer crash or exhaust the memory
+of any reachable node. If you run a node, this is worth doing today.
 
-## Fixed seeds: DNS is no longer a single point of failure
+The issues were reported by **OpenVuln**, an automated vulnerability analysis
+project, which reviewed this tree and supplied reproductions:
 
-Until now `vFixedSeeds` was empty on every network, which meant DNS seeding was
-the only way in. A fresh node with no `peers.dat` and no working resolver could
-not reach the network at all — and `seed.bitfinitechain.org` is one name, on one
-provider.
+  https://huggingface.co/spaces/zai-org/OpenVuln
 
-This release compiles in four mainnet nodes and one testnet node as a fallback.
-Every one of them is a host we operate and already publish through DNS, so
-nothing that was private has been made public; that is the deliberate trade for
-removing the single point of failure. A fixed seed that later goes away is
-harmless — the client simply tries the next.
+Credit where it is due: the report was specific, it was right, and several of
+the findings had been sitting in the code since the fork. Every finding was
+reproduced against our own source before being fixed, and every fix carries a
+regression test that was confirmed to fail without it.
 
-**They are a fallback, not a shortcut.** The node adds them only when its
-address manager is still empty 60 seconds after startup. In normal operation DNS
-answers first and the fixed seeds are never touched, so do not be alarmed if you
-never see them used.
+Two places where we diverged from the suggested patches, both noted below with
+the reason: the compact block fix, where the upstream approach returns a value
+that converts to the wrong boolean, and the seeder user-agent fix, where the
+suggested include does not compile in this tree.
 
-Verified rather than assumed: a fresh node started with `-dnsseed=0` connected to
-all four seeds and synced the full chain.
+## What was wrong, and what it meant
 
-**If you run a node others rely on**, nothing is required of you. If you would
-like it added to a future list, get in touch — the list lives in
-`contrib/seeds/nodes_main.txt`.
+### A duplicate message could stop the node
 
-## Faster initial sync
+`PartiallyDownloadedBlock` is single use: reconstructing a compact block
+consumes it. That was enforced with an assertion, and the compact block handler
+has a deliberately forgiving path that leaves the consumed object reachable. A
+peer could therefore send a second reply for the same block and abort the
+process.
 
-`nMinimumChainWork` and `defaultAssumeValid` were pinned at height 2639 and had
-fallen roughly 14,000 blocks behind. Both now point at height 16640, about 200
-deep at the time of this release.
+Two things made it worse than it looks. Assertions are compiled into our
+released binaries, so this was a crash and not a debug check. And a node that
+dies is a node that restarts, which re-opens the window described next.
 
-For a new node this means signature verification is skipped below that block
-during initial sync, and a presented chain with less accumulated work is rejected
-outright. `chainTxData` is refreshed to the same block, so the sync progress
-percentage reflects the current chain rather than a months-old estimate.
+This is the same class as CVE-2024-35202. Both Bitcoin Core and Bitcoin Cash
+Node fixed it after our fork point, and the fix was never carried across.
 
-These are trust anchors for syncing, not consensus rules. They do not change
-which blocks are valid.
+**A note for anyone porting the upstream patch.** The upstream version returns
+a status enum from a function that returns `bool`. Because the success value is
+zero, the error converts to `true`, which tells the caller every transaction is
+already present and suppresses the request it still needs to send. Our version
+returns `false`. If you are comparing us to upstream here, the difference is
+deliberate.
 
-## Developer tooling for the removed networks
+### Block headers were stored without limit
 
-Version 3.2.0 removed testnet4, scalenet and chipnet but left their tooling
-behind, and it had started to rot: `generate-seeds.py` still opened
-`nodes_testnet4.txt`, `nodes_scalenet.txt` and `nodes_chipnet.txt`, so deleting
-those files alone would have made the script crash rather than simply produce
-dead output.
+Every check applied to an incoming block header is self contained: the hash is
+unique, the work matches what the header claims, the previous block is known,
+the timestamp is in range. Not one of them bounds how *many* headers a peer can
+make us store, and the index is never pruned. The only check that ties a header
+to our chain is the finalization check, and it does nothing until a block has
+been finalized, which is two hours after every process start and not before a
+block is connected. That state is not written to disk, so every restart opens
+the window again.
 
-Worth stating plainly, because it was the more serious half: every `nodes_*.txt`
-in `contrib/seeds` was inherited **Bitcoin Cash** data. `nodes_main.txt` listed
-94 peers on port 8333, none of them ours, and the generator hardcoded 8333/18333
-as the mainnet and testnet ports. Anyone regenerating `chainparamsseeds.h` would
-have compiled Bitcoin Cash nodes into a BitFinite binary. It never shipped,
-because `vFixedSeeds` was cleared — the same emptiness this release fills. The
-lists are now ours and the ports are 19768 and 29768.
+The effect is that a peer could park unbounded header data in memory during that
+window, and it was written to the block index on disk and read back at every
+startup. One wave kept costing memory until the data directory was rebuilt.
 
-The functional test framework was also still using Bitcoin Cash's network magic
-bytes, which is fixed here. Test-only; it does not affect the node.
+This is the CVE-2019-25220 class. The real upstream answer is headers
+pre-synchronization, which is a much larger change and is **not** in this
+release. What is here instead: while nothing has been finalized yet, headers
+must descend from a point `maxreorgdepth` behind the current tip. That closes
+the window for a node that is already synced, which is the case that was
+reachable at any time.
+
+**This does not cover a node still performing its initial sync**, nor one run
+with `-maxreorgdepth=-1`. Said plainly because it is the limitation of the fix.
+
+### The DNS seeder would vouch for anyone
+
+The seeder decides which peers a new node connects to first, so its checks are a
+security control for the whole network, not just for itself. Its only check that
+a crawled peer is on our chain could be skipped by that peer simply saying so:
+the condition was keyed on a block height the peer reports about itself. Any
+host that spoke the protocol was recorded as verified and served in the DNS
+answers.
+
+The check no longer reads the peer's self-reported height when deciding whether
+to trust it, and the block header a peer presents must now carry valid proof of
+work rather than being accepted unexamined.
+
+**This raises the cost of the attack. It does not eliminate it**, and that is
+worth being direct about. The proof-of-work floor on this network is low enough
+that a determined attacker can still produce a qualifying header, and the
+seeder holds no chain of its own, so it cannot judge whether that header's
+difficulty is plausible for its height. Closing this properly is a design
+change rather than another check, and it is not in this release.
+
+### The seeder could be made to exhaust its own memory
+
+Three separate problems, all in the crawler:
+
+- The user-agent string a peer reports was read without the length limit the
+  node itself applies to the same field. The allocation followed the length the
+  peer *claimed*, so a message of about a hundred bytes could ask for tens of
+  megabytes, across every crawler thread.
+- The per-connection limit on harvested addresses did not actually stop
+  collection. Past the limit, each further message still contributed one more
+  address for as long as the connection was held open.
+- The address database had no size limit at all, and the bloat was written to
+  disk and reloaded at every start.
+
+All three are now bounded. An allocation failure in a crawler thread also used
+to terminate the whole process; it now fails that one crawl.
+
+**A note for anyone porting this one too.** The obvious fix is to reuse the
+node's own limit constant by including its networking header. That does not
+compile in the seeder: the header pulls in the address manager, which declares
+a class with the same name as one of the seeder's own. That collision is very
+likely why the seeder never inherited the node's limit in the first place. The
+value is mirrored in the seeder instead, with a comment to keep the two equal.
+
+## If you run the DNS seeder
+
+This section is for us and for anyone running `bitcoin-seeder`. Node operators
+can skip it.
+
+The stored "this peer was verified" flag is no longer trusted across the
+upgrade, because every flag written by an older seeder was granted by the check
+that has just been fixed. The database record version changes accordingly and
+each entry has to prove itself again on the next crawl.
+
+**Expect the served set to be empty for a few minutes after restart.** During
+that window the seeder answers from untested entries rather than returning
+nothing. This is the intended behavior and not a fault. Plan the restart
+accordingly, and do not deploy it at the same time as anything else that
+affects bootstrapping.
+
+## Functional test framework
+
+The functional test suite could not start a node, and had not been able to
+since the binaries and the configuration file were renamed. The framework was
+still looking for the old binary names and still writing the old configuration
+file name, so a test node never read its own configuration, came up on the wrong
+network and collided with its siblings on a single port.
+
+This is test-only and does not affect the node. It is called out because the
+suite was reporting a connection failure that pointed nowhere near the cause.
+
+One test, `p2p_dos_header_tree.py`, still fails. It carries block header data
+inherited from upstream that cannot connect to our genesis, so it needs new data
+rather than a code fix. Stated here rather than quietly excluded.
+
+## Components in this release
+
+Unchanged, and listed because absence of news is not neutral. The Linux build
+ships `bitfinited`, `bitfinite-cli`, `bitfinite-tx`, `bitfinite-wallet`,
+`bitfinite-qt` and `bitcoin-seeder`. The Windows build ships the same set
+without `bitcoin-seeder`, which is a Linux-only target. Both are identical to
+3.2.1 in what they contain.
 
 ## Verifying your download
 
 Both builds ship unsigned. There is no code-signing certificate for BitFinite
-yet, so the published `SHA256SUMS` file is the trust mechanism — check it rather
+yet, so the published `SHA256SUMS` file is the trust mechanism. Check it rather
 than relying on the operating system to vouch for the binary.
 
 ```
@@ -83,7 +172,7 @@ sha256sum -c SHA256SUMS --ignore-missing
 On Windows, PowerShell:
 
 ```
-Get-FileHash bitfinite-v3.2.1-x86_64-windows.zip -Algorithm SHA256
+Get-FileHash bitfinite-v3.2.2-x86_64-windows.zip -Algorithm SHA256
 ```
 
 **Windows will warn you.** SmartScreen and Defender flag unsigned executables
