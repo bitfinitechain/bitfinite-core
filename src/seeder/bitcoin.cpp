@@ -218,6 +218,33 @@ PeerMessagingState CSeederNode::ProcessMessage(const std::string &msg_type,
             }
         }
         while (it != vAddrNew.end()) {
+            // SECURITY: the cap is checked BEFORE collecting, and it now ends
+            // the harvest for the whole connection rather than for this message.
+            //
+            // It used to be checked after the push, and the non-verified branch
+            // only broke out of this loop. The connection stayed open for the
+            // 30s timeout, so every further addr message contributed exactly
+            // one more address. A single-address addrv2 frame is about 61
+            // bytes, so a peer could stream hundreds of thousands of fabricated
+            // addresses in one visit, and each one costs us roughly 400 bytes
+            // of resident memory in the database, persisted to dnsseed.dat and
+            // reloaded at every startup.
+            //
+            // Withholding the getheaders reply was one way to hold the window
+            // open, but not the only one: the seeder sends getaddr BEFORE
+            // getheaders, so simply answering addr first got the whole stream
+            // processed while still unverified. Bounding the collection itself
+            // is what closes both.
+            if (vAddr->size() >= ADDR_SOFT_CAP) {
+                if (checkpointVerified) {
+                    // Nothing left to wait for, so drop the connection now.
+                    doneAfter = now;
+                    return PeerMessagingState::Finished;
+                }
+                // Still want the checkpoint proof, so stay connected, but take
+                // no more addresses from this peer no matter how many it sends.
+                return PeerMessagingState::AwaitingMessages;
+            }
             CAddress &addr = *it;
             // std::fprintf(stdout, "%s: got address %s\n", ToString(you).c_str(), addr.ToString().c_str());
             it++;
@@ -230,16 +257,6 @@ PeerMessagingState CSeederNode::ProcessMessage(const std::string &msg_type,
             // std::fprintf(stdout, "%s: added address %s (#%i)\n",
             //              ToString(you).c_str(),
             //              addr.ToString().c_str(), (int)(vAddr->size()));
-            if (vAddr->size() > ADDR_SOFT_CAP) {
-                if (checkpointVerified) {
-                    // stop processing addresees and since we aren't waiting for headers, stop processing immediately
-                    doneAfter = now;
-                    return PeerMessagingState::Finished;
-                } else {
-                    // stop processing addresses now since we hit the soft cap, but we will continue to await headers
-                    break;
-                }
-            }
         }
         return PeerMessagingState::AwaitingMessages;
     }

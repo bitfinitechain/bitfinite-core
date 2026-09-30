@@ -160,6 +160,15 @@ void CAddrDb::Add_(const CAddress &addr, bool force) {
         return;
     }
 
+    if (!force && idToInfo.size() >= MAX_TRACKED_ADDRESSES) {
+        // SECURITY: the table is full, so drop new gossip-derived entries. A
+        // crawled peer controls what goes in here, and without a bound one
+        // hostile peer can grow resident memory until the process is killed.
+        // Existing entries and force-added seeds are untouched, so this cannot
+        // lock us out of our own nodes.
+        return;
+    }
+
     CAddrInfo ai;
     ai.ip = ipp;
     ai.services = addr.nServices;

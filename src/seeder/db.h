@@ -25,6 +25,20 @@
 
 #define REQUIRE_VERSION 70001
 
+//! Upper bound on tracked (non-banned) addresses.
+//!
+//! The database grows only from unauthenticated gossip reported by crawled
+//! peers, so its size is remote-controlled. Dedup is by exact CService and
+//! IsRoutable accepts the whole of 2000::/3, so a single IPv6 /64 yields
+//! unlimited unique keys that need not correspond to real hosts. Eviction
+//! cannot keep up either: a non-banned failure cycles back forever, and the
+//! stat-window bans need days of accumulated attempts.
+//!
+//! 250k entries is roughly 100 MB at about 400 bytes per entry, which is far
+//! above anything this network needs and still bounded, against a service the
+//! README sizes at a few tens of megabytes.
+static constexpr size_t MAX_TRACKED_ADDRESSES = 250000;
+
 static inline std::string ToString(const CService &ip) {
     std::string str = ip.ToString();
     while (str.size() < 22) {
@@ -381,6 +395,13 @@ public:
             CAddrInfo info;
             s >> info;
             if (!info.GetBanTime()) {
+                // Do not re-inflate a bloated dump past the cap. Serialize
+                // writes ourId (tried) entries before unkId (untested gossip),
+                // so what gets dropped here is the untested tail, which is
+                // exactly what an injector fills the file with.
+                if (db->idToInfo.size() >= MAX_TRACKED_ADDRESSES) {
+                    continue;
+                }
                 int id = db->nId++;
                 db->idToInfo[id] = info;
                 db->ipToId[info.ip] = id;

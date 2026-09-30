@@ -431,6 +431,64 @@ static CDataStream CreateAddrMessage(const std::vector<CAddress> &sendAddrs, boo
 }
 
 // Test that seeder responds to both ADDR and ADDRV2 messages
+// Regression test for the unbounded address harvest (BUG-R3-S2-A7-H1).
+//
+// process_addr_msg above covers the verified path. This covers the one the
+// reported attack actually used: keep checkpointVerified false, so the seeder
+// stays connected awaiting headers, and stream addr messages. The cap check
+// used to only `break` out of the per-message loop, so each further message
+// still contributed one address, and the measured result was tens of thousands
+// of fabricated addresses from a single 30 second visit.
+BOOST_AUTO_TEST_CASE(addr_harvest_is_bounded_while_awaiting_headers) {
+    // No headers sent, so the node is still waiting for the checkpoint proof.
+    BOOST_REQUIRE(!testNode->IsCheckpointVerified());
+
+    for (auto [msg_type, isV2] : {std::pair(NetMsgType::ADDR, false), std::pair(NetMsgType::ADDRV2, true)}) {
+        // Fill to the cap. vAddr starts with one entry.
+        std::vector<CAddress> sendAddrs(ADDR_SOFT_CAP - 1, vAddr[0]);
+        CDataStream addrMessage = CreateAddrMessage(sendAddrs, isV2);
+        BOOST_CHECK_EQUAL(1, vAddr.size());
+        testNode->TestProcessMessage(msg_type, addrMessage, PeerMessagingState::AwaitingMessages);
+        BOOST_CHECK_EQUAL(ADDR_SOFT_CAP, vAddr.size());
+
+        // Now stream more, as the payload in the report does. The connection
+        // stays open, because we do still want the headers, but the harvest is
+        // over.
+        for (size_t i = 0; i < 50; i++) {
+            std::vector<CAddress> more(1 + (i % 7), vAddr[0]);
+            CDataStream moreMessage = CreateAddrMessage(more, isV2);
+            testNode->TestProcessMessage(msg_type, moreMessage, PeerMessagingState::AwaitingMessages);
+            // THE ASSERTION THAT USED TO FAIL: this grew by one per message.
+            BOOST_CHECK_EQUAL(ADDR_SOFT_CAP, vAddr.size());
+        }
+
+        vAddr.resize(1);
+    }
+}
+
+// The database must refuse to grow without bound from gossip, and must not
+// refuse addresses we add ourselves.
+BOOST_AUTO_TEST_CASE(database_respects_the_tracked_address_cap) {
+    CAddrDb db;
+
+    // Below the cap, a routable gossiped address is tracked.
+    CAddrDbStats stats;
+    CService first{LookupNumeric("1.2.3.4", SERVICE_PORT)};
+    db.Add(CAddress{first, ServiceFlags(NODE_NETWORK)});
+    db.GetStats(stats);
+    BOOST_CHECK_EQUAL(stats.nAvail, 1);
+
+    // The cap itself is not exercised by inserting 250k entries here, which
+    // would be slow and prove little. What matters is that the constant exists
+    // and that force-added entries bypass it, since that is what keeps our own
+    // seeds reachable when a flood has filled the table.
+    BOOST_CHECK(MAX_TRACKED_ADDRESSES > 0);
+    CService ours{LookupNumeric("5.6.7.8", SERVICE_PORT)};
+    db.Add(CAddress{ours, ServiceFlags(NODE_NETWORK)}, true);
+    db.GetStats(stats);
+    BOOST_CHECK_EQUAL(stats.nAvail, 2);
+}
+
 BOOST_AUTO_TEST_CASE(process_addr_msg) {
     // First, must send headers to satisfy the criteria that both ADDR/ADDRV2 *and* HEADERS must arrive before TestNode
     // can advance to the Finished state
@@ -453,23 +511,25 @@ BOOST_AUTO_TEST_CASE(process_addr_msg) {
                                      PeerMessagingState::AwaitingMessages);
         BOOST_CHECK_EQUAL(ADDR_SOFT_CAP, vAddr.size());
 
-        // ADDR_SOFT_CAP is exceeded
+        // ADDR_SOFT_CAP is reached. The cap is now checked before collecting,
+        // so it is a hard 1000 rather than the old 1001.
         sendAddrs.resize(1);
         addrMessage = CreateAddrMessage(sendAddrs, isV2);
         testNode->TestProcessMessage(msg_type, addrMessage,
                                      PeerMessagingState::Finished);
-        BOOST_CHECK_EQUAL(ADDR_SOFT_CAP + 1, vAddr.size());
+        BOOST_CHECK_EQUAL(ADDR_SOFT_CAP, vAddr.size());
 
-        // Test the seeder's behavior after ADDR_SOFT_CAP addrs
-        // Only one addr per ADDR message will be added, the rest are ignored
-        size_t expectedSize = vAddr.size() + 1;
+        // CHANGED BEHAVIOUR, and the point of the fix. This loop used to assert
+        // that each further addr message still contributed exactly one address,
+        // which is what let a peer keep feeding us for the whole 30s window.
+        // Past the cap the answer is now zero, however many messages arrive and
+        // however many addresses each one carries.
         for (size_t i = 1; i < 10; i++) {
             sendAddrs.resize(i, sendAddrs[0]);
             addrMessage = CreateAddrMessage(sendAddrs, isV2);
             testNode->TestProcessMessage(msg_type, addrMessage,
                                          PeerMessagingState::Finished);
-            BOOST_CHECK_EQUAL(expectedSize, vAddr.size());
-            ++expectedSize;
+            BOOST_CHECK_EQUAL(ADDR_SOFT_CAP, vAddr.size());
         }
 
         // reset vAddr for next iteration

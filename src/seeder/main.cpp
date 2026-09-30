@@ -221,8 +221,21 @@ extern "C" void *ThreadCrawler(void *data) {
                                  getaddr ? &addr : nullptr,
                                  res.services, res.checkpointVerified);
 
-            if (res.fGood && getaddr)
+            // SECURITY: advance the once-per-day getaddr gate whenever we
+            // actually completed a handshake, not only when the whole crawl
+            // came back good. This used to require res.fGood, so a peer that
+            // answered our getaddr and then failed the crawl (closing the
+            // socket is enough) was asked for addresses again on every single
+            // visit instead of once a day. That multiplied its address
+            // injection rate by roughly 85, and the harvest is committed by the
+            // unconditional db.Add below whether the crawl succeeded or not.
+            //
+            // nClientV is non-zero only once a version message arrived, so a
+            // node that was simply unreachable keeps its old timestamp and is
+            // still asked promptly once it comes back.
+            if (getaddr && res.nClientV != 0) {
                 res.lastAddressRequest = now;
+            }
         }
         if (seeder::ShutdownRequested()) {
             // Since we may have been interrupted at any time during this operation due to shutdown,

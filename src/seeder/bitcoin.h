@@ -33,8 +33,8 @@ static inline int GetRequireHeight() {
     return 0;
 }
 
-// After the 1000th addr, the seeder will only add one more address per addr
-// message.
+// After the 1000th addr, the seeder collects no further addresses on this
+// connection.
 static const unsigned int ADDR_SOFT_CAP = 1000;
 
 // Mirror of MAX_SUBVERSION_LENGTH in src/net.h. It is duplicated rather than
