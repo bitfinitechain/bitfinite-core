@@ -3331,18 +3331,59 @@ static bool ContextualCheckBlockHeader(const CChainParams &params, const CBlockH
         return state.DoS(100, false, REJECT_INVALID, "bad-diffbits", false, "incorrect proof of work");
     }
 
+    const auto maxreorgdepth = gArgs.GetArg("-maxreorgdepth", DEFAULT_MAX_REORG_DEPTH);
+
+    // BFX SECURITY: pick the block that headers must descend from.
+    //
+    // Normally that is the last finalized block. But pindexFinalized is null
+    // for the first -finalizationdelay (2h by default) after every process
+    // start, and stays null until a block is actually connected; it is never
+    // persisted, so every restart re-arms that window. While it is null this
+    // check did nothing, and it is the only one that ties a header to our
+    // chain. Everything else in AcceptBlockHeader is per-header: unique hash,
+    // work matching its own nBits, prev block known, time in range. None of
+    // them bounds how MANY headers get stored, and mapBlockIndex is never
+    // pruned, so a peer could park unbounded fork headers in memory at roughly
+    // 380 bytes each. They are then flushed to the block index and reloaded at
+    // every startup, so one wave keeps costing memory until someone reindexes.
+    // That is the CVE-2019-25220 class of bug.
+    //
+    // It is cheap on this chain in particular: ASERT is anchored absolutely at
+    // genesis, so a fork whose timestamps run about four days ahead of its
+    // height schedule is clamped to powLimit, and each header then costs only
+    // about 2^32 hashes.
+    //
+    // The real upstream fix is headers pre-synchronization (Bitcoin Core PR
+    // #25717), which the BCHN lineage never took and which is far too large to
+    // carry here. So while nothing is finalized yet, fall back to an anchor
+    // maxreorgdepth back from the active tip. That closes the window for a node
+    // that is already synced, which is the always-available path in practice.
+    //
+    // Only for chains that declare a minimum chain work, and only once the tip
+    // has reached it. Without that condition the anchor could be derived from a
+    // chain we have no reason to trust yet, and regtest (where the value is
+    // zero) would silently lose the ability to reorg deeper than maxreorgdepth
+    // during the first two hours of every session.
+    const CBlockIndex *pindexFinalityAnchor = pindexFinalized;
+    if (pindexFinalityAnchor == nullptr && maxreorgdepth > -1 && nMinimumChainWork > 0) {
+        const CBlockIndex *tip = ::ChainActive().Tip();
+        if (tip != nullptr && tip->nChainWork >= nMinimumChainWork) {
+            pindexFinalityAnchor = ::ChainActive()[std::max(0, tip->nHeight - static_cast<int>(maxreorgdepth))];
+        }
+    }
+
     // finalizeheaders: Check against last finalized block height
-    if (pindexFinalized) {
+    if (pindexFinalityAnchor) {
         const auto finalizeheaders = gArgs.GetBoolArg("-finalizeheaders", DEFAULT_FINALIZE_HEADERS);
 
         if (finalizeheaders) {
-            const auto maxreorgdepth = gArgs.GetArg("-maxreorgdepth", DEFAULT_MAX_REORG_DEPTH);
             LogPrint(BCLog::FINALIZATION,
                      "%s: header finalization check: hash=%s  height=%d  date=%s  maxreorgdepth=%d   final height=%d  "
                      "final hash=%s\n",
                      __func__, block.GetHash().ToString(), nHeight, FormatISO8601DateTime(block.GetBlockTime()),
-                     maxreorgdepth, pindexFinalized->nHeight, pindexFinalized->GetBlockHash().ToString());
-            if (maxreorgdepth > -1 && pindexPrev->GetAncestor(pindexFinalized->nHeight) != pindexFinalized) {
+                     maxreorgdepth, pindexFinalityAnchor->nHeight,
+                     pindexFinalityAnchor->GetBlockHash().ToString());
+            if (maxreorgdepth > -1 && pindexPrev->GetAncestor(pindexFinalityAnchor->nHeight) != pindexFinalityAnchor) {
                 LogPrint(BCLog::FINALIZATION, "%s: below final=%s  height=%d  date=%s\n", __func__,
                          block.GetHash().ToString(), nHeight, FormatISO8601DateTime(block.GetBlockTime()));
 

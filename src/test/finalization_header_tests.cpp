@@ -90,6 +90,71 @@ static void CreateNewHeaderAndCheckIsRejected(const Config &config, CBlockIndex 
     }
 }
 
+// Regression test for the unbounded header flood (CVE-2019-25220 class).
+//
+// The finalization check is the only per-header test that ties a header to OUR
+// chain; every other check in AcceptBlockHeader is self-contained and none of
+// them bounds how many headers get stored. But pindexFinalized is null for the
+// first -finalizationdelay (2h) after every process start and until a block is
+// connected, it is never persisted, and every restart re-arms that window. So
+// in that window a peer could park unbounded fork headers in mapBlockIndex,
+// which is never pruned, and they survive into the block index on disk.
+//
+// The fix anchors to maxreorgdepth back from the active tip while nothing is
+// finalized yet, but only for a chain that declares a minimum chain work and
+// only once the tip has reached it. This test covers both sides of that
+// condition, which is also what keeps regtest able to reorg freely.
+BOOST_AUTO_TEST_CASE(deepForkHeaderRefusedBeforeFirstFinalization) {
+    const Config &config = GetConfig();
+
+    // The fixture's 100 blocks are all too close to now to be finalized, so
+    // this is the unguarded window, reproduced exactly as a restart produces it.
+    {
+        LOCK(cs_main);
+        BOOST_REQUIRE(GetFinalizedBlock() == nullptr);
+    }
+
+    CBlockIndex *deepFork = nullptr;
+    {
+        LOCK(cs_main);
+        // One block deeper than maxreorgdepth, so it can never be a legitimate
+        // reorg candidate: the node would refuse it once anything is finalized.
+        deepFork = ::ChainActive().Tip()->GetAncestor(::ChainActive().Tip()->nHeight - DEFAULT_MAX_REORG_DEPTH - 1);
+    }
+    BOOST_REQUIRE(deepFork != nullptr);
+
+    // Regtest declares no minimum chain work, so the fallback stays off and the
+    // header is stored exactly as before. This is the half that keeps deep
+    // reorgs working on regtest, where developers and the functional tests rely
+    // on them.
+    BOOST_REQUIRE(nMinimumChainWork == 0);
+    CreateNewHeaderAndCheckIsAccepted(config, deepFork);
+
+    // Now behave like a chain that does declare one, with the tip past it.
+    const arith_uint256 savedMinimumChainWork = nMinimumChainWork;
+    nMinimumChainWork = arith_uint256(1);
+    {
+        LOCK(cs_main);
+        BOOST_REQUIRE(::ChainActive().Tip()->nChainWork >= nMinimumChainWork);
+        BOOST_REQUIRE(GetFinalizedBlock() == nullptr);
+    }
+
+    // THE ASSERTION THAT USED TO FAIL: with nothing finalized, this header was
+    // accepted and stored. An attacker repeats it without limit.
+    CreateNewHeaderAndCheckIsRejected(config, deepFork);
+
+    // A header that does descend from the fallback anchor is still accepted, so
+    // the gate rejects the fork rather than stalling normal header sync.
+    CBlockIndex *shallow = nullptr;
+    {
+        LOCK(cs_main);
+        shallow = ::ChainActive().Tip();
+    }
+    CreateNewHeaderAndCheckIsAccepted(config, shallow);
+
+    nMinimumChainWork = savedMinimumChainWork;
+}
+
 BOOST_AUTO_TEST_CASE(headerFinalizationEnabledDefault) {
     const Config &config = GetConfig();
     CScript p2pk_scriptPubKey = CScript() << ToByteVector(coinbaseKey.GetPubKey()) << OP_CHECKSIG;
