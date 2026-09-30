@@ -128,7 +128,13 @@ public:
         if (clientVersion && clientVersion < REQUIRE_VERSION) {
             return Reliableness::NOT_REQUIRED_VERSION;
         }
-        if (blocks && blocks < GetRequireHeight()) {
+        // SECURITY: `blocks &&` exempted a peer reporting height 0 from the
+        // required-height filter entirely. The height is self-reported, so that
+        // handed any peer a free pass by claiming zero. A peer that reports no
+        // blocks has not proved it reached the checkpoint and must not be
+        // served. On a network whose checkpoint is genesis this is a no-op,
+        // since GetRequireHeight() is 0 and nothing is below it.
+        if (blocks < GetRequireHeight()) {
             return Reliableness::NOT_REQUIRED_HEIGHT;
         }
         if ((total > 3 || success * 2 < total) &&
@@ -172,7 +178,7 @@ public:
     friend class CAddrDb;
 
     SERIALIZE_METHODS(CAddrInfo, obj) {
-        uint8_t version = 6;
+        uint8_t version = 7;
         READWRITE(version, obj.ip, obj.services, obj.lastTry);
         uint8_t tried = obj.ourLastTry != 0;
         READWRITE(tried);
@@ -204,12 +210,24 @@ public:
         if (version >= 5) {
             READWRITE(obj.lastAddressRequest);
         }
-        if (version >= 6) {
+        if (version >= 7) {
             READWRITE(obj.checkpointVerified);
+        } else if (version == 6) {
+            // SECURITY: a v6 file does carry this flag, so it still has to be
+            // read to keep the stream aligned, but its value cannot be
+            // trusted. It was granted by the pre-fix checkpoint gate, which a
+            // peer could pass with an arbitrary 80-byte blob and no proof of
+            // work. Discard it and make every entry prove itself again on the
+            // next crawl. The good set dips until then; that is the point.
+            bool staleCheckpointVerified{};
+            READWRITE(staleCheckpointVerified);
+            SER_READ(obj, obj.checkpointVerified = false);
         } else {
-            // To avoid a sudden drop of all nodes when seeders upgrade, initially mark all nodes as having their
-            // checkpoints verified, to keep previously considered good nodes live until they are later proven bad
-            SER_READ(obj, obj.checkpointVerified = true);
+            // Older than v6: the flag was never stored. Same conclusion, and
+            // nothing to read. Note this replaces the previous "mark all nodes
+            // verified so the good set does not drop on upgrade" behaviour,
+            // which is not safe for a flag that gates chain authenticity.
+            SER_READ(obj, obj.checkpointVerified = false);
         }
     }
 };

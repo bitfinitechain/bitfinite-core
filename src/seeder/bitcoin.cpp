@@ -4,6 +4,7 @@
 
 #include <seeder/bitcoin.h>
 
+#include <arith_uint256.h>
 #include <chainparams.h>
 #include <clientversion.h>
 #include <compat.h>
@@ -104,6 +105,25 @@ void CSeederNode::PushVersion() {
     vSend << PROTOCOL_VERSION << nLocalServices << nTime << you << me
           << nLocalNonce << ver << nBestHeight << fRelayTxs;
     EndMessage();
+}
+
+// Mirror of CheckProofOfWork in src/pow.cpp. It is duplicated rather than
+// called because pow.cpp lives in the `server` library, and the seeder links
+// only `common` and `bitcoinconsensus`; linking `server` would drag the whole
+// node (validation, net, http) into the crawler. Keep the two in sync: this
+// must stay a range check plus a target comparison, nothing more.
+static bool CheckHeaderProofOfWork(const CBlockHeader &header, const Consensus::Params &params) {
+    bool fNegative = false;
+    bool fOverflow = false;
+    arith_uint256 bnTarget;
+
+    bnTarget.SetCompact(header.nBits, &fNegative, &fOverflow);
+
+    if (fNegative || bnTarget == 0 || fOverflow || bnTarget > UintToArith256(params.powLimit)) {
+        return false;
+    }
+
+    return UintToArith256(header.GetHash()) <= bnTarget;
 }
 
 PeerMessagingState CSeederNode::ProcessMessage(const std::string &msg_type,
@@ -223,15 +243,48 @@ PeerMessagingState CSeederNode::ProcessMessage(const std::string &msg_type,
         CBlockHeader header;
         recv >> header;
 
-        if (auto *pair = GetCheckpoint(); pair && nStartingHeight > pair->first && header.hashPrevBlock != pair->second) {
-            /* This node is synced higher than the last checkpoint height but does not have the checkpoint block in
-             * its chain. This means it must be on the wrong chain. We treat these nodes the same as nodes with
-             * the wrong net magic.
+        if (auto *pair = GetCheckpoint()) {
+            /* SECURITY: this is the seeder's only chain-authenticity control,
+             * and it decides which hosts fresh nodes connect to first. It used
+             * to read:
+             *
+             *   nStartingHeight > pair->first && hashPrevBlock != pair->second
+             *
+             * Both halves were forgeable. nStartingHeight is a plain integer
+             * the peer sends in its version message, so a peer that claims to
+             * be at or below the checkpoint height skipped the hash comparison
+             * altogether. With the checkpoint at genesis, "at or below" meant
+             * claiming height 0, so any host that spoke the wire protocol and
+             * sent one arbitrary 80-byte blob was recorded as
+             * checkpoint-verified and served in the DNS answers.
+             *
+             * Two changes. The peer's self-reported height no longer takes part
+             * in the decision to trust: the header must connect to the
+             * checkpoint, full stop. And the header must satisfy proof of work
+             * for its own nBits, so presenting one costs real hashing instead
+             * of nothing.
              */
-            // std::fprintf(stdout, "%s: BAD \"%s\" (wrong chain)\n",
-            //              ToString(you).c_str(), strSubVer.c_str());
-            ban = 100000;
-            return PeerMessagingState::Finished;
+            const bool connects = header.hashPrevBlock == pair->second;
+            if (!connects || !CheckHeaderProofOfWork(header, Params().GetConsensus())) {
+                /* The height is still worth reading, but only ever to be more
+                 * lenient, never to grant trust. A peer that claims to be
+                 * above the checkpoint and cannot show the checkpoint's
+                 * successor is on the wrong chain, and is banned as before. A
+                 * peer that claims to be below it is most likely still syncing
+                 * and answered our getheaders from genesis, so it is simply
+                 * left unverified: GetReliableness returns
+                 * UNVERIFIED_CHECKPOINT and it stays out of the DNS answers
+                 * until a later crawl proves it. Lying about the height to
+                 * dodge the ban buys an attacker nothing, because it is the
+                 * ban it dodges, not the exclusion.
+                 */
+                if (nStartingHeight > pair->first) {
+                    // std::fprintf(stdout, "%s: BAD \"%s\" (wrong chain)\n",
+                    //              ToString(you).c_str(), strSubVer.c_str());
+                    ban = 100000;
+                }
+                return PeerMessagingState::Finished;
+            }
         }
         checkpointVerified = true;
         if (!needAddrReply) {
