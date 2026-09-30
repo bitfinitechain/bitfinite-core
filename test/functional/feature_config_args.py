@@ -21,7 +21,7 @@ class ConfArgsTest(BitcoinTestFramework):
 
         inc_conf_file_path = os.path.join(
             self.nodes[0].datadir, 'include.conf')
-        with open(os.path.join(self.nodes[0].datadir, 'bitcoin.conf'), 'a', encoding='utf-8') as conf:
+        with open(os.path.join(self.nodes[0].datadir, 'bitfinite.conf'), 'a', encoding='utf-8') as conf:
             conf.write('includeconf={}\n'.format(inc_conf_file_path))
 
         with open(inc_conf_file_path, 'w', encoding='utf-8') as conf:
@@ -74,7 +74,7 @@ class ConfArgsTest(BitcoinTestFramework):
 
         inc_conf_file2_path = os.path.join(
             self.nodes[0].datadir, 'include2.conf')
-        with open(os.path.join(self.nodes[0].datadir, 'bitcoin.conf'), 'a', encoding='utf-8') as conf:
+        with open(os.path.join(self.nodes[0].datadir, 'bitfinite.conf'), 'a', encoding='utf-8') as conf:
             conf.write('includeconf={}\n'.format(inc_conf_file2_path))
 
         with open(inc_conf_file_path, 'w', encoding='utf-8') as conf:
@@ -114,7 +114,7 @@ class ConfArgsTest(BitcoinTestFramework):
             ['-datadir=' + new_data_dir], 'Error: Specified data directory "' + new_data_dir + '" does not exist.')
 
         # Check that using non-existent datadir in conf file fails
-        conf_file = os.path.join(default_data_dir, "bitcoin.conf")
+        conf_file = os.path.join(default_data_dir, "bitfinite.conf")
 
         # datadir needs to be set before [regtest] section
         conf_file_contents = open(conf_file, encoding='utf8').read()
