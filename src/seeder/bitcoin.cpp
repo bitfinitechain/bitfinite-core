@@ -4,6 +4,7 @@
 
 #include <seeder/bitcoin.h>
 
+#include <arith_uint256.h>
 #include <chainparams.h>
 #include <clientversion.h>
 #include <compat.h>
@@ -21,6 +22,7 @@
 #include <cstdio>
 #include <cstring>
 #include <ctime>
+#include <new>
 
 #ifdef USE_POLL /* USE_POLL comes from compat.h */
 #  if __has_include(<poll.h>)
@@ -106,6 +108,25 @@ void CSeederNode::PushVersion() {
     EndMessage();
 }
 
+// Mirror of CheckProofOfWork in src/pow.cpp. It is duplicated rather than
+// called because pow.cpp lives in the `server` library, and the seeder links
+// only `common` and `bitcoinconsensus`; linking `server` would drag the whole
+// node (validation, net, http) into the crawler. Keep the two in sync: this
+// must stay a range check plus a target comparison, nothing more.
+static bool CheckHeaderProofOfWork(const CBlockHeader &header, const Consensus::Params &params) {
+    bool fNegative = false;
+    bool fOverflow = false;
+    arith_uint256 bnTarget;
+
+    bnTarget.SetCompact(header.nBits, &fNegative, &fOverflow);
+
+    if (fNegative || bnTarget == 0 || fOverflow || bnTarget > UintToArith256(params.powLimit)) {
+        return false;
+    }
+
+    return UintToArith256(header.GetHash()) <= bnTarget;
+}
+
 PeerMessagingState CSeederNode::ProcessMessage(const std::string &msg_type,
                                                CDataStream &recv) {
     // std::fprintf(stdout, "%s: RECV %s\n", ToString(you).c_str(),
@@ -119,7 +140,19 @@ PeerMessagingState CSeederNode::ProcessMessage(const std::string &msg_type,
         recv >> nVersion >> nServiceInt >> nTime >> addrMe;
         you.nServices = ServiceFlags(nServiceInt);
         recv >> addrFrom >> nNonce;
-        recv >> strSubVer;
+        // SECURITY: cap the user-agent read. The generic string unserializer
+        // reads an attacker-declared CompactSize, bounded only by MAX_SIZE
+        // (32 MiB), and then calls resize() BEFORE reading any bytes, so the
+        // allocation follows what the peer CLAIMS to be sending, not what it
+        // sends. A ~120-byte message could therefore cost 32 MiB, times 96
+        // crawler threads, and an in-bounds 2 MiB subversion was copied into
+        // the database and persisted to dnsseed.dat forever.
+        //
+        // LIMITED_STRING throws before the resize. This is exactly what the
+        // node itself does for the same wire field in net_processing.cpp;
+        // the seeder never picked it up. strSubVer only feeds the dump and
+        // stats output, so 256 bytes costs us nothing.
+        recv >> LIMITED_STRING(strSubVer, SEEDER_MAX_SUBVERSION_LENGTH);
         recv >> nStartingHeight;
 
         if (nVersion >= FEATURE_NEGOTIATION_BEFORE_VERACK_VERSION) {
@@ -185,6 +218,33 @@ PeerMessagingState CSeederNode::ProcessMessage(const std::string &msg_type,
             }
         }
         while (it != vAddrNew.end()) {
+            // SECURITY: the cap is checked BEFORE collecting, and it now ends
+            // the harvest for the whole connection rather than for this message.
+            //
+            // It used to be checked after the push, and the non-verified branch
+            // only broke out of this loop. The connection stayed open for the
+            // 30s timeout, so every further addr message contributed exactly
+            // one more address. A single-address addrv2 frame is about 61
+            // bytes, so a peer could stream hundreds of thousands of fabricated
+            // addresses in one visit, and each one costs us roughly 400 bytes
+            // of resident memory in the database, persisted to dnsseed.dat and
+            // reloaded at every startup.
+            //
+            // Withholding the getheaders reply was one way to hold the window
+            // open, but not the only one: the seeder sends getaddr BEFORE
+            // getheaders, so simply answering addr first got the whole stream
+            // processed while still unverified. Bounding the collection itself
+            // is what closes both.
+            if (vAddr->size() >= ADDR_SOFT_CAP) {
+                if (checkpointVerified) {
+                    // Nothing left to wait for, so drop the connection now.
+                    doneAfter = now;
+                    return PeerMessagingState::Finished;
+                }
+                // Still want the checkpoint proof, so stay connected, but take
+                // no more addresses from this peer no matter how many it sends.
+                return PeerMessagingState::AwaitingMessages;
+            }
             CAddress &addr = *it;
             // std::fprintf(stdout, "%s: got address %s\n", ToString(you).c_str(), addr.ToString().c_str());
             it++;
@@ -197,16 +257,6 @@ PeerMessagingState CSeederNode::ProcessMessage(const std::string &msg_type,
             // std::fprintf(stdout, "%s: added address %s (#%i)\n",
             //              ToString(you).c_str(),
             //              addr.ToString().c_str(), (int)(vAddr->size()));
-            if (vAddr->size() > ADDR_SOFT_CAP) {
-                if (checkpointVerified) {
-                    // stop processing addresees and since we aren't waiting for headers, stop processing immediately
-                    doneAfter = now;
-                    return PeerMessagingState::Finished;
-                } else {
-                    // stop processing addresses now since we hit the soft cap, but we will continue to await headers
-                    break;
-                }
-            }
         }
         return PeerMessagingState::AwaitingMessages;
     }
@@ -223,15 +273,48 @@ PeerMessagingState CSeederNode::ProcessMessage(const std::string &msg_type,
         CBlockHeader header;
         recv >> header;
 
-        if (auto *pair = GetCheckpoint(); pair && nStartingHeight > pair->first && header.hashPrevBlock != pair->second) {
-            /* This node is synced higher than the last checkpoint height but does not have the checkpoint block in
-             * its chain. This means it must be on the wrong chain. We treat these nodes the same as nodes with
-             * the wrong net magic.
+        if (auto *pair = GetCheckpoint()) {
+            /* SECURITY: this is the seeder's only chain-authenticity control,
+             * and it decides which hosts fresh nodes connect to first. It used
+             * to read:
+             *
+             *   nStartingHeight > pair->first && hashPrevBlock != pair->second
+             *
+             * Both halves were forgeable. nStartingHeight is a plain integer
+             * the peer sends in its version message, so a peer that claims to
+             * be at or below the checkpoint height skipped the hash comparison
+             * altogether. With the checkpoint at genesis, "at or below" meant
+             * claiming height 0, so any host that spoke the wire protocol and
+             * sent one arbitrary 80-byte blob was recorded as
+             * checkpoint-verified and served in the DNS answers.
+             *
+             * Two changes. The peer's self-reported height no longer takes part
+             * in the decision to trust: the header must connect to the
+             * checkpoint, full stop. And the header must satisfy proof of work
+             * for its own nBits, so presenting one costs real hashing instead
+             * of nothing.
              */
-            // std::fprintf(stdout, "%s: BAD \"%s\" (wrong chain)\n",
-            //              ToString(you).c_str(), strSubVer.c_str());
-            ban = 100000;
-            return PeerMessagingState::Finished;
+            const bool connects = header.hashPrevBlock == pair->second;
+            if (!connects || !CheckHeaderProofOfWork(header, Params().GetConsensus())) {
+                /* The height is still worth reading, but only ever to be more
+                 * lenient, never to grant trust. A peer that claims to be
+                 * above the checkpoint and cannot show the checkpoint's
+                 * successor is on the wrong chain, and is banned as before. A
+                 * peer that claims to be below it is most likely still syncing
+                 * and answered our getheaders from genesis, so it is simply
+                 * left unverified: GetReliableness returns
+                 * UNVERIFIED_CHECKPOINT and it stays out of the DNS answers
+                 * until a later crawl proves it. Lying about the height to
+                 * dodge the ban buys an attacker nothing, because it is the
+                 * ban it dodges, not the exclusion.
+                 */
+                if (nStartingHeight > pair->first) {
+                    // std::fprintf(stdout, "%s: BAD \"%s\" (wrong chain)\n",
+                    //              ToString(you).c_str(), strSubVer.c_str());
+                    ban = 100000;
+                }
+                return PeerMessagingState::Finished;
+            }
         }
         checkpointVerified = true;
         if (!needAddrReply) {
@@ -463,7 +546,21 @@ bool TestNode(const CService &cip, int &ban, int &clientV,
         // std::fprintf(stdout, "%s: %s!!!\n", cip.ToString().c_str(), ret ? "GOOD" :
         //              "BAD");
         return ret;
-    } catch (std::ios_base::failure &e) {
+    } catch (const std::ios_base::failure &e) {
+        ban = 0;
+        return false;
+    } catch (const std::bad_alloc &e) {
+        // SECURITY: this used to escape. A crawler thread is a pthread, so an
+        // uncaught exception calls std::terminate and takes the whole seeder
+        // down, which is a remote kill switch for the network's bootstrap if
+        // any allocation on this path can be driven by a peer. The subversion
+        // cap above closes the worst of those, but the receive buffer and the
+        // per-message copy are still peer-sized, so failing this one crawl is
+        // the behaviour we want rather than dying.
+        ban = 0;
+        return false;
+    } catch (const std::exception &e) {
+        // Same reasoning. Nothing below this is worth a process abort.
         ban = 0;
         return false;
     }

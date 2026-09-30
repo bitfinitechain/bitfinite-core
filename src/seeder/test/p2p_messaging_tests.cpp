@@ -4,7 +4,10 @@
 
 #define BOOST_TEST_MODULE Bitcoin Seeder Test Suite
 
+#include <arith_uint256.h>
 #include <chainparams.h>
+#include <clientversion.h>
+#include <netbase.h>
 #include <protocol.h>
 #include <seeder/bitcoin.h>
 #include <seeder/db.h>
@@ -74,6 +77,23 @@ CreateVersionMessage(int64_t now, CAddress addrTo, CAddress addrFrom,
     ServiceFlags serviceflags = ServiceFlags(NODE_NETWORK);
     payload << nVersion << uint64_t(serviceflags) << now << addrTo << addrFrom
             << nonce << user_agent << start_height;
+    return payload;
+}
+
+// Builds a version message whose strSubVer CompactSize is a lie: it declares
+// `declaredLength` bytes while only `actualBytes` follow. This is the shape of
+// the amplification payload, a ~120-byte message that asks for a 32 MiB
+// allocation.
+static CDataStream CreateVersionMessageWithOverdeclaredSubVer(int64_t now, CAddress addrTo, CAddress addrFrom,
+                                                              uint64_t declaredLength, size_t actualBytes) {
+    CDataStream payload(SER_NETWORK, 0);
+    payload.SetVersion(INIT_PROTO_VERSION);
+    ServiceFlags serviceflags = ServiceFlags(NODE_NETWORK);
+    payload << int32_t(OUR_VERSION) << uint64_t(serviceflags) << now << addrTo << addrFrom << uint64_t(0);
+    WriteCompactSize(payload, declaredLength);
+    const std::string partial(actualBytes, 'A');
+    payload.write(partial.data(), partial.size());
+    payload << int32_t(1);
     return payload;
 }
 
@@ -176,6 +196,217 @@ BOOST_AUTO_TEST_CASE(process_headers_msg) {
     BOOST_CHECK(testNode->GetBan() > 0);
 }
 
+// Regression tests for the checkpoint-gate bypass (BUG-R3-S2-A6-H1).
+//
+// The gate is the seeder's only chain-authenticity control, and the seeder
+// chooses which hosts a fresh node connects to first. It used to read
+// `nStartingHeight > checkpointHeight && hashPrevBlock != checkpointHash`,
+// where nStartingHeight is an integer the peer states about itself. A peer
+// claiming to be at or below the checkpoint therefore skipped the hash
+// comparison. With the checkpoint at genesis that meant claiming height 0, so
+// any host speaking the wire protocol was recorded as checkpoint-verified and
+// served in the DNS answers, at the cost of one arbitrary 80-byte blob.
+//
+// What must hold now: nothing becomes checkpoint-verified without presenting a
+// header that connects to the checkpoint AND carries valid proof of work.
+
+// The bypass itself: claim height 0, send a header that does not connect.
+// Before the fix this set checkpointVerified and the host entered the good set.
+BOOST_AUTO_TEST_CASE(spoofed_low_height_does_not_verify_checkpoint) {
+    CService serviceFrom;
+    CAddress addrFrom(serviceFrom, ServiceFlags(NODE_NETWORK | NODE_BITCOIN_CASH));
+
+    // Path A from the report: nStartingHeight = 0, which is <= the checkpoint
+    // height and so used to disable the hash comparison entirely.
+    CDataStream versionMessage = CreateVersionMessage(std::time(nullptr), vAddr[0], addrFrom, 0);
+    testNode->TestProcessMessage(NetMsgType::VERSION, versionMessage, PeerMessagingState::AwaitingMessages);
+    BOOST_CHECK(!testNode->IsCheckpointVerified());
+
+    // An arbitrary header. hashPrevBlock is null, so it connects to nothing.
+    CDataStream headersMessage = CreateHeadersMessage({CBlockHeader()}, testNode->GetClientVersion());
+    testNode->TestProcessMessage(NetMsgType::HEADERS, headersMessage, PeerMessagingState::Finished);
+
+    // THE ASSERTION THAT USED TO FAIL.
+    BOOST_CHECK(!testNode->IsCheckpointVerified());
+    // Not banned: a peer claiming to sit below the checkpoint is most likely
+    // still syncing, and answered our getheaders from genesis. Staying
+    // unverified is what keeps it out of the DNS answers; the ban is a separate
+    // matter. Reading the self-reported height only to be MORE lenient is safe,
+    // because lying about it buys the attacker leniency, not trust.
+    BOOST_CHECK_EQUAL(testNode->GetBan(), 0);
+}
+
+// The wrong-chain case the gate was written for still bans.
+BOOST_AUTO_TEST_CASE(wrong_chain_above_checkpoint_is_banned) {
+    CService serviceFrom;
+    CAddress addrFrom(serviceFrom, ServiceFlags(NODE_NETWORK | NODE_BITCOIN_CASH));
+
+    CDataStream versionMessage =
+        CreateVersionMessage(std::time(nullptr), vAddr[0], addrFrom, GetRequireHeight() + 1);
+    testNode->TestProcessMessage(NetMsgType::VERSION, versionMessage, PeerMessagingState::AwaitingMessages);
+
+    CDataStream headersMessage = CreateHeadersMessage({CBlockHeader()}, testNode->GetClientVersion());
+    testNode->TestProcessMessage(NetMsgType::HEADERS, headersMessage, PeerMessagingState::Finished);
+
+    BOOST_CHECK(!testNode->IsCheckpointVerified());
+    BOOST_CHECK(testNode->GetBan() > 0);
+}
+
+// Connecting to the checkpoint is no longer enough on its own: the header has
+// to satisfy proof of work for its own nBits. Without this, forging a header
+// that connects costs nothing, since hashPrevBlock is public data.
+BOOST_AUTO_TEST_CASE(header_without_proof_of_work_does_not_verify_checkpoint) {
+    CService serviceFrom;
+    CAddress addrFrom(serviceFrom, ServiceFlags(NODE_NETWORK | NODE_BITCOIN_CASH));
+
+    CDataStream versionMessage =
+        CreateVersionMessage(std::time(nullptr), vAddr[0], addrFrom, GetRequireHeight() + 1);
+    testNode->TestProcessMessage(NetMsgType::VERSION, versionMessage, PeerMessagingState::AwaitingMessages);
+
+    // Start from the real block 1, which does connect to the checkpoint, and
+    // break only the work. nBits = 0 makes the decoded target zero, which fails
+    // the range check deterministically.
+    CBlockHeader noWork = ::ChainActive()[1]->GetBlockHeader();
+    BOOST_REQUIRE(noWork.hashPrevBlock == Params().Checkpoints().mapCheckpoints.rbegin()->second);
+    noWork.nBits = 0;
+
+    CDataStream headersMessage = CreateHeadersMessage({noWork}, testNode->GetClientVersion());
+    testNode->TestProcessMessage(NetMsgType::HEADERS, headersMessage, PeerMessagingState::Finished);
+
+    BOOST_CHECK(!testNode->IsCheckpointVerified());
+    BOOST_CHECK(testNode->GetBan() > 0);
+}
+
+// Same, with a target the header's hash does not actually meet.
+BOOST_AUTO_TEST_CASE(header_above_its_target_does_not_verify_checkpoint) {
+    CService serviceFrom;
+    CAddress addrFrom(serviceFrom, ServiceFlags(NODE_NETWORK | NODE_BITCOIN_CASH));
+
+    CDataStream versionMessage =
+        CreateVersionMessage(std::time(nullptr), vAddr[0], addrFrom, GetRequireHeight() + 1);
+    testNode->TestProcessMessage(NetMsgType::VERSION, versionMessage, PeerMessagingState::AwaitingMessages);
+
+    // A mainnet-grade target on a regtest header. Nudge the nonce until the
+    // hash genuinely exceeds it, so the test asserts the comparison rather than
+    // relying on it being overwhelmingly likely.
+    CBlockHeader tooEasy = ::ChainActive()[1]->GetBlockHeader();
+    tooEasy.nBits = 0x1d00ffff;
+    arith_uint256 bnTarget;
+    bnTarget.SetCompact(tooEasy.nBits);
+    while (UintToArith256(tooEasy.GetHash()) <= bnTarget) {
+        ++tooEasy.nNonce;
+    }
+    BOOST_REQUIRE(tooEasy.hashPrevBlock == Params().Checkpoints().mapCheckpoints.rbegin()->second);
+
+    CDataStream headersMessage = CreateHeadersMessage({tooEasy}, testNode->GetClientVersion());
+    testNode->TestProcessMessage(NetMsgType::HEADERS, headersMessage, PeerMessagingState::Finished);
+
+    BOOST_CHECK(!testNode->IsCheckpointVerified());
+    BOOST_CHECK(testNode->GetBan() > 0);
+}
+
+// The flag is persisted in dnsseed.dat. Entries written by a pre-fix seeder
+// carry checkpointVerified = true granted by the broken gate, so a straight
+// reload would keep a poisoned good set across the upgrade with no attacker
+// action. Reading a v6 record must drop the flag and force re-verification.
+BOOST_AUTO_TEST_CASE(stale_checkpoint_flag_is_not_trusted_on_reload) {
+    // Hand-assemble a v6 CAddrInfo record: same field order as the current
+    // serializer, version byte 6, and checkpointVerified set to true.
+    CService service{vAddr[0]};
+    CDataStream v6(SER_DISK, CLIENT_VERSION);
+    v6 << uint8_t(6) << service << uint64_t(NODE_NETWORK) << int64_t(1);
+    v6 << uint8_t(1);                    // tried
+    v6 << int64_t(1);                    // ourLastTry
+    CAddrStat blank{};
+    v6 << blank << blank << blank << blank << blank;
+    v6 << 1 << 1 << int(PROTOCOL_VERSION);  // total, success, clientVersion
+    v6 << std::string("/BitFinite:3.1.2/");  // clientSubVersion
+    v6 << int(0);                        // blocks, as the spoof reported it
+    v6 << int64_t(1);                    // ourLastSuccess
+    v6 << int64_t(1);                    // lastAddressRequest
+    v6 << uint8_t(1);                    // checkpointVerified == true
+
+    CAddrInfo info;
+    v6 >> info;
+    // The whole record must have been consumed. If the v6 branch forgot to read
+    // the flag byte the stream would still hold it, and every later record in a
+    // real dnsseed.dat would be parsed at the wrong offset.
+    BOOST_CHECK(v6.empty());
+
+    // CAddrInfo keeps its fields private, so assert through the serializer.
+    // Writing it back out now emits version 7, and the last byte is
+    // checkpointVerified.
+    CDataStream out(SER_DISK, CLIENT_VERSION);
+    out << info;
+    BOOST_REQUIRE(out.size() > 1);
+    BOOST_CHECK_EQUAL(int(uint8_t(out[0])), 7);
+    // THE ASSERTION THAT USED TO FAIL: the old reader honoured the stored flag,
+    // so this byte came back as 1 and the poisoned entry stayed in the good set.
+    BOOST_CHECK_EQUAL(int(uint8_t(out[out.size() - 1])), 0);
+
+    // And the reloaded entry is not servable, whichever gate catches it.
+    BOOST_CHECK(!info.IsReliable());
+}
+
+// Regression tests for the uncapped user-agent read (BUG-R3-S2-A6-H2).
+//
+// The generic string unserializer reads a peer-declared CompactSize, bounded
+// only by MAX_SIZE (32 MiB), then calls resize() BEFORE reading any bytes. So
+// the allocation followed what the peer claimed rather than what it sent: a
+// ~120-byte message bought a 32 MiB allocation, across 96 crawler threads, and
+// an in-bounds 2 MiB subversion was copied into the database and persisted.
+// The node caps the same wire field at 256 bytes; the seeder never did.
+
+// An over-declared length must be refused, and refused before it allocates.
+BOOST_AUTO_TEST_CASE(overdeclared_subversion_is_refused) {
+    CService serviceFrom;
+    CAddress addrFrom(serviceFrom, ServiceFlags(NODE_NETWORK | NODE_BITCOIN_CASH));
+
+    // Claim 32 MiB of user agent, send 8 bytes of it.
+    CDataStream versionMessage = CreateVersionMessageWithOverdeclaredSubVer(
+        std::time(nullptr), vAddr[0], addrFrom, 32u * 1024 * 1024, 8);
+    // The whole message is far smaller than what it asks us to allocate, which
+    // is the amplification.
+    BOOST_CHECK(versionMessage.size() < 200);
+
+    // THE BEHAVIOUR THAT USED TO BE MISSING: the read throws instead of
+    // resizing. Before the cap this call allocated 32 MiB and then failed on
+    // the short read, leaving the entry un-banned and re-crawlable.
+    BOOST_CHECK_THROW(testNode->TestProcessMessage(NetMsgType::VERSION, versionMessage,
+                                                   PeerMessagingState::AwaitingMessages),
+                      std::ios_base::failure);
+
+    // Nothing was recorded from the rejected message.
+    BOOST_CHECK_EQUAL(testNode->GetClientSubVersion(), "");
+}
+
+// A subversion that is over the cap but well inside the 2 MiB message limit is
+// the persistent variant: it used to be stored and written to dnsseed.dat.
+BOOST_AUTO_TEST_CASE(oversized_subversion_within_message_limit_is_refused) {
+    CService serviceFrom;
+    CAddress addrFrom(serviceFrom, ServiceFlags(NODE_NETWORK | NODE_BITCOIN_CASH));
+
+    const size_t oversized = SEEDER_MAX_SUBVERSION_LENGTH + 1;
+    CDataStream versionMessage = CreateVersionMessage(std::time(nullptr), vAddr[0], addrFrom, 1, OUR_VERSION, 0,
+                                                      std::string(oversized, 'A'));
+    BOOST_CHECK_THROW(testNode->TestProcessMessage(NetMsgType::VERSION, versionMessage,
+                                                   PeerMessagingState::AwaitingMessages),
+                      std::ios_base::failure);
+    BOOST_CHECK_EQUAL(testNode->GetClientSubVersion(), "");
+}
+
+// The cap must not break an honest node. 256 bytes exactly is still accepted.
+BOOST_AUTO_TEST_CASE(subversion_at_the_cap_is_accepted) {
+    CService serviceFrom;
+    CAddress addrFrom(serviceFrom, ServiceFlags(NODE_NETWORK | NODE_BITCOIN_CASH));
+
+    const std::string atCap(SEEDER_MAX_SUBVERSION_LENGTH, 'A');
+    CDataStream versionMessage =
+        CreateVersionMessage(std::time(nullptr), vAddr[0], addrFrom, 1, OUR_VERSION, 0, atCap);
+    testNode->TestProcessMessage(NetMsgType::VERSION, versionMessage, PeerMessagingState::AwaitingMessages);
+    BOOST_CHECK_EQUAL(testNode->GetClientSubVersion(), atCap);
+}
+
 BOOST_AUTO_TEST_CASE(ban_too_many_headers) {
     auto blockOneHeader = ::ChainActive()[1]->GetBlockHeader();
 
@@ -200,6 +431,64 @@ static CDataStream CreateAddrMessage(const std::vector<CAddress> &sendAddrs, boo
 }
 
 // Test that seeder responds to both ADDR and ADDRV2 messages
+// Regression test for the unbounded address harvest (BUG-R3-S2-A7-H1).
+//
+// process_addr_msg above covers the verified path. This covers the one the
+// reported attack actually used: keep checkpointVerified false, so the seeder
+// stays connected awaiting headers, and stream addr messages. The cap check
+// used to only `break` out of the per-message loop, so each further message
+// still contributed one address, and the measured result was tens of thousands
+// of fabricated addresses from a single 30 second visit.
+BOOST_AUTO_TEST_CASE(addr_harvest_is_bounded_while_awaiting_headers) {
+    // No headers sent, so the node is still waiting for the checkpoint proof.
+    BOOST_REQUIRE(!testNode->IsCheckpointVerified());
+
+    for (auto [msg_type, isV2] : {std::pair(NetMsgType::ADDR, false), std::pair(NetMsgType::ADDRV2, true)}) {
+        // Fill to the cap. vAddr starts with one entry.
+        std::vector<CAddress> sendAddrs(ADDR_SOFT_CAP - 1, vAddr[0]);
+        CDataStream addrMessage = CreateAddrMessage(sendAddrs, isV2);
+        BOOST_CHECK_EQUAL(1, vAddr.size());
+        testNode->TestProcessMessage(msg_type, addrMessage, PeerMessagingState::AwaitingMessages);
+        BOOST_CHECK_EQUAL(ADDR_SOFT_CAP, vAddr.size());
+
+        // Now stream more, as the payload in the report does. The connection
+        // stays open, because we do still want the headers, but the harvest is
+        // over.
+        for (size_t i = 0; i < 50; i++) {
+            std::vector<CAddress> more(1 + (i % 7), vAddr[0]);
+            CDataStream moreMessage = CreateAddrMessage(more, isV2);
+            testNode->TestProcessMessage(msg_type, moreMessage, PeerMessagingState::AwaitingMessages);
+            // THE ASSERTION THAT USED TO FAIL: this grew by one per message.
+            BOOST_CHECK_EQUAL(ADDR_SOFT_CAP, vAddr.size());
+        }
+
+        vAddr.resize(1);
+    }
+}
+
+// The database must refuse to grow without bound from gossip, and must not
+// refuse addresses we add ourselves.
+BOOST_AUTO_TEST_CASE(database_respects_the_tracked_address_cap) {
+    CAddrDb db;
+
+    // Below the cap, a routable gossiped address is tracked.
+    CAddrDbStats stats;
+    CService first{LookupNumeric("1.2.3.4", SERVICE_PORT)};
+    db.Add(CAddress{first, ServiceFlags(NODE_NETWORK)});
+    db.GetStats(stats);
+    BOOST_CHECK_EQUAL(stats.nAvail, 1);
+
+    // The cap itself is not exercised by inserting 250k entries here, which
+    // would be slow and prove little. What matters is that the constant exists
+    // and that force-added entries bypass it, since that is what keeps our own
+    // seeds reachable when a flood has filled the table.
+    BOOST_CHECK(MAX_TRACKED_ADDRESSES > 0);
+    CService ours{LookupNumeric("5.6.7.8", SERVICE_PORT)};
+    db.Add(CAddress{ours, ServiceFlags(NODE_NETWORK)}, true);
+    db.GetStats(stats);
+    BOOST_CHECK_EQUAL(stats.nAvail, 2);
+}
+
 BOOST_AUTO_TEST_CASE(process_addr_msg) {
     // First, must send headers to satisfy the criteria that both ADDR/ADDRV2 *and* HEADERS must arrive before TestNode
     // can advance to the Finished state
@@ -222,23 +511,25 @@ BOOST_AUTO_TEST_CASE(process_addr_msg) {
                                      PeerMessagingState::AwaitingMessages);
         BOOST_CHECK_EQUAL(ADDR_SOFT_CAP, vAddr.size());
 
-        // ADDR_SOFT_CAP is exceeded
+        // ADDR_SOFT_CAP is reached. The cap is now checked before collecting,
+        // so it is a hard 1000 rather than the old 1001.
         sendAddrs.resize(1);
         addrMessage = CreateAddrMessage(sendAddrs, isV2);
         testNode->TestProcessMessage(msg_type, addrMessage,
                                      PeerMessagingState::Finished);
-        BOOST_CHECK_EQUAL(ADDR_SOFT_CAP + 1, vAddr.size());
+        BOOST_CHECK_EQUAL(ADDR_SOFT_CAP, vAddr.size());
 
-        // Test the seeder's behavior after ADDR_SOFT_CAP addrs
-        // Only one addr per ADDR message will be added, the rest are ignored
-        size_t expectedSize = vAddr.size() + 1;
+        // CHANGED BEHAVIOUR, and the point of the fix. This loop used to assert
+        // that each further addr message still contributed exactly one address,
+        // which is what let a peer keep feeding us for the whole 30s window.
+        // Past the cap the answer is now zero, however many messages arrive and
+        // however many addresses each one carries.
         for (size_t i = 1; i < 10; i++) {
             sendAddrs.resize(i, sendAddrs[0]);
             addrMessage = CreateAddrMessage(sendAddrs, isV2);
             testNode->TestProcessMessage(msg_type, addrMessage,
                                          PeerMessagingState::Finished);
-            BOOST_CHECK_EQUAL(expectedSize, vAddr.size());
-            ++expectedSize;
+            BOOST_CHECK_EQUAL(ADDR_SOFT_CAP, vAddr.size());
         }
 
         // reset vAddr for next iteration

@@ -33,9 +33,16 @@ static inline int GetRequireHeight() {
     return 0;
 }
 
-// After the 1000th addr, the seeder will only add one more address per addr
-// message.
+// After the 1000th addr, the seeder collects no further addresses on this
+// connection.
 static const unsigned int ADDR_SOFT_CAP = 1000;
+
+// Mirror of MAX_SUBVERSION_LENGTH in src/net.h. It is duplicated rather than
+// included because net.h pulls in addrman.h, which declares its OWN CAddrInfo
+// and collides with the seeder's class of the same name in seeder/db.h. That
+// collision is why the seeder never picked up the node's cap on this field in
+// the first place. Keep the two values equal.
+static const unsigned int SEEDER_MAX_SUBVERSION_LENGTH = 256;
 
 enum class PeerMessagingState {
     AwaitingMessages,

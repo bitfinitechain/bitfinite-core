@@ -156,7 +156,7 @@ class BitcoinTestFramework(metaclass=BitcoinTestMetaClass):
         config.read_file(open(self.options.configfile, encoding='utf-8'))
         self.config = config
         self.options.bitcoind = os.getenv(
-            "BITCOIND", default=config["environment"]["BUILDDIR"] + '/src/bitcoind' + config["environment"]["EXEEXT"])
+            "BITCOIND", default=config["environment"]["BUILDDIR"] + '/src/bitfinited' + config["environment"]["EXEEXT"])
         if sys.platform == "darwin":
             self.options.bitcoinqt = os.getenv(
                 "BITCOINQT", default=config["environment"]["BUILDDIR"] + '/src/qt/BitFiniteNode-Qt.app/Contents/MacOS/BitFiniteNode-Qt' + config["environment"]["EXEEXT"])
@@ -165,7 +165,7 @@ class BitcoinTestFramework(metaclass=BitcoinTestMetaClass):
                 "BITCOINQT", default=config["environment"]["BUILDDIR"] + '/src/qt/bitcoin-qt' + config["environment"]["EXEEXT"])
 
         self.options.bitcoincli = os.getenv(
-            "BITCOINCLI", default=config["environment"]["BUILDDIR"] + '/src/bitcoin-cli' + config["environment"]["EXEEXT"])
+            "BITCOINCLI", default=config["environment"]["BUILDDIR"] + '/src/bitfinite-cli' + config["environment"]["EXEEXT"])
         self.options.emulator = config["environment"]["EMULATOR"] or None
 
         os.environ['PATH'] = config['environment']['BUILDDIR'] + os.pathsep + \
