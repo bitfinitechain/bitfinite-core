@@ -68,15 +68,30 @@ run() { if [ "$DRY" = 1 ]; then echo "  [dry-run] $*"; else eval "$@"; fi; }
 # ── Derive layout from the running node ─────────────────────────────────────
 # Reading the live process beats hardcoding paths: it cannot disagree with
 # reality, and it makes the script portable across differently-laid-out hosts.
-PID=$(pgrep -x bitfinited | head -1 || true)
-[ -n "$PID" ] || { echo "bitfinited is not running — start it, or investigate, before upgrading" >&2; exit 1; }
-RUNNING_EXE=$(readlink -f "/proc/$PID/exe")
+# Ask systemd for THIS unit's process before falling back to a name match.
+# `pgrep -x bitfinited` returns an arbitrary daemon on a host running more than
+# one, which is how seed-4 reported a testnet binary as the running node while
+# being asked to upgrade mainnet. The unit knows which process is its own.
+PID=$(systemctl show -p MainPID --value "$SERVICE" 2>/dev/null || true)
+[ "${PID:-0}" = 0 ] && PID=""
+[ -n "$PID" ] || PID=$(pgrep -x bitfinited | head -1 || true)
+if [ -n "$PID" ] && [ -r "/proc/$PID/exe" ]; then
+    RUNNING_EXE=$(readlink -f "/proc/$PID/exe")
+else
+    RUNNING_EXE=""
+fi
+if [ -z "${BFX_BINDIR:-}" ] && [ -z "$RUNNING_EXE" ]; then
+    echo "cannot find the running node and BFX_BINDIR is not set; pass BFX_BINDIR" >&2
+    exit 1
+fi
 BINDIR="${BFX_BINDIR:-$(dirname "$RUNNING_EXE")}"
 
 if [ -n "${BFX_DATADIR:-}" ]; then
     DATADIR="$BFX_DATADIR"
 else
-    DATADIR=$(tr '\0' '\n' < "/proc/$PID/cmdline" | sed -n 's/^-datadir=//p' | head -1 || true)
+    DATADIR=""
+    [ -n "$PID" ] && [ -r "/proc/$PID/cmdline" ] && \
+        DATADIR=$(tr '\0' '\n' < "/proc/$PID/cmdline" | sed -n 's/^-datadir=//p' | head -1 || true)
     DATADIR="${DATADIR:-$HOME/.bitfinite}"
 fi
 CLI="$BINDIR/bitfinite-cli -datadir=$DATADIR"
@@ -114,13 +129,26 @@ WORK="${TMPDIR:-/tmp}/bfx-upgrade-${VERSION}"
 
 # ── Preflight ───────────────────────────────────────────────────────────────
 say "Preflight on $(hostname)"
-HEIGHT_BEFORE=$($CLI getblockcount)
-SUBVER_BEFORE=$($CLI getnetworkinfo | grep -o '/BitFinite:[^"]*' || true)
-IBD=$($CLI getblockchaininfo | grep -o '"initialblockdownload": *[a-z]*' | awk '{print $2}')
+# A stopped node must not block the upgrade. This is exactly the state a failed
+# run leaves behind, so demanding a live RPC here made the retry impossible and
+# turned one aborted upgrade on seed-4 into a service outage that needed a
+# manual systemctl start before the script would even talk to us.
+if $CLI getblockcount >/dev/null 2>&1; then
+    NODE_WAS_UP=1
+    HEIGHT_BEFORE=$($CLI getblockcount)
+    SUBVER_BEFORE=$($CLI getnetworkinfo | grep -o '/BitFinite:[^"]*' || true)
+    IBD=$($CLI getblockchaininfo | grep -o '"initialblockdownload": *[a-z]*' | awk '{print $2}')
+else
+    NODE_WAS_UP=0
+    HEIGHT_BEFORE="n/a"
+    SUBVER_BEFORE="(node not running)"
+    IBD="n/a"
+    echo "  NOTE: $SERVICE is not running. Upgrading anyway and starting it at the end."
+fi
 FREE_MB=$(df -Pm "$BINDIR" | awk 'NR==2{print $4}')
 
 echo "  target      : $VERSION"
-echo "  running     : $RUNNING_EXE"
+echo "  running     : ${RUNNING_EXE:-(not running)}"
 echo "  subversion  : $SUBVER_BEFORE"
 echo "  height      : $HEIGHT_BEFORE   (ibd=$IBD)"
 echo "  bindir      : $BINDIR"
@@ -135,7 +163,9 @@ KNOWN=$(systemctl list-dependencies --reverse --plain --no-pager "$SERVICE.servi
         | tail -n +2 | tr -d ' ' | grep -v "^$SERVICE.service$" | grep -v '\.target$' | tr '\n' ' ' || true)
 [ -n "$KNOWN" ] && echo "  systemd also sees: $KNOWN"
 
-[ "$IBD" = false ] || { echo "node is in initial block download — not a good moment" >&2; exit 1; }
+if [ "$NODE_WAS_UP" = 1 ]; then
+    [ "$IBD" = false ] || { echo "node is in initial block download, not a good moment" >&2; exit 1; }
+fi
 [ "$FREE_MB" -ge 500 ] || { echo "need >=500 MB free, have ${FREE_MB} MB" >&2; exit 1; }
 
 for L in "${LOCKS[@]}"; do
@@ -194,8 +224,27 @@ fi
 say "Stopping dependents, then the node"
 for u in "${DEPS[@]}"; do sudo systemctl stop "$u"; echo "  stopped $u"; done
 sudo systemctl stop "$SERVICE"
-for _ in $(seq 1 60); do pgrep -x bitfinited >/dev/null || break; sleep 1; done
-pgrep -x bitfinited >/dev/null && { echo "bitfinited did not exit within 60s" >&2; exit 1; }
+# Wait on THIS unit, not on the process name.
+#
+# This used to poll `pgrep -x bitfinited`, which matches every daemon of that
+# name on the host. On a box running more than one node that is a false
+# positive that never clears: seed-4 also runs two testnet daemons, so the
+# check sat for 60s waiting on nodes that were never meant to stop, then
+# aborted the upgrade with the mainnet node and all three pools already down.
+# Its own log showed "Shutdown: done" seconds in. Systemd knows which process
+# belongs to the unit, so ask it.
+for _ in $(seq 1 120); do
+    [ "$(systemctl is-active "$SERVICE" 2>/dev/null)" != "active" ] && break
+    sleep 1
+done
+if [ "$(systemctl is-active "$SERVICE" 2>/dev/null)" = "active" ]; then
+    echo "$SERVICE did not stop within 120s" >&2; exit 1
+fi
+# Belt and braces: the unit can be inactive while the datadir lock is still
+# held. If RPC still answers on this datadir, the swap is not safe yet.
+if $CLI getblockcount >/dev/null 2>&1; then
+    echo "$SERVICE reports inactive but its RPC still answers; not swapping" >&2; exit 1
+fi
 echo "  node stopped cleanly"
 
 say "Backing up datadir and current binaries"
@@ -223,7 +272,9 @@ echo "  subversion: $SUBVER_BEFORE  ->  $SUBVER_AFTER"
 echo "  height    : $HEIGHT_BEFORE  ->  $HEIGHT_AFTER"
 
 grep -q "${VERSION#v}" <<<"$SUBVER_AFTER" || { echo "node did not come up as $VERSION — run --rollback" >&2; exit 1; }
-[ "$HEIGHT_AFTER" -ge "$HEIGHT_BEFORE" ] || { echo "height went backwards — run --rollback" >&2; exit 1; }
+if [ "$NODE_WAS_UP" = 1 ]; then
+    [ "$HEIGHT_AFTER" -ge "$HEIGHT_BEFORE" ] || { echo "height went backwards, run --rollback" >&2; exit 1; }
+fi
 
 say "Starting dependents"
 for ((i=${#DEPS[@]}-1; i>=0; i--)); do sudo systemctl start "${DEPS[i]}"; echo "  started ${DEPS[i]}"; done
