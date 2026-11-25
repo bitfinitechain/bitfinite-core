@@ -149,13 +149,39 @@ A staged, no-false-promises plan:
 3. **Medium term — optional hash-strengthening.** Favor P2SH-32 (`OP_HASH256`,
    `src/script/standard.cpp:109`) where a 256-bit script-hash commitment is wanted over
    the 160-bit `hash160` margin.
-4. **Long term: post-quantum signatures through a planned hard fork.** Port BCH's VM
-   upgrades and, once it is settled upstream, its post-quantum signature support, as an
-   *opt-in* alongside ECDSA/Schnorr, so users can move funds to quantum-safe outputs
-   ahead of any CRQC. A hybrid (classical plus post-quantum) scheme is the likely first
-   step. In the Bitcoin Cash lineage, consensus changes like this activate as scheduled
-   network upgrades that every node must adopt, so this needs miners, pools and
-   exchanges to coordinate. It will be planned and reviewed, not shipped prematurely.
+4. **Middle path: port BCH's 2025 and 2026 upgrades in one planned hard fork.** This
+   code is already written, reviewed and shipped upstream in Bitcoin Cash Node. It
+   raises the 520-byte stack item cap and brings the VM changes that post-quantum
+   scripts need. By its author's account, the 2025 changes alone make Quantumroot-style
+   vaults possible, so BFX users could hold funds in post-quantum vaults without any new
+   cryptography entering consensus. Those vaults still need an audited wallet before
+   anyone should rely on them.
+5. **Long term: post-quantum signatures, after BCH activates them.** Adopt BCH's
+   post-quantum signature support once it is settled and live upstream, as an *opt-in*
+   alongside ECDSA/Schnorr, so users can move funds to quantum-safe outputs ahead of
+   any CRQC. A hybrid (classical plus post-quantum) scheme is the likely first step.
+
+Steps 4 and 5 are consensus changes. In the Bitcoin Cash lineage these activate as
+scheduled network upgrades that every node must adopt, so each needs miners, pools and
+exchanges to coordinate. They will be planned and reviewed, not shipped prematurely.
+
+### Why we will not ship our own scheme ahead of BCH
+
+A post-quantum upgrade would be opt-in. It would not touch coins already mined, the
+block reward or the supply. The risk is in shipping it alone:
+
+- **Chain split.** Any node, pool or exchange that has not upgraded by activation day
+  follows the old chain. Coins would then exist on both chains, and a transaction would
+  be valid on both, which can cost users coins and expose exchanges to double spends.
+- **A consensus bug hits every coin.** New verification code that crashes nodes, or
+  lets a spend be forged, damages the whole chain, not just the new outputs.
+- **Review.** Bitcoin Cash consensus code has many reviewers. Code we wrote alone would
+  have far fewer.
+- **Divergence.** If BCH settles on a different scheme, we would maintain ours forever
+  or hard fork a second time to switch.
+
+No quantum computer that can break these keys exists today, so there is time to do this
+in order. Until then, the protection that works now is step 1: do not reuse addresses.
 
 We will update this document as each step is taken, and we will never claim a step is
 done before it is.
